@@ -4,8 +4,6 @@
 *.o
 *.a
 webserv
-
-
 **/UserInterfaceState.xcuserstate
 *.xcuserstate
 /server_xcode_project/server_xcode_project.xcodeproj/project.xcworkspace/xcuserdata/yuliia.xcuserdatad/UserInterfaceState.xcuserstate
