@@ -5,3 +5,4 @@
 *.a
 webserv
 *.xcodeproj
+server_xcode_project/
