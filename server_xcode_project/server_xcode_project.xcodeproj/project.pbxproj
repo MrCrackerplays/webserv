@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		32715123296C486C00F66BBE /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 32715122296C486C00F66BBE /* main.cpp */; };
+		32715130296EFFC300F66BBE /* getPort.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3271512E296EFFC300F66BBE /* getPort.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +26,10 @@
 /* Begin PBXFileReference section */
 		3271511F296C486C00F66BBE /* server_xcode_project */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = server_xcode_project; sourceTree = BUILT_PRODUCTS_DIR; };
 		32715122296C486C00F66BBE /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		3271512C296C6CB700F66BBE /* info_serv.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = info_serv.strings; sourceTree = "<group>"; };
+		3271512D296C78A000F66BBE /* gpt_example.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = gpt_example.strings; sourceTree = "<group>"; };
+		3271512E296EFFC300F66BBE /* getPort.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = getPort.cpp; sourceTree = "<group>"; };
+		3271512F296EFFC300F66BBE /* getPort.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = getPort.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +62,10 @@
 		32715121296C486C00F66BBE /* server_xcode_project */ = {
 			isa = PBXGroup;
 			children = (
+				3271512C296C6CB700F66BBE /* info_serv.strings */,
+				3271512D296C78A000F66BBE /* gpt_example.strings */,
+				3271512F296EFFC300F66BBE /* getPort.hpp */,
+				3271512E296EFFC300F66BBE /* getPort.cpp */,
 				32715122296C486C00F66BBE /* main.cpp */,
 			);
 			path = server_xcode_project;
@@ -120,6 +129,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				32715123296C486C00F66BBE /* main.cpp in Sources */,
+				32715130296EFFC300F66BBE /* getPort.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
