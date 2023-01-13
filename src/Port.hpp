@@ -1,12 +1,12 @@
 //
-//  getPort.hpp
+//  Port.hpp
 //  server_xcode_project
 //
 //  Created by Julia Demura on 11/01/2023.
 //
 
-#ifndef getPort_hpp
-#define getPort_hpp
+#ifndef Port_hpp
+#define Port_hpp
 
 #include <stdio.h>
 #include <iostream>
@@ -19,22 +19,14 @@
 class Port{
 	
 private:
-//	std::string _port;
-	struct addrinfo *_res; //is linked list
-	struct addrinfo _hints;
-	
+	struct addrinfo *_res; //is linked list and final result
+	struct addrinfo _hints; //not sure if needed
 	
 public:
 	Port();
 	~Port();
-//	void	getPort();
-//	void	getAddrss();
-	void	getRes();
-	void	getHints();
-	
-	
-	
-	
+	addrinfo *	getRes();
+	addrinfo	getHints();
 };
 
-#endif /* getPort_hpp */
+#endif /* Port_hpp */
