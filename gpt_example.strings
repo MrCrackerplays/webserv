@@ -73,9 +73,9 @@ int main(int argc, char *argv[]) {
 
   // Bind socket to address and port
 	  if (bind(sockfd, result->ai_addr, result->ai_addrlen) < 0) {
-		  perror("Error binding socket to address");
-		  return 1;
-		  }
+		perror("Error binding socket to address");
+		return 1;
+	}
 		  
 		  freeaddrinfo(result);
 		  
@@ -184,14 +184,8 @@ int main(int argc, char *argv[]) {
 
 		  
 		  Certainly! Here is an updated step-by-step plan with pseudocode for a server using the allowed functions and either poll, epoll, or kqueue instead of select:
-		 1. Parse the port number and other necessary command line arguments.
-		 
-		 
-		 
-		 2. Set up the address and port for the server using the getaddrinfo function.
-		 
-		 
-		 
+		  Parse the port number and other necessary command line arguments.
+		  Set up the address and port for the server using the getaddrinfo function.
 		  Create a socket using the socket function.
 		  Bind the socket to the address and port using the bind function.
 		  Set the socket to listen for incoming connections using the listen function.

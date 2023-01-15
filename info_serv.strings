@@ -44,7 +44,8 @@ known:
 execve,
 dup,dup2,
 pipe,
-strerror, errno
+strerror,
+errno,
 fork,
 
 ******************"gai_strerror"**********************
@@ -86,11 +87,8 @@ The htons, htonl, ntohs, and ntohl functions are all related to network byte ord
 It is generally a good idea to learn about these functions together, because they are closely related and are often used in conjunction with each other. Here is a brief overview of each function:
 
 htons stands for "host to network short." It converts a 16-bit (short) value from host byte order to network byte order.
-
 htonl stands for "host to network long." It converts a 32-bit (long) value from host byte order to network byte order.
-
 ntohs stands for "network to host short." It converts a 16-bit (short) value from network byte order to host byte order.
-
 ntohl stands for "network to host long." It converts a 32-bit (long) value from network byte order to host byte order.
 
 These functions are often used when sending or receiving numerical data over a network, to ensure that the data is correctly interpreted by the recipient.
@@ -102,14 +100,12 @@ These functions are often used when sending or receiving numerical data over a n
 //Network byte order is a standardized way of representing numerical values that is used in network communication. It is defined as "big-endian," which means that the most significant byte is stored first, followed by the next least significant byte, and so on.
 
 //The htons, htonl, ntohs, and ntohl functions are used to convert values between host byte order and network byte order. These functions are often used when sending or receiving numerical data over a network, to ensure that the data is correctly interpreted by the recipient.
-*******************************************************************************
+***************************************************************
 
 
 OR
-"select,
-poll, epoll (epoll_create, epoll_ctl,
-epoll_wait),
-kqueue (kqueue, kevent),"
+*****************"select, poll, epoll (epoll_create, epoll_ctl,
+epoll_wait), kqueue (kqueue, kevent)," *****************
 
 The select function is a way for a program to monitor multiple file descriptor sources for events, such as incoming data or the availability of space to write data. It takes three sets of file descriptors as arguments: those for reading, those for writing, and those for error conditions. It waits for events on these file descriptors and returns the count of file descriptors that are ready for the requested I/O.
 
@@ -140,32 +136,66 @@ The kqueue function is available on certain Unix-like operating systems, such as
 
 If you are running your server on a system that does not support kqueue, you will need to choose a different function for monitoring file descriptor sources and waiting for events. Some options to consider include select, poll, and epoll.
 
-*******************************************************************************
+*****************************************************************
 
-"socket", //https://pubs.opengroup.org/onlinepubs/009604499/functions/socket.html
+
+
 accept,
 listen,
 send,
 recv,
-bind,
-connect,
-getaddrinfo,
-freeaddrinfo,
+
 setsockopt,
 getsockname,
 getprotobyname,
-fcntl
 
 
-Familiarize yourself with the functions on the list. Make sure you understand what each of these functions does and how to use them.
-
-Choose a project to work on. Just as before, you might want to start by building a simple server that can handle a single connection at a time, and then gradually add more advanced features as you become more comfortable with the process.
-
-Implement your server using the functions on the list. You'll need to use the functions on the list to perform tasks such as creating and accepting connections, sending and receiving data, and handling requests and responses.
-
-Test your server. Once you've implemented your server, you'll want to test it to make sure it's working correctly. You can do this by using a client program to send requests to your server and verifying that it responds correctly.
+bind,
+connect,
 
 
+*****************"getaddrinfo, freeaddrinfo,"*******************
+//getaddrinfo, freeaddrinfo, gai_strerror - network address and service translation
+//https://cppsecrets.com/users/18989711511997116104103495564103109971051084699111109/C00-Socket-Programming-getaddrinfo.php
+//https://man7.org/linux/man-pages/man3/getaddrinfo.3.html
 
-request:
-I already know cpp and I am allowed to use only these functions:
+//The getaddrinfo() function is used to translate hostnames and service names into a socket address structure, which can be used to create a socket for the server.
+
+*****************   "socket" ***************** //https://pubs.opengroup.org/onlinepubs/009604499/functions/socket.html
+The socket() function shall create an unbound socket in a communications domain, and return a file descriptor that can be used in later function calls that operate on sockets.
+
+The socket() function takes the following arguments:
+
+domain
+Specifies the communications domain in which a socket is to be created.
+type
+Specifies the type of socket to be created.
+protocol
+Specifies a particular protocol to be used with the socket. Specifying a protocol of 0 causes socket() to use an unspecified default protocol appropriate for the requested socket type.
+->> this is defined in 'addrinfo' struct
+
+*****************"fcntl"**********************************
+//https://linux.die.net/man/3/fcntl
+The fcntl function in C++ is a system call that provides control over file descriptor. It is defined in the <fcntl.h> header. The function takes three arguments: the file descriptor, the command to be executed, and an optional third argument, which is typically a pointer to a data structure used by the command. Some of the common commands that can be passed to fcntl include:
+
+F_DUPFD - Duplicate the file descriptor
+F_GETFD - Get the file descriptor flags
+F_SETFD - Set the file descriptor flags
+F_GETFL - Get the file status flags
+F_SETFL - Set the file status flags
+F_GETOWN - Get the process or process group ID currently receiving SIGIO and SIGURG signals
+F_SETOWN - Set the process or process group ID to receive SIGIO and SIGURG signals
+It returns the new file descriptor on success and -1 on failure.
+
+The fcntl function can be used to perform various operations on a file descriptor, such as duplicating it, changing its flags, or setting its owner. it is useful when working with file descriptor in low level io operations.
+
+
+'Non-blocking file descriptors' are often used in servers to handle multiple connections simultaneously.
+
+When a server is using blocking file descriptors, it can only handle one connection at a time. For example, if a client is sending a large amount of data to the server, the server will be blocked and cannot process any other client connections until the data transfer is complete. This can lead to poor performance and slow response times for other clients trying to connect to the server.
+
+By using non-blocking file descriptors, a server can continue to handle other connections while it is waiting for data to be sent or received on a particular file descriptor. This allows the server to handle multiple connections simultaneously, improving its overall performance and responsiveness.
+
+Non-blocking file descriptor also helps when server is waiting for a response from the client, in case if the client is not responding server can continue to serve other clients instead of waiting for the response.
+
+In summary, using non-blocking file descriptors allows a server to handle multiple connections simultaneously, improving its performance and responsiveness.
