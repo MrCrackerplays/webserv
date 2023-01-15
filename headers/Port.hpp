@@ -18,7 +18,7 @@
 
 class Port{
 	
-private:
+protected:
 	struct addrinfo *_res; //is linked list and final result
 	struct addrinfo _hints; //not sure if needed
 	
