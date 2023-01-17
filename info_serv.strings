@@ -150,8 +150,15 @@ getsockname,
 getprotobyname,
 
 
-bind,
 connect,
+
+*****************"bind"**********************************
+//https://man7.org/linux/man-pages/man2/bind.2.html
+The bind() function binds a unique local name to the socket with descriptor socket. After calling socket(), a descriptor does not have a name associated with it. However, it does belong to a particular address family as specified when socket() is called. The exact format of a name depends on the address family.
+
+
+
+
 
 
 *****************"getaddrinfo, freeaddrinfo,"*******************

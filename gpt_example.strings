@@ -77,13 +77,13 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 		  
-		  freeaddrinfo(result);
+freeaddrinfo(result);
 		  
-		  // Listen for incoming connections
-		  if (listen(sockfd, BACKLOG) < 0) {
-		  perror("Error listening for connections");
-		  return 1;
-		  }
+// Listen for incoming connections
+	if (listen(sockfd, BACKLOG) < 0) {
+	perror("Error listening for connections");
+	 return 1;
+	 }
 		  
 		  // Set up epoll
 		  int epollfd = epoll_create(1);
@@ -183,18 +183,23 @@ int main(int argc, char *argv[]) {
 		  return 0;
 
 		  
-		  Certainly! Here is an updated step-by-step plan with pseudocode for a server using the allowed functions and either poll, epoll, or kqueue instead of select:
-		  Parse the port number and other necessary command line arguments.
-		  Set up the address and port for the server using the getaddrinfo function.
-		  Create a socket using the socket function.
-		  Bind the socket to the address and port using the bind function.
-		  Set the socket to listen for incoming connections using the listen function.
-		  Initialize the file descriptor sets for poll, epoll, or kqueue as appropriate.
-		  Set up the timeout variable for poll or kqueue as appropriate.
-		  Enter a loop to handle incoming connections and requests.
+
+Parse the port number and other necessary command line arguments.
+Set up the address and port for the server using the getaddrinfo function.
+Create a socket using the socket function.
+Bind the socket to the address and port using the bind function.
+
+Set the socket to listen for incoming connections using the listen function.
+
+
+		Initialize the file descriptor sets for poll, epoll, or kqueue as appropriate.
+		Set up the timeout variable for poll or kqueue as appropriate.
+		Enter a loop to handle incoming connections and requests.
 		  Inside the loop, call poll, epoll_wait, or kqueue as appropriate to wait for events on the file descriptors.
 		  Check for events on the listening socket (incoming connection).
 		  Accept the incoming connection using the accept function.
+		  
+		  
 		  Add the new client socket to the file descriptor sets as appropriate.
 		  Update the max_fd or kq variable as appropriate.
 		  Check for events on the client sockets (incoming data).
@@ -207,3 +212,8 @@ int main(int argc, char *argv[]) {
 		  Close the listening socket and exit the program.
 		  This updated plan should be suitable for a general-purpose server implementation using either poll, epoll, or kqueue instead of select, as well as the other functions listed in your question. The specific details of how the server handles requests and performs actions will depend on the requirements of the server application.
 
+		  If you want to listen for incoming connections on the socket, you will use the listen() function to specify the maximum number of connections that can be queued for the socket. Once the socket is listening, you can use the accept() function to accept incoming connections and create a new socket for each one.
+
+		  If you want to initiate a connection to another socket, you will use the connect() function to connect to a remote address and port. This function is typically used on the client side of a connection.
+
+		  If you want to use the socket for sending and receiving data, you can use the send() and recv() functions.

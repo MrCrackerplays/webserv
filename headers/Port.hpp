@@ -15,7 +15,6 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-
 class Port{
 	
 protected:
@@ -23,7 +22,7 @@ protected:
 	struct addrinfo _hints; //not sure if needed
 	
 public:
-	Port();
+	Port(void *inp);
 	~Port();
 	addrinfo *	getRes();
 	addrinfo	getHints();

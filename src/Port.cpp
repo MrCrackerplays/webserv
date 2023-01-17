@@ -6,6 +6,8 @@
 //
 
 #include "Port.hpp"
+#include <stdexcept>
+
 //getaddrinfo, freeaddrinfo, gai_strerror - network address and service translation
 //https://cppsecrets.com/users/18989711511997116104103495564103109971051084699111109/C00-Socket-Programming-getaddrinfo.php
 //https://man7.org/linux/man-pages/man3/getaddrinfo.3.html
@@ -40,21 +42,28 @@
 ///Once the code is done using the res variable, it frees the memory used by the linked list using the freeaddrinfo() function.
 ///The code then returns 0 to indicate that it has completed successfully.
 
-Port::Port(){
+//https://en.cppreference.com/w/cpp/error/runtime_error
+Port::Port(void *inp){
 	
 	int status;
-	char* port_number;
+	char* port_number;//this needs to be received
+	
+	port_number = (char *)inp;
 	
 	std::memset(&_hints, 0, sizeof(_hints));
-	_hints.ai_family = AF_UNSPEC; // don't care IPv4 or IPv6
+	//_hints.ai_family = AF_UNSPEC; // don't care IPv4 or IPv6 - gave a mistake
+	_hints.ai_family = AF_INET; // also an option
 	_hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
 	_hints.ai_flags = AI_PASSIVE; //fill ip address by default
 	
 	
-	status = getaddrinfo(NULL, port_number, &_hints, &_res);
+	status = getaddrinfo("localhost", "7777", &_hints, &_res);
 	if (status < 0){
-		std::cerr << "getaddrinfo error: " << gai_strerror(status) << std::endl;
-		std::exit(status);
+		
+		throw std::runtime_error("Port : getaddrinfo");
+//		throw std::exception();
+//		std::cerr << "getaddrinfo error: " << gai_strerror(status) << std::endl;
+//		std::exit(status);
 	}
 }
 
