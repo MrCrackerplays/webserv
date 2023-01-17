@@ -6,13 +6,15 @@
 //
 
 #include <iostream>
-#include "Port.hpp"
+#include "Socket.hpp"
 
 //Parse the port number and other necessary command line arguments.
 //Set up the address and port for the server using the getaddrinfo function.
 //Create a socket using the socket function.
 //Bind the socket to the address and port using the bind function.
+
 //Set the socket to listen for incoming connections using the listen function.
+
 //Initialize the file descriptor sets for poll, epoll, or kqueue as appropriate.
 //Set up the timeout variable for poll or kqueue as appropriate.
 //Enter a loop to handle incoming connections and requests.
@@ -30,14 +32,35 @@
 //Repeat the loop to handle additional incoming connections and requests.
 //Close the listening socket and exit the program.
 
+
+
 int main(int argc, const char * argv[]) {
 	
 	if (argc != 2){
 		std::cout << "not enough arguments" << std::endl;
 	}
 
+	argv[1] = "80";
 	
+	//test port
+	try {
+		Port wrong(0);
+	} catch (std::exception &e) {
+		std::cerr << e.what() << std::endl;
+	}
 	
+	//test Socket
+	try {
+		Socket test((void *)argv[1]);
+		int fd = test.getSocketFd();
+		printf("FD: %i\n", fd);
+		test.setupSocket();
+		
+		//acceptServ(test.getSocketFd());
+	} catch (std::exception &e) {
+		std::cerr << e.what() << std::endl;
+	}
+
 	
 	return 0;
 }
