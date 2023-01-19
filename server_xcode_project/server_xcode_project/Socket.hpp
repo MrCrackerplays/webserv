@@ -34,7 +34,7 @@ protected:
 	void	sendData(int client_socket);
 	void	receiveData();
 	void	initiate_struct();
-	void	handleEvent(int i);
+	void	handleEvents();
 	void	incomingConnection();
 	
 public:
