@@ -35,7 +35,7 @@ void	Socket::incomingConnection(){
 	}
 }
 
-void	Socket::handleEvent(int i){
+void	Socket::handleEvents(){
 
 	for (int i = 0; i < EVENTS_NUM; i++) {
 		if (_fds[i].fd == 0){
@@ -51,10 +51,8 @@ void	Socket::handleEvent(int i){
 				std::cout << "Connection closed by client" << std::endl;
 				close(_fds[i].fd);
 			} else {
-				
 				//RESPONSE
-				const char *response = "hello there user";
-				send(_fds[i].fd, response, sizeof(response), 0);
+				sendData(_fds[i].fd);
 			}
 		}
 	}
@@ -65,6 +63,7 @@ void	Socket::handleEvent(int i){
 
 void Socket::pollLoop(){
 	
+	initiate_struct();
 	while (true) {
 		
 		if (poll(_fds, EVENTS_NUM, -1) < 0){
@@ -76,7 +75,7 @@ void Socket::pollLoop(){
 			if (_fds[0].revents & POLLIN){
 				incomingConnection();
 			}
-			
+			handleEvents();
 
 			
 		}
