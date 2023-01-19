@@ -66,7 +66,7 @@ void Socket::pollLoop(){
 	initiate_struct();
 	while (true) {
 		
-		if (poll(_fds, EVENTS_NUM, -1) < 0){
+		if (poll(_fds, EVENTS_NUM, 0) < 0){
 			free(_fds);
 			close(_socketFd);
 			throw std::runtime_error("Socket : poll");
