@@ -11,9 +11,6 @@ parser.add_argument("-bg", "--background-color", dest="background-color", help="
 
 args = vars(parser.parse_args())
 
-if args["styles"]:
-	print(args["styles"])
-
 stdin = sys.stdin.buffer.read()
 buffer = numpy.frombuffer(stdin, dtype='uint8')
 img = cv2.imdecode(buffer, cv2.IMREAD_UNCHANGED)
@@ -106,7 +103,6 @@ if args["styles"]:
 		thickness = 2
 		scale = get_optimal_font_scale(message, endwidth, bannerheight - 10, font, thickness)
 		textSize = cv2.getTextSize(message, fontFace=font, fontScale=scale, thickness=thickness)[0]
-		print(textSize)
 		img = cv2.putText(img, message,
 			((endwidth // 2) - (textSize[0] // 2), row + bannerheight - 5 + (150 if "postcard" in styles else 0)),
 			font,
