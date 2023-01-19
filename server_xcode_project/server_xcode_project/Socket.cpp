@@ -7,70 +7,91 @@
 
 #include "Socket.hpp"
 
-Socket::Socket(void *inp) : Port(inp){
-	
-	_socketFd = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
-	if (_socketFd < 0){
-		throw std::runtime_error("Socket : socket");
-//		perror("failed to create socket: socket");
-//		exit(1);
+
+
+void	Socket::sendData(int client_socket){
+
+	char server_message[256] = "Hello, Client!";
+	if (send(client_socket, server_message, sizeof(server_message), 0) < 0){
+		throw std::runtime_error("Socket : send");
+
 	}
 }
 
-Socket::~Socket(){
+void	Socket::incomingConnection(){
 	
-	//not sure if here I should close socket fd
-	close(_socketFd);
-}
-
-
-int		Socket::getSocketFd(){
-	return _socketFd;
-}
-
-
-void	Socket::acceptServ(){
-
-		
-	//	if (accept(_socketFd, _res->ai_addr, _res->ai_addrlen) < 0){
-	//		throw std::runtime_error("Socket : accept");
-	//	}
-
-		int client_socket = accept(_socketFd, NULL, NULL);
-		if (client_socket < 0){
-			printf("err %s : %i\n", strerror(errno), errno);
-			throw std::runtime_error("Socket : accept");
-			//[EAGAIN] The socket is marked non-blocking, and the receive operation would block, or a receive timeout had been set, and the timeout expired before data were received.
+	//incloming connection, explanation of '&' operation in info
+	int client_socket = accept(_socketFd, NULL, NULL);
+	if (client_socket < 0){
+		throw std::runtime_error("Socket : accept"); //not sure
+	}
+	// add the new client socket to the list of file descriptors being monitored
+	for (int i = 0; i < EVENTS_NUM; i++) {
+		if (_fds[i].fd == 0){
+			_fds[i].fd = client_socket;
+			_fds[i].events = POLLIN;
+			break;
 		}
-	
-	///The error code "Resource temporarily unavailable" (errno value 35) can occur when calling the accept function in a non-blocking socket. This error indicates that the socket is in non-blocking mode and there are no incoming connections to be accepted at the moment.
+	}
+}
 
-	///When the socket is in non-blocking mode, the accept function returns immediately with the error code EAGAIN or EWOULDBLOCK (both have the same value) when there are no incoming connections to be accepted. In this case, you can use the select, poll or epoll system call to wait for incoming connections before calling accept again
+void	Socket::handleEvent(int i){
+
+	for (int i = 0; i < EVENTS_NUM; i++) {
+		if (_fds[i].fd == 0){
+			continue;
+		}
+		if (_fds[i].revents & POLLIN){
+			char buff[1024];
+			int recvRes = (int)recv(_fds[i].fd, buff, sizeof(buff), 0);
+			
+			if (recvRes < 0) {
+				throw std::runtime_error("Socket : accept"); //not sure
+			} else if (recvRes == 0) {
+				std::cout << "Connection closed by client" << std::endl;
+				close(_fds[i].fd);
+			} else {
+				
+				//RESPONSE
+				const char *response = "hello there user";
+				send(_fds[i].fd, response, sizeof(response), 0);
+			}
+		}
+	}
 	
-		char server_message[256] = "Hello, Client!";
+}
+
+
+
+void Socket::pollLoop(){
+	
+	while (true) {
 		
-		if (send(client_socket, server_message, sizeof(server_message), 0) < 0){
-			throw std::runtime_error("Socket : send");
+		if (poll(_fds, EVENTS_NUM, -1) < 0){
+			free(_fds);
+			close(_socketFd);
+			throw std::runtime_error("Socket : poll");
+		} else {
+			
+			if (_fds[0].revents & POLLIN){
+				incomingConnection();
+			}
+			
+
 			
 		}
+		
+		
+	}//end of while loop
+	
 
 }
-
-
 
 
 void	Socket::setupSocket(){
 	
 	setToNonBlocking();
 	bindToPort();
-	
-	
-	//do poll
-	
-	//setToListen();
-	//acceptServ();
-	
-	
-	//		while (1)
-	//			continue;
+	setToListen();
+	pollLoop();
 }
