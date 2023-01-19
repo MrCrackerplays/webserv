@@ -47,32 +47,32 @@ Port::Port(void *inp){
 	
 	int status;
 	char* port_number;//this needs to be received
+	struct addrinfo hints;
 	
 	port_number = (char *)inp;
 	
-	std::memset(&_hints, 0, sizeof(_hints));
-	//_hints.ai_family = AF_UNSPEC; // don't care IPv4 or IPv6 - gave a mistake
-	_hints.ai_family = AF_INET; // also an option
-	_hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
-	_hints.ai_flags = AI_PASSIVE; //fill ip address by default
-	
-	
-	status = getaddrinfo("localhost", "7777", &_hints, &_res);
+	std::memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET; // also an option
+	hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
+	hints.ai_flags = AI_PASSIVE; //fill ip address by default
+	status = getaddrinfo("localhost", port_number, &hints, &_res);
 	if (status < 0){
-		
 		throw std::runtime_error("Port : getaddrinfo");
-//		throw std::exception();
-//		std::cerr << "getaddrinfo error: " << gai_strerror(status) << std::endl;
-//		std::exit(status);
 	}
+	
+	//simplified struct that is shorter version that addrinfo
+//	_simp_res.sin_family = AF_INET;
+//	int num = atoi(port_number);
+//	_simp_res.sin_port = htons(num);
+//	_simp_res.sin_addr.s_addr = INADDR_ANY;
 }
 
 Port::~Port(){
 	freeaddrinfo(_res);
 }
 
-addrinfo Port::getHints(){
-	return _hints;
+sockaddr_in Port::getSimplRes(){
+	return _simp_res;
 }
 
 addrinfo *	Port::getRes(){

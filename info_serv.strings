@@ -37,6 +37,19 @@ In the code you provided, the getaddrinfo function is called to set up an addres
 
 Exceptions are typically used to handle errors that are not easily anticipated and cannot be handled in a simple way, such as out-of-memory errors or invalid input. In this case, the error is anticipated (the getaddrinfo function is expected to return an error code if it fails) and is handled in a straightforward way by printing an error message and exiting the program. Therefore, it is not necessary to use try and catch statements in this case.
 
+//
+The line if "(fds[0].revents & POLLIN) " is checking if the POLLIN event has occurred on the file descriptor stored in the first element of the fds array.
+
+The & operator is a bitwise AND operator in C++, it compares each bit of the first operand to the corresponding bit of the second operand. If both bits are 1, the corresponding result bit is set to 1, otherwise, the result bit is set to 0.
+
+In this case, its used to check if the POLLIN event has occurred by comparing the revents field of the pollfd struct with the POLLIN constant. The POLLIN constant has a value of 0x001, which corresponds to the first bit being set.
+
+The & operator compares the revents field to the POLLIN constant and returns true if the first bit of the revents field is set (i.e., the POLLIN event has occurred), otherwise, it returns false.
+
+So this line of code is checking if the event POLLIN occurred on the file descriptor stored in the first element of the fds array, if it did it will enter the if statement block.
+
+Its important to note that poll can return multiple events at the same time, so a bitwise AND operator is used to check if a specific event occurred.
+
 
 '******************FUNCTIONS******************'
 

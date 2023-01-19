@@ -18,14 +18,14 @@
 class Port{
 	
 protected:
-	struct addrinfo *_res; //is linked list and final result
-	struct addrinfo _hints; //not sure if needed
+	struct addrinfo *_res;
+	struct sockaddr_in _simp_res;
 	
 public:
 	Port(void *inp);
 	~Port();
 	addrinfo *	getRes();
-	addrinfo	getHints();
+	sockaddr_in getSimplRes();
 };
 
 #endif /* Port_hpp */
