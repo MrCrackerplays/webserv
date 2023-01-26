@@ -1,15 +1,10 @@
+#!/usr/bin/env python3
 import cv2
 import numpy
 import sys
-import argparse
+import cgi
 
-parser = argparse.ArgumentParser()
-
-parser.add_argument("-s", "--styling", dest="styles", help="Styles to apply to the image", nargs="*")
-parser.add_argument("-bc", "--border-color", dest="border-color", help="Optional RGB[A] hex code for border color in postcards", default="#89cff0", const="#89cff0", nargs="?")
-parser.add_argument("-bg", "--background-color", dest="background-color", help="Optional RGB[A] hex code for the background color in postcards", default="#ffffff", const="#ffffff", nargs="?")
-
-args = vars(parser.parse_args())
+input_data = cgi.FieldStorage()
 
 stdin = sys.stdin.buffer.read()
 buffer = numpy.frombuffer(stdin, dtype='uint8')
@@ -45,13 +40,12 @@ def get_optimal_font_scale(text, width, height, font, thickness):
 	return 1
 
 
-
 #make a postcard out of the piped image
-if args["styles"]:
-	styles = args["styles"]
+if "style" in input_data:
+	styles = input_data.getlist("style")
 	if "postcard" in styles:
-		bordercolor = hex_to_bgra(args["border-color"])
-		background = hex_to_bgra(args["background-color"])
+		bordercolor = hex_to_bgra(input_data.getvalue("border-color") or "#89cff0")
+		background = hex_to_bgra(input_data.getvalue("background-color") or "#ffffff")
 
 		bordersize = 30
 		img = cv2.copyMakeBorder(

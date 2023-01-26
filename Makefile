@@ -28,7 +28,7 @@ $(NAME): cgi-check $(OBJECTS)
 
 obj/%.o: src/%.cpp $(HEADER_FILES)
 	@mkdir -p obj
-	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ -D PYTHON_PATH=\"$(PYTHON_PATH)\"
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ -D PYTHON=\"$(PYTHON)\"
 
 clean:
 	rm -f $(OBJECTS)
