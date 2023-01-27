@@ -1,3 +1,5 @@
+include .env
+
 NAME := webserv
 CC := c++
 
@@ -21,12 +23,12 @@ all:
 	@#-j4 makes the compilation use 4 threads for faster compiling
 	$(MAKE) $(NAME) -j4
 
-$(NAME): $(OBJECTS)
+$(NAME): cgi-check $(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS) -o $(NAME)
 
 obj/%.o: src/%.cpp $(HEADER_FILES)
 	@mkdir -p obj
-	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ -D PYTHON=\"$(PYTHON)\"
 
 clean:
 	rm -f $(OBJECTS)
@@ -34,6 +36,7 @@ clean:
 
 fclean: clean
 	rm -f $(NAME)
+	rm -f cgi-check
 
 re: fclean all
 
@@ -41,6 +44,9 @@ bonus: all
 
 run: all
 	./$(NAME)
+
+cgi-check:
+	sh cgi-requirements.sh
 
 debug:
 	$(MAKE) DEBUG=1
