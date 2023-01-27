@@ -6,6 +6,13 @@
   
 */
 
+'******************'How to test?'******************'
+command "nc"
+nc localhost [number of port] [-v for details]
+command "curl"
+curl localhost:[portnumber]
+
+
 
 '******************QUESTIONS:******************'
 
