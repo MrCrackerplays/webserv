@@ -81,7 +81,7 @@ int main(int argc, const char * argv[]) {
 		std::cout << "not enough arguments" << std::endl;
 	}
 
-	argv[1] = "8080";
+	argv[1] = "7777";
 	//separate_for_test((char *)argv[1]);
 
 	//test Socket

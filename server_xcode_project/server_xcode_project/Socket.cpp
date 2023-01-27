@@ -5,7 +5,7 @@
 //  Created by Julia Demura on 15/01/2023.
 //
 
-#include "Socket.hpp"
+#include "Socket.hpp" 
 
 
 
@@ -22,8 +22,11 @@ void	Socket::incomingConnection(){
 	
 	//incloming connection, explanation of '&' operation in info
 	int client_socket = accept(_socketFd, NULL, NULL);
+	std::cout << client_socket << std::endl;
+//	perror("hello");
 	if (client_socket < 0){
-		throw std::runtime_error("Socket : accept"); //not sure
+//		perror("hello");
+		throw std::runtime_error(std::string("Socket : accept") + strerror(errno)); //not sure
 	}
 	// add the new client socket to the list of file descriptors being monitored
 	for (int i = 0; i < EVENTS_NUM; i++) {
@@ -38,15 +41,14 @@ void	Socket::incomingConnection(){
 void	Socket::handleEvents(){
 
 	for (int i = 0; i < EVENTS_NUM; i++) {
-		if (_fds[i].fd == 0){
-			continue;
-		}
 		if (_fds[i].revents & POLLIN){
 			char buff[1024];
-			int recvRes = (int)recv(_fds[i].fd, buff, sizeof(buff), 0);
+			std::cout<< _fds[i].fd << std::endl;
 			
+			int recvRes = (int)recv(_fds[i].fd, buff, sizeof(buff), 0);
+			perror("recv");
 			if (recvRes < 0) {
-				throw std::runtime_error("Socket : accept"); //not sure
+				throw std::runtime_error("Socket : recv"); //not sure
 			} else if (recvRes == 0) {
 				std::cout << "Connection closed by client" << std::endl;
 				close(_fds[i].fd);
