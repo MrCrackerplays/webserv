@@ -5,84 +5,79 @@
 //  Created by Julia Demura on 15/01/2023.
 //
 
-#include "Socket.hpp" 
-
-
+#include "Socket.hpp"
 
 void	Socket::sendData(int client_socket){
 
 	char server_message[256] = "Hello, Client!";
 	if (send(client_socket, server_message, sizeof(server_message), 0) < 0){
 		throw std::runtime_error("Socket : send");
-
 	}
 }
 
 void	Socket::incomingConnection(){
-	
-	//incloming connection, explanation of '&' operation in info
+	printf("HERE\n");
 	int client_socket = accept(_socketFd, NULL, NULL);
-	std::cout << client_socket << std::endl;
-//	perror("hello");
+	std::cout << "accepted: " << client_socket << std::endl;
+	perror("check1");
 	if (client_socket < 0){
-//		perror("hello");
-		throw std::runtime_error(std::string("Socket : accept") + strerror(errno)); //not sure
+		perror("check2");
+		throw std::runtime_error(std::string("Socket : accept") + strerror(errno));
 	}
-	// add the new client socket to the list of file descriptors being monitored
+	int allTaken = true;
 	for (int i = 0; i < EVENTS_NUM; i++) {
-		if (_fds[i].fd == 0){
-			_fds[i].fd = client_socket;
-			_fds[i].events = POLLIN;
+		if (_vFds[i].fd == 0){
+			_vFds[i].fd = client_socket;
+			_vFds[i].events = POLLIN;
+			allTaken = false;
 			break;
 		}
+	}
+	if (allTaken == true){
+		//not sure if I need to clean prev sockets or how to proceed
 	}
 }
 
 void	Socket::handleEvents(){
 
 	for (int i = 0; i < EVENTS_NUM; i++) {
-		if (_fds[i].revents & POLLIN){
-			char buff[1024];
-			std::cout<< _fds[i].fd << std::endl;
+		if (_vFds[i].revents & POLLIN){
 			
-			int recvRes = (int)recv(_fds[i].fd, buff, sizeof(buff), 0);
+			char buff[1024];
+			std::cout<< "handleEvents fd i now: "<< _vFds[i].fd << std::endl;
+			
+			int recvRes = (int)recv(_vFds[i].fd, buff, sizeof(char) * 1024, 0);
+			printf("received, fd %i\n", _vFds[i].fd);
 			perror("recv");
 			if (recvRes < 0) {
 				throw std::runtime_error("Socket : recv"); //not sure
 			} else if (recvRes == 0) {
 				std::cout << "Connection closed by client" << std::endl;
-				close(_fds[i].fd);
 			} else {
 				//RESPONSE
-				sendData(_fds[i].fd);
+				sendData(_vFds[i].fd);
 			}
 		}
 	}
-	
 }
-
-
 
 void Socket::pollLoop(){
 	
-	initiate_struct();
+	initiateStruct();
+	initiateVect();
 	while (true) {
 		
-		if (poll(_fds, EVENTS_NUM, 0) < 0){
-			free(_fds);
-			close(_socketFd);
+		if (poll(&_vFds[0], EVENTS_NUM, 0) < 0){
 			throw std::runtime_error("Socket : poll");
 		} else {
 			
-			if (_fds[0].revents & POLLIN){
+			if (_vFds[0].revents & POLLIN){
 				incomingConnection();
 			}
+			//incomingConnection();
 			handleEvents();
-
 			
 		}
-		
-		
 	}//end of while loop
 	
 

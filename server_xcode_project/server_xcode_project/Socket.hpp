@@ -17,6 +17,7 @@
 #include <stdexcept>
 #include <poll.h>
 #include <sys/select.h>
+#include <vector>
 
 //https://pubs.opengroup.org/onlinepubs/009604499/functions/socket.html
 //  Create a socket using the socket function
@@ -26,6 +27,8 @@ class Socket : public Port{
 protected:
 	int _socketFd; //opened in constructor
 	struct pollfd *_fds;
+	std::vector<pollfd> _vFds;
+	
 	
 	void	setToNonBlocking();
 	void	bindToPort();
@@ -33,9 +36,10 @@ protected:
 	void	pollLoop();
 	void	sendData(int client_socket);
 	void	receiveData();
-	void	initiate_struct();
+	void	initiateStruct();
 	void	handleEvents();
 	void	incomingConnection();
+	void	initiateVect();
 	
 public:
 	Socket(void *inp); //this will create a socket
