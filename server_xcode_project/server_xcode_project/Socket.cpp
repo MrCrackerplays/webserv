@@ -41,13 +41,15 @@ void	Socket::incomingConnection(){
 void	Socket::handleEvents(){
 
 	for (int i = 0; i < EVENTS_NUM; i++) {
+		
+		
+		
 		if (_vFds[i].revents & POLLIN){
 			
 			char buff[1024];
-			std::cout<< "handleEvents fd i now: "<< _vFds[i].fd << std::endl;
-			
-			int recvRes = (int)recv(_vFds[i].fd, buff, sizeof(char) * 1024, 0);
-			printf("received, fd %i\n", _vFds[i].fd);
+			std::cout<< "handleEvents fd i" << i <<" now: "<< _vFds[i].fd << std::endl;
+			int recvRes = (int)recv(_vFds[i].fd, buff, sizeof(buff), 0);
+			std::cout << _vFds[i].fd << std::endl;
 			perror("recv");
 			if (recvRes < 0) {
 				throw std::runtime_error("Socket : recv"); //not sure
@@ -74,7 +76,6 @@ void Socket::pollLoop(){
 			if (_vFds[0].revents & POLLIN){
 				incomingConnection();
 			}
-			//incomingConnection();
 			handleEvents();
 			
 		}
