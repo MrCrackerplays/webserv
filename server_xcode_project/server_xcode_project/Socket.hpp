@@ -44,6 +44,9 @@ protected:
 	void	handleEvents();
 	void	incomingConnection();
 	
+	//new approach
+	void	acceptNewConnect(int i);
+	void	recNewConnect(int i);
 	
 	
 public:

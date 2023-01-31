@@ -69,6 +69,54 @@ void	Socket::handleEvents(){
 	}
 }
 
+//work with listening socket
+void	Socket::acceptNewConnect(int i){
+	int newFd = 0;
+	pollfd newPollfd;
+
+	do {
+		newFd = accept(_listenFd, NULL, NULL);
+		if (newFd < 0){
+			if (errno != EWOULDBLOCK){ ///EWOULDBLOCK is returned when you are using a non-blocking socket and there is not enough space in the kernel's outgoing-data-buffer for that socket to hold any of the data you want to send. ->> https://stackoverflow.com/questions/16281468/write-to-the-client-returns-ewouldblock-when-server-is-slow
+				perror("");
+				throw std::runtime_error("SocketLoop : accept");
+			}
+			break;
+		}
+		newPollfd.fd = newFd;
+		newPollfd.events = POLLIN;
+		_vFds.push_back(newPollfd);
+	} while (newFd != -1);
+}
+
+void	Socket::recNewConnect(int i){
+	int res = 0;
+	char buff[1024];
+	
+	do {
+		res = (int)recv(_vFds[i].fd, buff, sizeof(buff), 0);
+		if (res < 0){
+			if (errno != EWOULDBLOCK){
+				perror("recv");
+				throw std::runtime_error("SockedLoop : revc");
+			}
+			break;
+		}
+		else if (res == 0){ //connection was closed by client
+			break;
+		}
+		else{
+			//here can be different actions
+			sendData(_vFds[i].fd);
+			
+			break;
+		}
+		
+		
+	} while (true);
+	
+}
+
 void Socket::pollLoop(){
 
 	initiateVect();
@@ -77,11 +125,24 @@ void Socket::pollLoop(){
 		if (poll(&_vFds[0], (unsigned int)_vFds.size(), 0) < 0){
 			throw std::runtime_error("Socket : poll");
 		} else {
-
-			if (_vFds[0].revents & POLLIN){
-				incomingConnection();
+			
+			for (int i = 0; i < (int)_vFds.size(); i++){
+				if (_vFds[i].fd == 0)
+					continue;
+				if (_vFds[i].revents != POLLIN){
+					//std::cout << "unexpected result, revent should be POLLIN" << std::endl;
+					break;
+				}
+				if (_vFds[i].fd == _listenFd){///Listening socket is readable -> need to accept all incoming connections
+					acceptNewConnect(i); //work with listening socket
+				}
+				
+				else { ///connection is not on listening socket, need to be readable -> receive all data
+					recNewConnect(i);
+				}
 			}
-			handleEvents();
+
+			
 
 		}
 	}//end of while loop
