@@ -19,13 +19,13 @@ class Sockadrs{
 	
 protected:
 	struct addrinfo *_res;
-	struct sockaddr_in _simp_res;
+	//struct sockaddr_in _simp_res;
 	
 public:
 	Sockadrs(void *inp);
 	~Sockadrs();
 	addrinfo *	getRes();
-	sockaddr_in getSimplRes();
+	//sockaddr_in getSimplRes();
 };
 
 #endif /* Sockadrs_hpp */

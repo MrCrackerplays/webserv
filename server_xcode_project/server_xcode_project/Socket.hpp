@@ -33,22 +33,27 @@ protected:
 	void	setToNonBlocking();
 	void	bindToPort();
 	void	setToListen();
+	void	addInEventQueu(int client_socket);
+	void	initiateVect();
+	
+	
 	void	pollLoop();
 	void	sendData(int client_socket);
 	void	receiveData();
-	//void	initiateStruct();
+	void	initiateStruct();
 	void	handleEvents();
 	void	incomingConnection();
-	void	initiateVect();
+	
+	
 	
 public:
 	Socket(void *inp); //this will create a socket
 	~Socket();
-	
-	
 	int		getSocketFd();
 	void	setupSocket();
 	
+	//void	setListenSocket();
+	//pollfd *		getVFd();
 };
 
 #endif /* Socket_hpp */

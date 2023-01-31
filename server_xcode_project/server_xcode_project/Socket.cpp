@@ -7,88 +7,78 @@
 
 #include "Socket.hpp"
 
-void	Socket::sendData(int client_socket){
 
-	char server_message[256] = "Hello, Client!";
-	if (send(client_socket, server_message, sizeof(server_message), 0) < 0){
-		throw std::runtime_error("Socket : send");
-	}
+Socket::~Socket(){
+	//UNFINISHED
+	//want to reuse here
 }
 
-void	Socket::incomingConnection(){
-	printf("HERE\n");
-	int client_socket = accept(_listenFd, NULL, NULL);
-	std::cout << "accepted: " << client_socket << std::endl;
-	perror("check1");
-	if (client_socket < 0){
-		perror("check2");
-		throw std::runtime_error(std::string("Socket : accept") + strerror(errno));
+void	Socket::initiateVect(){
+
+	pollfd deflt;
+	deflt.fd = 0;
+	deflt.events = 0;
+	for (int i = 0; i < EVENTS_NUM; i++){
+		_vFds.push_back(deflt);
 	}
-	int allTaken = true;
-	for (int i = 0; i < EVENTS_NUM; i++) {
-		if (_vFds[i].fd == 0){
-			_vFds[i].fd = client_socket;
-			_vFds[i].events = POLLIN;
-			allTaken = false;
-			break;
-		}
-	}
-	if (allTaken == true){
-		//not sure if I need to clean prev sockets or how to proceed
-	}
+	_vFds[0].fd = _listenFd;
+	_vFds[0].events = POLLIN;
 }
 
-void	Socket::handleEvents(){
-
-	for (int i = 0; i < EVENTS_NUM; i++) {
-		
-		
-		
-		if (_vFds[i].revents & POLLIN){
-			
-			char buff[1024];
-			std::cout<< "handleEvents fd i" << i <<" now: "<< _vFds[i].fd << std::endl;
-			int recvRes = (int)recv(_vFds[i].fd, buff, sizeof(buff), 0);
-			std::cout << _vFds[i].fd << std::endl;
-			perror("recv");
-			if (recvRes < 0) {
-				throw std::runtime_error("Socket : recv"); //not sure
-			} else if (recvRes == 0) {
-				std::cout << "Connection closed by client" << std::endl;
-			} else {
-				//RESPONSE
-				sendData(_vFds[i].fd);
-			}
-		}
-	}
-}
-
-void Socket::pollLoop(){
+Socket::Socket(void *inp) : Sockadrs(inp){
 	
-	//initiateStruct();
-	initiateVect();
-	while (true) {
-		
-		if (poll(&_vFds[0], EVENTS_NUM, 0) < 0){
-			throw std::runtime_error("Socket : poll");
-		} else {
-			
-			if (_vFds[0].revents & POLLIN){
-				incomingConnection();
-			}
-			handleEvents();
-			
-		}
-	}//end of while loop
-	
-
+	_listenFd = socket(PF_INET, SOCK_STREAM, 0);
+	if (_listenFd < 0){
+		throw std::runtime_error("Socket : socket");
+	}
 }
 
+void	Socket::setToNonBlocking(){
 
-void	Socket::setupSocket(){
-	
-	setToNonBlocking();
-	bindToPort();
-	setToListen();
-	pollLoop();
+/* Make socket non-blockable  */
+	int flagsForFd = fcntl(_listenFd, F_GETFL, 0);
+	if (flagsForFd < 0){
+		throw std::runtime_error("Socket : fcntl");
+	}
+	if (fcntl(_listenFd, F_SETFL, flagsForFd | O_NONBLOCK) < 0){
+		throw std::runtime_error("Socket : fcntl");
+	}
+
+/* Allow socket descriptor to be reuseable  */
+	int on = 1;
+	if (setsockopt(_listenFd, SOL_SOCKET,  SO_REUSEADDR, (char *)&on, sizeof(on)) < 0){
+		perror("setsockopt() failed");
+		throw std::runtime_error("setsockopt() : failed");
+	}
 }
+
+void	Socket::bindToPort(){
+
+	if (bind(_listenFd, _res->ai_addr, _res->ai_addrlen) < 0){
+		close(_listenFd);
+		throw std::runtime_error("Socket : bind");
+	}
+}
+
+void	Socket::setToListen(){
+	
+	if (listen(_listenFd, EVENTS_NUM) < 0){
+		close(_listenFd);
+		throw std::runtime_error("Socket : bind");
+	}
+}
+
+int		Socket::getSocketFd(){
+	return _listenFd;
+}
+
+//void	Socket::setListenSocket(){
+//
+//	setToNonBlocking();
+//	bindToPort();
+//	setToListen();
+//}
+
+//pollfd *		Socket::getVFd(){
+//	return &_vFds[0];
+//}

@@ -1,5 +1,5 @@
 //
-//  Port.cpp
+//  Sockadrs.cpp
 //  server_xcode_project
 //
 //  Created by Julia Demura on 11/01/2023.
@@ -52,7 +52,7 @@ Sockadrs::Sockadrs(void *inp){
 	port_number = (char *)inp;
 	
 	std::memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET; // also an option
+	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
 	hints.ai_flags = AI_PASSIVE; //fill ip address by default
 	status = getaddrinfo("localhost", port_number, &hints, &_res);
@@ -71,9 +71,9 @@ Sockadrs::~Sockadrs(){
 	freeaddrinfo(_res);
 }
 
-sockaddr_in Sockadrs::getSimplRes(){
-	return _simp_res;
-}
+//sockaddr_in Sockadrs::getSimplRes(){
+//	return _simp_res;
+//}
 
 addrinfo *	Sockadrs::getRes(){
 	return _res;
