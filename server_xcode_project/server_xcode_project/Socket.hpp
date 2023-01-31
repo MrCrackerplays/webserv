@@ -10,7 +10,7 @@
 
 #define EVENTS_NUM 5
 
-#include "Port.hpp"
+#include "Sockadrs.hpp"
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -22,11 +22,11 @@
 //https://pubs.opengroup.org/onlinepubs/009604499/functions/socket.html
 //  Create a socket using the socket function
 
-class Socket : public Port{
+class Socket : public Sockadrs{
 	
 protected:
-	int _socketFd; //opened in constructor
-	struct pollfd *_fds;
+	int _listenFd; //opened in constructor
+	//struct pollfd *_fds;
 	std::vector<pollfd> _vFds;
 	
 	
@@ -36,7 +36,7 @@ protected:
 	void	pollLoop();
 	void	sendData(int client_socket);
 	void	receiveData();
-	void	initiateStruct();
+	//void	initiateStruct();
 	void	handleEvents();
 	void	incomingConnection();
 	void	initiateVect();

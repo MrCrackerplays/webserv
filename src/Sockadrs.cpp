@@ -5,7 +5,7 @@
 //  Created by Julia Demura on 11/01/2023.
 //
 
-#include "Port.hpp"
+#include "Sockadrs.hpp"
 #include <stdexcept>
 
 //getaddrinfo, freeaddrinfo, gai_strerror - network address and service translation
@@ -43,7 +43,7 @@
 ///The code then returns 0 to indicate that it has completed successfully.
 
 //https://en.cppreference.com/w/cpp/error/runtime_error
-Port::Port(void *inp){
+Sockadrs::Sockadrs(void *inp){
 	
 	int status;
 	char* port_number;//this needs to be received
@@ -67,15 +67,15 @@ Port::Port(void *inp){
 //	_simp_res.sin_addr.s_addr = INADDR_ANY;
 }
 
-Port::~Port(){
+Sockadrs::~Sockadrs(){
 	freeaddrinfo(_res);
 }
 
-sockaddr_in Port::getSimplRes(){
+sockaddr_in Sockadrs::getSimplRes(){
 	return _simp_res;
 }
 
-addrinfo *	Port::getRes(){
+addrinfo *	Sockadrs::getRes(){
 	return _res;
 }
 

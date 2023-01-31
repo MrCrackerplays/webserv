@@ -17,7 +17,7 @@ void	Socket::sendData(int client_socket){
 
 void	Socket::incomingConnection(){
 	printf("HERE\n");
-	int client_socket = accept(_socketFd, NULL, NULL);
+	int client_socket = accept(_listenFd, NULL, NULL);
 	std::cout << "accepted: " << client_socket << std::endl;
 	perror("check1");
 	if (client_socket < 0){
@@ -65,7 +65,7 @@ void	Socket::handleEvents(){
 
 void Socket::pollLoop(){
 	
-	initiateStruct();
+	//initiateStruct();
 	initiateVect();
 	while (true) {
 		

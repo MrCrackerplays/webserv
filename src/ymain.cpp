@@ -69,22 +69,12 @@
 //	}
 //}
 
-
-int main(int argc, const char * argv[]) {
-
-	if (argc != 2){
-		std::cout << "not enough arguments" << std::endl;
-	}
-
-	argv[1] = "7777";
-	//separate_for_test((char *)argv[1]);
-
-	//test Socket
+void	smallTest(const char *port){
 	try {
 		std::fstream fs;
 		fs.open("/Users/yuliia/Codam/webserv/info_serv.strings", std::fstream::in);
 
-		Socket test((void *)argv[1]);
+		Socket test((void *)port);
 		int fd = test.getSocketFd();
 		printf("FD: %i\n", fd);
 		test.setupSocket();
@@ -93,6 +83,23 @@ int main(int argc, const char * argv[]) {
 	} catch (std::exception &e) {
 		std::cerr << e.what() << std::endl;
 	}
+}
+
+
+void	runServ(){
+	
+	
+	
+}
+
+
+int main(int argc, const char * argv[]) {
+
+	if (argc != 2){
+		std::cout << "not enough arguments" << std::endl;
+	}
+	//separate_for_test((char *)argv[1]);
+	//smallTest("7777");
 
 
 	return 0;

@@ -10,13 +10,13 @@
 //#include "Socket.hpp"
 
 int		Socket::getSocketFd(){
-	return _socketFd;
+	return _listenFd;
 }
 
 Socket::Socket(void *inp) : Port(inp){
 	
-	_socketFd = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
-	if (_socketFd < 0){
+	_listenFd = socket(_res->ai_family, _res->ai_socktype, _res->ai_protocol);
+	if (_listenFd < 0){
 		throw std::runtime_error("Socket : socket");
 //		perror("failed to create socket: socket");
 //		exit(1);
@@ -26,7 +26,7 @@ Socket::Socket(void *inp) : Port(inp){
 Socket::~Socket(){
 	
 	//not sure if here I should close socket fd
-	close(_socketFd);
+	close(_listenFd);
 }
 
 //setting the file descriptor associated with the socket (sockfd) to non-blocking mode. The fcntl function is used to modify the properties of the file descriptor.
@@ -35,13 +35,13 @@ Socket::~Socket(){
 //The | operator is a bitwise OR operator. It sets the bit of O_NONBLOCK to 1, while keeping the current value of other flags (flags) intact.
 void	Socket::setToNonBlocking(){
 	
-	int flagsForFd = fcntl(_socketFd, F_GETFL, 0);
+	int flagsForFd = fcntl(_listenFd, F_GETFL, 0);
 	if (flagsForFd < 0){
 		throw std::runtime_error("Socket : fcntl");
 //		perror("failed to create socket: fcntl");
 //		exit(1);
 	}
-	if (fcntl(_socketFd, F_SETFL, flagsForFd | O_NONBLOCK) < 0){
+	if (fcntl(_listenFd, F_SETFL, flagsForFd | O_NONBLOCK) < 0){
 		throw std::runtime_error("Socket : fcntl");
 //		perror("failed to create socket: fcntl");
 //		exit(1);
@@ -52,7 +52,7 @@ void	Socket::setToNonBlocking(){
 //bind() assigns the address specified by addr to the socket referred to by the file descriptor sockfd.  addrlen specifies the size, in bytes, of the address structure pointed to by addr. Traditionally, this operation is called “assigning a name to a socket”.
 void	Socket::bindToPort(){
 	
-	if (bind(_socketFd, _res->ai_addr, _res->ai_addrlen) < 0){
+	if (bind(_listenFd, _res->ai_addr, _res->ai_addrlen) < 0){
 		throw std::runtime_error("Socket : bind");
 	}
 	
@@ -61,7 +61,7 @@ void	Socket::bindToPort(){
 //A backlog argument of 0 may allow the socket to accept connections, in which case the length of the listen queue may be set to an implementation-defined minimum value.
 void	Socket::setToListen(){
 	
-	if (listen(_socketFd, 2) < 0){
+	if (listen(_listenFd, 2) < 0){
 		throw std::runtime_error("Socket : bind");
 //		perror("error in socket: listen");
 //		exit(1);
@@ -71,7 +71,7 @@ void	Socket::setToListen(){
 
 void	Socket::acceptServ(){
 
-	int client_socket = accept(_socketFd, NULL, NULL);
+	int client_socket = accept(_listenFd, NULL, NULL);
 	if (client_socket < 0){
 	///printf("err %s : %i\n", strerror(errno), errno);
 		throw std::runtime_error("Socket : accept");
@@ -99,7 +99,7 @@ void Socket::pollSet(){
 	
 	
 	struct pollfd fds;//can be array if needed
-	fds.fd = _socketFd; ///poll will manage this socket, recognize it by ID
+	fds.fd = _listenFd; ///poll will manage this socket, recognize it by ID
 	fds.events = POLLIN; //for incoming events
 	// I maybe need to be able to write and read at once
 	
