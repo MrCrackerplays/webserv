@@ -18,9 +18,10 @@ void	Socket::initiateVect(){
 	pollfd deflt;
 	deflt.fd = 0;
 	deflt.events = 0;
-	for (int i = 0; i < EVENTS_NUM; i++){
-		_vFds.push_back(deflt);
-	}
+//	for (int i = 0; i < EVENTS_NUM; i++){
+//		_vFds.push_back(deflt);
+//	}
+	_vFds.push_back(deflt);
 	_vFds[0].fd = _listenFd;
 	_vFds[0].events = POLLIN;
 }
@@ -45,11 +46,11 @@ void	Socket::setToNonBlocking(){
 	}
 
 /* Allow socket descriptor to be reuseable  */
-	int on = 1;
-	if (setsockopt(_listenFd, SOL_SOCKET,  SO_REUSEADDR, (char *)&on, sizeof(on)) < 0){
-		perror("setsockopt() failed");
-		throw std::runtime_error("setsockopt() : failed");
-	}
+//	int on = 1;
+//	if (setsockopt(_listenFd, SOL_SOCKET,  SO_REUSEADDR, (char *)&on, sizeof(on)) < 0){
+//		perror("setsockopt() failed");
+//		throw std::runtime_error("setsockopt() : failed");
+//	}
 }
 
 void	Socket::bindToPort(){

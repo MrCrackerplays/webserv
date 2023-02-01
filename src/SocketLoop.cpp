@@ -73,7 +73,7 @@ void	Socket::handleEvents(){
 void	Socket::acceptNewConnect(int i){
 	int newFd = 0;
 	pollfd newPollfd;
-
+	std::cout << "start acceptNewConnect" << std::endl;
 	do {
 		newFd = accept(_listenFd, NULL, NULL);
 		if (newFd < 0){
@@ -87,14 +87,16 @@ void	Socket::acceptNewConnect(int i){
 		newPollfd.events = POLLIN;
 		_vFds.push_back(newPollfd);
 	} while (newFd != -1);
+	std::cout << "end acceptNewConnect" << std::endl;
 }
 
 void	Socket::recNewConnect(int i){
 	int res = 0;
 	char buff[1024];
-	
+	std::cout << "start recNewConnect" << std::endl;
 	do {
 		res = (int)recv(_vFds[i].fd, buff, sizeof(buff), 0);
+		std::cout << "res of recv " << res << std::endl;
 		if (res < 0){
 			if (errno != EWOULDBLOCK){
 				perror("recv");
@@ -103,10 +105,12 @@ void	Socket::recNewConnect(int i){
 			break;
 		}
 		else if (res == 0){ //connection was closed by client
+			std::cout << "connection was closed by client" << std::endl;
 			break;
 		}
 		else{
 			//here can be different actions
+			std::cout << "senddata call" << std::endl;
 			sendData(_vFds[i].fd);
 			
 			break;
@@ -114,7 +118,7 @@ void	Socket::recNewConnect(int i){
 		
 		
 	} while (true);
-	
+	std::cout << "end recNewConnect" << std::endl;
 }
 
 void Socket::pollLoop(){
@@ -127,18 +131,18 @@ void Socket::pollLoop(){
 		} else {
 			
 			for (int i = 0; i < (int)_vFds.size(); i++){
+				
+				//std::cout << (int)_vFds.size() << std::endl;
 				if (_vFds[i].fd == 0)
 					continue;
-				if (_vFds[i].revents != POLLIN){
+				if ((_vFds[i].revents & POLLIN) == POLLIN){
 					//std::cout << "unexpected result, revent should be POLLIN" << std::endl;
-					break;
-				}
-				if (_vFds[i].fd == _listenFd){///Listening socket is readable -> need to accept all incoming connections
-					acceptNewConnect(i); //work with listening socket
-				}
-				
-				else { ///connection is not on listening socket, need to be readable -> receive all data
-					recNewConnect(i);
+					if (_vFds[i].fd == _listenFd){///Listening socket is readable -> need to accept all incoming connections
+						acceptNewConnect(i); //work with listening socket
+					}
+					else { ///connection is not on listening socket, need to be readable -> receive all data
+						recNewConnect(i);
+					}
 				}
 			}
 
@@ -165,7 +169,8 @@ void	Socket::setupSocket(){
 
 void	Socket::sendData(int client_socket){
 
-	char server_message[256] = "Hello, Client!";
+	std::cout << "here is Jonny" << std::endl;
+	char server_message[256] = "200 OK \n\n HJELLO";
 	if (send(client_socket, server_message, sizeof(server_message), 0) < 0){
 		throw std::runtime_error("Socket : send");
 	}
