@@ -1,8 +1,9 @@
 #include <Server.hpp>
+#include <iostream>
 
-Server::Server(int port, std::string host, std::map<std::string, std::string> error_pages,
+Server::Server(int port, std::string host,
 				size_t client_body_limit, std::string name)
-	: _port(port), _host(host), _name(name), _error_pages(error_pages), _client_body_limit(client_body_limit)
+	: _port(port), _host(host), _name(name), _client_body_limit(client_body_limit), _error_pages()
 {
 }
 Server::Server(Server const &src)
@@ -25,62 +26,82 @@ Server &Server::operator=(Server const &rhs)
 	return (*this);
 }
 
-void Server::addLocation(std::string path, Location location)
+void	Server::addLocation(std::string path, Location &location)
 {
+	// this->_paths[path] = location;
+	std::cout << location.getRequireCookie() << std::endl;
 	this->_paths.insert(std::pair<std::string, Location>(path, location));
+	std::cout << location.getRequireCookie() << std::endl;
 }
 
-int Server::getPort() const
-{
-	return (this->_port);
-}
-
-const std::string &Server::getHost() const
-{
-	return (this->_host);
-}
-
-const std::string &Server::getName() const
-{
-	return (this->_name);
+void	Server::addError(std::string error_code, std::string path) {
+	this->_error_pages.insert(std::pair<std::string, std::string>(error_code, path));
 }
 
 size_t Server::getClientBodyLimit(std::string path) const
 {
-	//I don't like the way this looks, will change it
 	size_t result = this->_client_body_limit;
-	std::map<std::string, Location>::const_iterator found = this->_paths.find(path);
-	if (found != this->_paths.end() && found->second._client_body_limit != 0)
-		result = found->second._client_body_limit;
-	return result;
+	try
+	{
+		result = getClosestLocation(path).getClientBodyLimit();
+	}
+	catch(const std::exception& e)
+	{}
+	return (result);
 }
 
-const std::string Server::getErrorPage(std::string path, std::string error_code) const
+const std::string Server::getErrorPage(std::string error_code, std::string path) const
 {
-	//I don't like the way this looks, will change it
-	std::map<std::string, std::string>::const_iterator found = this->_error_pages.find(error_code);
 	std::string result = "root/errors/error.html";
+	std::map<std::string, std::string>::const_iterator found = this->_error_pages.find(error_code);
 	if (found != this->_error_pages.end())
 		result = found->second;
-	std::map<std::string, Location>::const_iterator locationfound = this->_paths.find(path);
-	if (locationfound != this->_paths.end()) {
-		found = locationfound->second._error_pages.find(error_code);
-		if (found != locationfound->second._error_pages.end())
+	try
+	{
+		std::map<std::string, std::string> error_pages = getClosestLocation(path).getErrorPages();
+		found = error_pages.find(error_code);
+		if (found != error_pages.end())
 			result = found->second;
 	}
-	return result;
+	catch(const std::exception& e)
+	{}
+	return (result);
+}
+
+const Location &	Server::getClosestLocation(std::string path) const {
+	std::map<std::string, Location>::const_iterator found = this->_paths.find(path);
+	if (found != this->_paths.end())
+		return (found->second);
+	while (path.length() > 0) {
+		std::string newpath = path.substr(0, path.rfind("/"));
+		if (newpath == path)
+			throw std::exception();
+		path = newpath;
+		found = this->_paths.find(path);
+		if (found != this->_paths.end())
+			return (found->second);
+	}
+	throw std::exception();
 }
 
 std::string Server::response(std::string request) const
 {
 	//magic
-	return ("");
+	return (request);
 }
 
-std::ostream &operator<<(std::ostream &out, const Server &f1)
+std::ostream &operator<<(std::ostream &out, const Server &serv)
 {
-	out << f1.getHost() << ":" << f1.getPort();
-	if (f1.getName() != "")
-		out << "(" << f1.getName() << ")";
+	out << serv.getHost() << ":" << serv.getPort();
+	if (serv.getName() != "")
+		out << "(" << serv.getName() << ")";
+	if (serv.getClientBodyLimit() != 0)
+		out << " client-limit:" << serv.getClientBodyLimit();
+	try
+	{
+		out << " location=" << serv.getClosestLocation("/shii");
+	}
+	catch(const std::exception& e)
+	{}
 	return (out);
 }

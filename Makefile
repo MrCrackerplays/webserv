@@ -6,7 +6,7 @@ ifdef DEBUG
 CFLAGS := -g $(CFLAGS)
 endif
 
-CLASSES := Example
+CLASSES := Server Location
 OBJECTS := main.o
 HEADER_FILES :=
 INCLUDE := headers
