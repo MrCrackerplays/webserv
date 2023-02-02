@@ -31,6 +31,10 @@ Location & Location::operator=(Location const & rhs) {
 	this->_methods = rhs._methods;
 	this->_cgis = rhs._cgis;
 	this->_error_pages = rhs._error_pages;
+	
+	//added
+	this->_require_cookie = rhs._require_cookie;
+	this->_set_cookie = rhs._set_cookie;
 	return (*this);
 }
 
