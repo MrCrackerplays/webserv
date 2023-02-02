@@ -15,8 +15,6 @@ void	smallTest(const char *port){
 		fs.open("/Users/yuliia/Codam/webserv/info_serv.strings", std::fstream::in);
 
 		Socket test((void *)port);
-		int fd = test.getSocketFd();
-		printf("FD: %i\n", fd);
 		test.setupSocket();
 
 		//acceptServ(test.getSocketFd());
@@ -31,7 +29,7 @@ int main(int argc, const char * argv[]) {
 	if (argc != 2){
 		std::cout << "not enough arguments" << std::endl;
 	}
-	smallTest("8888");
+	smallTest("8877");
 
 	return 0;
 }
