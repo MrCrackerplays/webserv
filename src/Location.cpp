@@ -1,5 +1,4 @@
 #include <Location.hpp>
-#include <iostream>
 
 Location::Location(std::string path,
 	// std::vector<std::string> methods, std::vector<std::string> cgis, std::map<std::string, std::string> error_pages,
@@ -7,8 +6,6 @@ Location::Location(std::string path,
 	std::string default_file, std::string set_cookie, std::string require_cookie, size_t client_body_limit)
 	: _path(path), _redirect(redirect), _root(root), _directory_listing(directory_listing),
 	_set_cookie(set_cookie), _require_cookie(require_cookie), _default_file(default_file), _client_body_limit(client_body_limit), _methods(), _cgis(), _error_pages() {
-		this->_require_cookie = require_cookie;
-		std::cerr << "HEYHO:" << this->_require_cookie << std::endl;
 }
 
 Location::Location(Location const & src) {
@@ -31,8 +28,6 @@ Location & Location::operator=(Location const & rhs) {
 	this->_methods = rhs._methods;
 	this->_cgis = rhs._cgis;
 	this->_error_pages = rhs._error_pages;
-	
-	//added
 	this->_require_cookie = rhs._require_cookie;
 	this->_set_cookie = rhs._set_cookie;
 	return (*this);
@@ -61,10 +56,8 @@ std::ostream& operator<<(std::ostream& out, const Location& loc) {
 		out << ",default_file=" << loc.getDefaultFile();
 	if (loc.getSetCookie() != "")
 		out << ",set_cookie=" << loc.getSetCookie();
-	// if (loc.getRequireCookie() != "")
-	out << ",require_cookie='" << loc.getRequireCookie() << "'";
-	// else
-	// 	out << ",require_cookie=none";
+	if (loc.getRequireCookie() != "")
+		out << ",require_cookie=" << loc.getRequireCookie();
 	if (loc.getClientBodyLimit() != 0)
 		out << ",client_body_limit=" << loc.getClientBodyLimit();
 	if (loc.getMethods().size() > 0) {

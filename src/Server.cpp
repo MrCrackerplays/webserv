@@ -1,5 +1,4 @@
 #include <Server.hpp>
-#include <iostream>
 
 Server::Server(int port, std::string host,
 				size_t client_body_limit, std::string name)
@@ -28,10 +27,7 @@ Server &Server::operator=(Server const &rhs)
 
 void	Server::addLocation(std::string path, Location &location)
 {
-	// this->_paths[path] = location;
-	std::cout << location.getRequireCookie() << std::endl;
 	this->_paths.insert(std::pair<std::string, Location>(path, location));
-	std::cout << location.getRequireCookie() << std::endl;
 }
 
 void	Server::addError(std::string error_code, std::string path) {
@@ -84,7 +80,7 @@ const Location &	Server::getClosestLocation(std::string path) const {
 	throw std::exception();
 }
 
-std::string Server::response(std::string request) const
+std::string Server::generateResponse(std::string request) const
 {
 	//magic
 	return (request);
@@ -97,11 +93,5 @@ std::ostream &operator<<(std::ostream &out, const Server &serv)
 		out << "(" << serv.getName() << ")";
 	if (serv.getClientBodyLimit() != 0)
 		out << " client-limit:" << serv.getClientBodyLimit();
-	try
-	{
-		out << " location=" << serv.getClosestLocation("/shii");
-	}
-	catch(const std::exception& e)
-	{}
 	return (out);
 }

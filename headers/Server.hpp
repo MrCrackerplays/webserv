@@ -34,7 +34,7 @@ public:
 	void				addLocation(std::string path, Location &location);
 	void				addError(std::string error_code, std::string path);
 
-	std::string			response(std::string request) const;
+	std::string			generateResponse(std::string request) const;
 // protected:
 	size_t				getClientBodyLimit(void) const { return (this->_client_body_limit);}
 	size_t				getClientBodyLimit(std::string path) const;
