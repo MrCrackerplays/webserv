@@ -6,6 +6,7 @@
 //
 
 #include "Socket.hpp"
+#include <fstream>
 //https://www.ibm.com/docs/en/i/7.3?topic=designs-using-poll-instead-select
 
 //work with listening socket
@@ -53,7 +54,7 @@ void	Socket::recNewConnect(int i){
 			break;
 		}
 		else{
-			std::cout << "buffer after recv" << std::endl << std::endl << ":" << std::endl << buff << std::endl;
+			//std::cout << "buffer after recv" << std::endl << std::endl << ":" << std::endl << buff << std::endl;
 			//here can be different actions
 			//std::cout << "senddata call   " << "for fd " << _vFds[i].fd << std::endl;
 			sendData(_vFds[i].fd);
@@ -108,18 +109,44 @@ void	Socket::setupSocket(){
 void	Socket::sendData(int client_socket){
 
 	std::cout << "start senddata here :   " << client_socket << std::endl;
-	std::string response = "HTTP/1.1 200 OK\r\n"
+	std::string response_header = "HTTP/1.0 200 OK\r\n"
 						   "Content-Type: text/html\r\n"
-						   "Content-Length: 31\r\n"
-						   "\r\n"
-						   "<html><body><h1>Patric, look :D</h1></body></html>\r\n";
+						   "Content-Length: 400\r\n" // !! need to be extra careful with numbers content-lenght
+							"\r\n";
+	//"<html><body><h1>Patric, look :D</h1></body></html>\r\n";
 	
 	
-	int bitesend = (int)send(client_socket, response.c_str(), response.length(), 0);
-	if (bitesend < 0){
+	std::string filename = "/Users/yuliia/Codam/webserv/info_practice.html"; //HARDCODED
+	std::ifstream file(filename);
+	std::string response_body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	std::cout << response_body << std::endl;
+	
+	std::string test_body = "<html><body><h1>Patric, look :D</h1></body></html>\r\n";
+	
+	
+	//header
+	int bitesend1 = (int)send(client_socket, response_header.c_str(), response_header.length(), 0);
+	if (bitesend1 < 0){
 		throw std::runtime_error("Socket : send");
 	}
-	std::cout << "bite sent: " <<bitesend << " response lenght: " << response.length() <<std::endl;
+	std::cout << "header : bite sent: " <<bitesend1 << " response lenght: " << response_header.length() <<std::endl;
+	
+	
+	//test_body
+//	int bitesend2 = (int)send(client_socket, test_body.c_str(), test_body.length(), 0);
+//	if (bitesend2 < 0){
+//		throw std::runtime_error("Socket : send");
+//	}
+//	std::cout << "body : bite sent: " <<bitesend2 << " response lenght: " << test_body.length() <<std::endl;
+	
+	
+	
+	//body from file
+	int bitesend2 = (int)send(client_socket, response_body.c_str(), response_body.length(), 0);
+	if (bitesend2 < 0){
+		throw std::runtime_error("Socket : send");
+	}
+	std::cout << "body : bite sent: " <<bitesend2 << " response lenght: " << response_body.length() <<std::endl;
 	
 }
 
