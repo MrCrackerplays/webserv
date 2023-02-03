@@ -113,15 +113,15 @@ void	Socket::sendData(int client_socket){
 						   "Content-Type: text/html\r\n"
 						   "Content-Length: 400\r\n" // !! need to be extra careful with numbers content-lenght
 							"\r\n";
-	//"<html><body><h1>Patric, look :D</h1></body></html>\r\n";
+	//"<html><body><h1>Patric, look :D</h1></body></html>\r\n"; -> the most primitive body
 	
 	
-	std::string filename = "/Users/yuliia/Codam/webserv/info_practice.html"; //HARDCODED
+	std::string filename = "/Users/yuliia/Codam/webserv/info_practice.html"; //HARDCODED file path
 	std::ifstream file(filename);
 	std::string response_body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 	std::cout << response_body << std::endl;
 	
-	std::string test_body = "<html><body><h1>Patric, look :D</h1></body></html>\r\n";
+	std::string test_body = "<html><body><h1>Patric, look :D</h1></body></html>\r\n"; //-> the most primitive body separatly
 	
 	
 	//header
