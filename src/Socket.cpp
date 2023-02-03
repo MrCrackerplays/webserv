@@ -46,11 +46,11 @@ void	Socket::setToNonBlocking(){
 	}
 
 /* Allow socket descriptor to be reuseable  */
-//	int on = 1;
-//	if (setsockopt(_listenFd, SOL_SOCKET,  SO_REUSEADDR, (char *)&on, sizeof(on)) < 0){
-//		perror("setsockopt() failed");
-//		throw std::runtime_error("setsockopt() : failed");
-//	}
+	int on = 1;
+	if (setsockopt(_listenFd, SOL_SOCKET,  SO_REUSEADDR, (char *)&on, sizeof(on)) < 0){
+		perror("setsockopt() failed");
+		throw std::runtime_error("setsockopt() : failed");
+	}
 }
 
 void	Socket::bindToPort(){

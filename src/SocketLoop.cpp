@@ -49,10 +49,11 @@ void	Socket::recNewConnect(int i){
 		else if (res == 0){ //connection was closed by client
 			std::cout << "connection was closed by client   " << "for fd " << _vFds[i].fd << std::endl;
 			close(_vFds[i].fd);
-			exit(33);
+//			exit(33);
 			break;
 		}
 		else{
+			std::cout << "buffer after recv" << std::endl << std::endl << ":" << std::endl << buff << std::endl;
 			//here can be different actions
 			//std::cout << "senddata call   " << "for fd " << _vFds[i].fd << std::endl;
 			sendData(_vFds[i].fd);
@@ -107,31 +108,20 @@ void	Socket::setupSocket(){
 void	Socket::sendData(int client_socket){
 
 	std::cout << "start senddata here :   " << client_socket << std::endl;
+	std::string response = "HTTP/1.1 200 OK\r\n"
+						   "Content-Type: text/html\r\n"
+						   "Content-Length: 31\r\n"
+						   "\r\n"
+						   "<html><body><h1>Patric, look :D</h1></body></html>\r\n";
 	
 	
-	std::string response = "HTTP/1.0 200 OK\r\n"
-						  "Content-Type: text/plain\r\n"
-						  "Content-Length: 10\r\n"
-						  "\r\n"
-						  "WORDS\r\n";
-	
-	
-//	char server_message[256] = "200 OK \n\n HJELLO\n";
-//	if (send(client_socket, server_message, sizeof(server_message), 0) < 0){
-//		throw std::runtime_error("Socket : send");
-//	}
 	int bitesend = (int)send(client_socket, response.c_str(), response.length(), 0);
-//	if (send(client_socket, response.c_str(), response.length(), 0) < 0){
-//		perror("send: ");
-//		throw std::runtime_error("Socket : send");
-//	}
-	std::cout << "bite sent: " <<bitesend <<std::endl;
+	if (bitesend < 0){
+		throw std::runtime_error("Socket : send");
+	}
+	std::cout << "bite sent: " <<bitesend << " response lenght: " << response.length() <<std::endl;
+	
 }
-
-
-
-
-
 
 
 

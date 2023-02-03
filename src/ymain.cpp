@@ -29,7 +29,7 @@ int main(int argc, const char * argv[]) {
 	if (argc != 2){
 		std::cout << "not enough arguments" << std::endl;
 	}
-	smallTest("8877");
+	smallTest("9999");
 
 	return 0;
 }
