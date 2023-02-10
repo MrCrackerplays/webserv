@@ -28,15 +28,12 @@ protected:
 	int _listenFd; //opened in constructor
 	//struct pollfd *_fds;
 	std::vector<pollfd> _vFds;
-	
-	
+
 	void	setToNonBlocking();
 	void	bindToPort();
 	void	setToListen();
 	void	addInEventQueu(int client_socket);
 	void	initiateVect();
-	
-	
 	void	pollLoop();
 	void	sendData(int client_socket);
 	void	receiveData();
@@ -50,7 +47,7 @@ protected:
 	
 	
 public:
-	Socket(void *inp); //this will create a socket
+	Socket(char * hostName, char * portNumber);
 	~Socket();
 	int		getSocketFd();
 	void	setupSocket();

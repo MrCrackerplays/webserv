@@ -26,7 +26,7 @@ void	Socket::initiateVect(){
 	_vFds[0].events = POLLIN;
 }
 
-Socket::Socket(void *inp) : Sockadrs(inp){
+Socket::Socket(char * hostName, char * portNumber) : Sockadrs(hostName, portNumber){
 	
 	_listenFd = socket(PF_INET, SOCK_STREAM, 0);
 	if (_listenFd < 0){

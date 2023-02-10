@@ -98,32 +98,18 @@ void Socket::pollLoop(){
 
 }
 
-void	Socket::setupSocket(){
-
-	setToNonBlocking();
-	bindToPort();
-	setToListen();
-	pollLoop();
-}
-
 void	Socket::sendData(int client_socket){
-
-	std::cout << "start senddata here :   " << client_socket << std::endl;
+	
 	std::string response_header = "HTTP/1.0 200 OK\r\n"
 						   "Content-Type: text/html\r\n"
-						   "Content-Length: 400\r\n" // !! need to be extra careful with numbers content-lenght
-							"\r\n";
-	//"<html><body><h1>Patric, look :D</h1></body></html>\r\n"; -> the most primitive body
-	
+						   "Content-Length: 348\r\n" // !! need to be extra careful with numbers content-lenght
+	"\r\n";
 	
 	std::string filename = "/Users/yuliia/Codam/webserv/info_practice.html"; //HARDCODED file path
 	std::ifstream file(filename);
 	std::string response_body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 	std::cout << response_body << std::endl;
-	
-	std::string test_body = "<html><body><h1>Patric, look :D</h1></body></html>\r\n"; //-> the most primitive body separatly
-	
-	
+
 	//header
 	int bitesend1 = (int)send(client_socket, response_header.c_str(), response_header.length(), 0);
 	if (bitesend1 < 0){
@@ -131,23 +117,12 @@ void	Socket::sendData(int client_socket){
 	}
 	std::cout << "header : bite sent: " <<bitesend1 << " response lenght: " << response_header.length() <<std::endl;
 	
-	
-	//test_body
-//	int bitesend2 = (int)send(client_socket, test_body.c_str(), test_body.length(), 0);
-//	if (bitesend2 < 0){
-//		throw std::runtime_error("Socket : send");
-//	}
-//	std::cout << "body : bite sent: " <<bitesend2 << " response lenght: " << test_body.length() <<std::endl;
-	
-	
-	
 	//body from file
 	int bitesend2 = (int)send(client_socket, response_body.c_str(), response_body.length(), 0);
 	if (bitesend2 < 0){
 		throw std::runtime_error("Socket : send");
 	}
 	std::cout << "body : bite sent: " <<bitesend2 << " response lenght: " << response_body.length() <<std::endl;
-	
 }
 
 
@@ -155,6 +130,14 @@ void	Socket::sendData(int client_socket){
 
 
 
+
+void	Socket::setupSocket(){
+
+	setToNonBlocking();
+	bindToPort();
+	setToListen();
+	pollLoop();
+}
 
 
 

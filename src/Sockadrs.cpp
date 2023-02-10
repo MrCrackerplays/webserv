@@ -43,29 +43,29 @@
 ///The code then returns 0 to indicate that it has completed successfully.
 
 //https://en.cppreference.com/w/cpp/error/runtime_error
-Sockadrs::Sockadrs(void *inp){
+
+
+Sockadrs::Sockadrs(char * hostName, char * portNumber){
 	
 	int status;
-	char* port_number;//this needs to be received
 	struct addrinfo hints;
-	
-	port_number = (char *)inp;
 	
 	std::memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
 	hints.ai_flags = AI_PASSIVE; //fill ip address by default
-	status = getaddrinfo("localhost", port_number, &hints, &_res);
+	status = getaddrinfo(hostName, portNumber, &hints, &_res);
 	if (status < 0){
 		throw std::runtime_error("Port : getaddrinfo");
 	}
 	
-	//simplified struct that is shorter version that addrinfo
+//	simplified struct that is shorter version that addrinfo
 //	_simp_res.sin_family = AF_INET;
 //	int num = atoi(port_number);
 //	_simp_res.sin_port = htons(num);
 //	_simp_res.sin_addr.s_addr = INADDR_ANY;
 }
+
 
 Sockadrs::~Sockadrs(){
 	freeaddrinfo(_res);
@@ -80,3 +80,25 @@ addrinfo *	Sockadrs::getRes(){
 }
 
 
+//Sockadrs::Sockadrs(void *inp){
+//
+//	int status;
+//	char* port_number;//this needs to be received
+//	struct addrinfo hints;
+//
+//	port_number = (char *)inp;
+//	std::memset(&hints, 0, sizeof(hints));
+//	hints.ai_family = AF_INET;
+//	hints.ai_socktype = SOCK_STREAM; // TCP stream sockets
+//	hints.ai_flags = AI_PASSIVE; //fill ip address by default
+//	status = getaddrinfo("localhost", port_number, &hints, &_res);
+//	if (status < 0){
+//		throw std::runtime_error("Port : getaddrinfo");
+//	}
+//
+////	simplified struct that is shorter version that addrinfo
+////	_simp_res.sin_family = AF_INET;
+////	int num = atoi(port_number);
+////	_simp_res.sin_port = htons(num);
+////	_simp_res.sin_addr.s_addr = INADDR_ANY;
+//}

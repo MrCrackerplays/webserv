@@ -22,7 +22,7 @@ protected:
 	//struct sockaddr_in _simp_res;
 	
 public:
-	Sockadrs(void *inp);
+	Sockadrs(char * hostName, char * portNumber);
 	~Sockadrs();
 	addrinfo *	getRes();
 	//sockaddr_in getSimplRes();
