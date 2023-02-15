@@ -58,6 +58,37 @@ So this line of code is checking if the event POLLIN occurred on the file descri
 Its important to note that poll can return multiple events at the same time, so a bitwise AND operator is used to check if a specific event occurred.
 
 
+'******************'"status_codes"'******************'
+
+There are many different HTTP status codes, each with its own specific meaning. Here are some of the most common status codes and their meanings:
+
+1xx (Informational): These status codes indicate that the server has received the request and is continuing to process it.
+
+2xx (Success): These status codes indicate that the request was successfully received, understood, and processed.
+
+	200 (OK): The request was successful, and the server is returning the requested data in the response body.
+	201 (Created): The request was successful, and a new resource has been created as a result.
+	204 (No Content): The request was successful, but there is no data to return in the response body.
+
+3xx (Redirection): These status codes indicate that the client must take additional action to complete the request.
+
+	301 (Moved Permanently): The requested resource has been permanently moved to a new URL.
+	302 (Found): The requested resource has been temporarily moved to a new URL.
+	304 (Not Modified): The client has made a conditional request, and the server has indicated that the data has not been modified since the client last requested it.
+
+4xx (Client Error): These status codes indicate that there was an error on the client side of the request.
+
+	400 (Bad Request): The request was malformed or invalid.
+	401 (Unauthorized): The client must provide authentication credentials in order to access the requested resource.
+	404 (Not Found): The requested resource could not be found on the server.
+
+5xx (Server Error): These status codes indicate that there was an error on the server side of the request.
+
+	500 (Internal Server Error): There was an internal server error that prevented the request from being processed.
+	503 (Service Unavailable): The server is currently unable to handle the request.
+
+
+
 '******************FUNCTIONS******************'
 
 known:
