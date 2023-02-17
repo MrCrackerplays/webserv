@@ -7,6 +7,7 @@
 
 #include "Socket.hpp"
 #include <fstream>
+#include "parsingRequest.hpp"
 //https://www.ibm.com/docs/en/i/7.3?topic=designs-using-poll-instead-select
 
 //work with listening socket
@@ -39,6 +40,12 @@ void	Socket::recNewConnect(int i){
 	do {
 		res = (int)recv(_vFds[i].fd, buff, sizeof(buff), 0);
 		std::cout << "res of recv " << res << "   for fd " << _vFds[i].fd << std::endl;
+		
+		//test print
+		printf("\n **************************test START \n %s \n test FINISH**************************\n", buff);
+		parsingRequest(buff);
+		
+		
 		if (res < 0){
 			if (errno != EWOULDBLOCK){
 				perror("recv");

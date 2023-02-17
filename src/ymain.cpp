@@ -9,6 +9,7 @@
 #include "Socket.hpp"
 #include <fstream>
 
+
 void	smallTest(const char *hostname, const char *port){
 	try {
 		std::fstream fs;

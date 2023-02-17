@@ -9,12 +9,14 @@
 #define parsingRequest_hpp
 
 #include <stdio.h>
+#include <string>
 
 typedef enum {
 	
 	GET = 0,
 	POST = 1,
-	DELETE = 2
+	DELETE = 2,
+	NOTSPECIF = 3
 	
 }	request;
 
@@ -32,5 +34,18 @@ typedef enum {
 	NOTFOUND = 404
 
 }	codeStatus;
+
+typedef struct {
+	
+	request method;
+	codeStatus status;
+	
+	std::string path;
+	std::string httpVers;
+	
+	
+}	parsRes;
+
+void parsingRequest(char *parsBuff);
 
 #endif /* parsingRequest_hpp */
