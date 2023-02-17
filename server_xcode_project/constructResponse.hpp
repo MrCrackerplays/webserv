@@ -8,14 +8,6 @@
 #ifndef constructResponse_hpp
 #define constructResponse_hpp
 
-#include <stdio.h>
 
-typedef enum {
-	
-	GET = 0,
-	POST = 1,
-	DELETE = 2
-	
-}	request;
 
 #endif /* constructResponse_hpp */
