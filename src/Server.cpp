@@ -1,8 +1,8 @@
 #include <Server.hpp>
 
 Server::Server(int port, std::string host,
-				size_t client_body_limit, std::string name)
-	: _port(port), _host(host), _name(name), _client_body_limit(client_body_limit), _error_pages()
+				size_t client_body_limit, std::vector<std::string> names)
+	: _port(port), _host(host), _client_body_limit(client_body_limit), _names(names), _error_pages()
 {
 }
 Server::Server(Server const &src)
@@ -18,11 +18,14 @@ Server &Server::operator=(Server const &rhs)
 		return (*this);
 	this->_port = rhs._port;
 	this->_host = rhs._host;
-	this->_name = rhs._name;
+	this->_names = rhs._names;
 	this->_client_body_limit = rhs._client_body_limit;
 	this->_error_pages = rhs._error_pages;
 	this->_paths = rhs._paths;
 	return (*this);
+}
+void	Server::addName(std::string name) {
+	this->_names.push_back(name);
 }
 
 void	Server::addLocation(std::string path, Location &location)
@@ -64,6 +67,13 @@ const std::string Server::getErrorPage(std::string error_code, std::string path)
 	return (result);
 }
 
+Location *	Server::getLocation(std::string path) {
+	std::map<std::string, Location>::iterator found = this->_paths.find(path);
+	if (found != this->_paths.end())
+		return (&(found->second));
+	return (NULL);
+}
+
 const Location &	Server::getClosestLocation(std::string path) const {
 	std::map<std::string, Location>::const_iterator found = this->_paths.find(path);
 	if (found != this->_paths.end())
@@ -80,6 +90,14 @@ const Location &	Server::getClosestLocation(std::string path) const {
 	throw std::exception();
 }
 
+void	Server::printLocations(std::ostream& out, std::string separator) const {
+	for (std::map<std::string, Location>::const_iterator it = this->_paths.begin(); it != this->_paths.end(); it++) {
+		if (it != this->_paths.begin())
+			out << separator;
+		out << "Location[" << it->first << "] " << it->second;
+	}
+}
+
 std::string Server::generateResponse(std::string request) const
 {
 	//magic
@@ -89,9 +107,21 @@ std::string Server::generateResponse(std::string request) const
 std::ostream &operator<<(std::ostream &out, const Server &serv)
 {
 	out << serv.getHost() << ":" << serv.getPort();
-	if (serv.getName() != "")
-		out << "(" << serv.getName() << ")";
-	if (serv.getClientBodyLimit() != 0)
-		out << " client-limit:" << serv.getClientBodyLimit();
+	if (!serv.getNames().empty()) {
+		const std::vector<std::string> & names = serv.getNames();
+		out << "(";
+		for (size_t i = 0; i < names.size(); i++) {
+			if (i > 0)
+				out << ", ";
+			out << names[i];
+		}
+		out << ")";
+	}
+	if (serv.getClientBodyLimit())
+		out << " max_body: " << serv.getClientBodyLimit();
+	if (serv.getLocationCount() != 0) {
+		out << "\n\t";
+		serv.printLocations(out, "\n\t");
+	}
 	return (out);
 }

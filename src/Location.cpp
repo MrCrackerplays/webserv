@@ -2,10 +2,10 @@
 
 Location::Location(std::string path,
 	// std::vector<std::string> methods, std::vector<std::string> cgis, std::map<std::string, std::string> error_pages,
-	std::string redirect, std::string root, bool directory_listing,
+	std::pair<std::string, std::string> redirect, std::string root, bool directory_listing,
 	std::string default_file, std::string set_cookie, std::string require_cookie, size_t client_body_limit)
-	: _path(path), _redirect(redirect), _root(root), _directory_listing(directory_listing),
-	_set_cookie(set_cookie), _require_cookie(require_cookie), _default_file(default_file), _client_body_limit(client_body_limit), _methods(), _cgis(), _error_pages() {
+	: _path(path), _root(root), _directory_listing(directory_listing), _set_cookie(set_cookie), _require_cookie(require_cookie),
+	_default_file(default_file), _client_body_limit(client_body_limit), _redirect(redirect), _methods(), _cgis(), _error_pages() {
 }
 
 Location::Location(Location const & src) {
@@ -47,45 +47,45 @@ void	Location::addError(std::string error_code, std::string path) {
 
 std::ostream& operator<<(std::ostream& out, const Location& loc) {
 	out << "{" << loc.getPath();
-	if (loc.getRedirect() != "")
-		out << ",redirect=" << loc.getRedirect();
+	if (loc.getRedirect().first != "")
+		out << ", redirect=" << loc.getRedirect().first << " " << loc.getRedirect().second;
 	if (loc.getRoot() != "")
-		out << ",root=" << loc.getRoot();
-	out << ",directory_listing=" << (loc.getDirectoryListing() ? "true" : "false");
+		out << ", root=" << loc.getRoot();
+	out << ", directory_listing=" << (loc.getDirectoryListing() ? "true" : "false");
 	if (loc.getDefaultFile() != "")
-		out << ",default_file=" << loc.getDefaultFile();
+		out << ", default_file=" << loc.getDefaultFile();
 	if (loc.getSetCookie() != "")
-		out << ",set_cookie=" << loc.getSetCookie();
+		out << ", set_cookie=" << loc.getSetCookie();
 	if (loc.getRequireCookie() != "")
-		out << ",require_cookie=" << loc.getRequireCookie();
+		out << ", require_cookie=" << loc.getRequireCookie();
 	if (loc.getClientBodyLimit() != 0)
-		out << ",client_body_limit=" << loc.getClientBodyLimit();
+		out << ", client_body_limit=" << loc.getClientBodyLimit();
 	if (loc.getMethods().size() > 0) {
 		std::vector<std::string> methods = loc.getMethods();
-		out << ",methods={";
+		out << ", methods={";
 		for (std::vector<std::string>::const_iterator it = methods.begin(); it != methods.end(); it++) {
 			if (it != methods.begin())
-				out << ",";
+				out << ", ";
 			out << *it;
 		}
 		out << "}";
 	}
 	if (loc.getCGIs().size() > 0) {
 		std::vector<std::string> cgis = loc.getCGIs();
-		out << ",cgis={";
+		out << ", cgis={";
 		for (std::vector<std::string>::const_iterator it = cgis.begin(); it != cgis.end(); it++) {
 			if (it != cgis.begin())
-				out << ",";
+				out << ", ";
 			out << *it;
 		}
 		out << "}";
 	}
 	if (loc.getErrorPages().size() > 0) {
 		std::map<std::string, std::string> error_pages = loc.getErrorPages();
-		out << ",error_pages={";
+		out << ", error_pages={";
 		for (std::map<std::string, std::string>::const_iterator it = error_pages.begin(); it != error_pages.end(); it++) {
 			if (it != error_pages.begin())
-				out << ",";
+				out << ", ";
 			out << it->first << "=" << it->second;
 		}
 		out << "}";
