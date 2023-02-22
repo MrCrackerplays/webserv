@@ -1,7 +1,6 @@
 #include <Location.hpp>
 
 Location::Location(std::string path,
-	// std::vector<std::string> methods, std::vector<std::string> cgis, std::map<std::string, std::string> error_pages,
 	std::pair<std::string, std::string> redirect, std::string root, bool directory_listing,
 	std::string default_file, std::string set_cookie, std::string require_cookie, size_t client_body_limit)
 	: _path(path), _root(root), _directory_listing(directory_listing), _set_cookie(set_cookie), _require_cookie(require_cookie),

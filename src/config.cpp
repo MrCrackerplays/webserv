@@ -46,7 +46,7 @@ static std::string	extract_server_block(std::string & config, size_t & i) {
 		} else
 			throw ConfigFormatException();
 
-		//currently only accept a location block inside a server block but the above implementation
+		//currently only accepts a location block inside a server block but the above implementation
 		//allows for adding more blocks within blocks later on without having to update a lot of code
 		if (depth > 2)
 			throw ConfigFormatException();

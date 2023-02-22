@@ -20,9 +20,6 @@ protected:
 	std::map<std::string, std::string>	_error_pages;
 public:
 	Location(std::string path,
-			// std::vector<std::string> methods,
-			// std::vector<std::string> cgis,
-			// std::map<std::string, std::string> error_pages,
 			std::pair<std::string, std::string> redirect = std::pair<std::string, std::string>("", ""),
 			std::string root = "",
 			bool directory_listing = false,
@@ -44,7 +41,7 @@ public:
 	size_t		getClientBodyLimit(void) const { return (this->_client_body_limit); };
 	std::string	getSetCookie(void) const { return (this->_set_cookie); };
 	std::string	getRequireCookie(void) const { return (this->_require_cookie); };
-	std::pair<std::string, std::string>	getRedirect(void) const { return (this->_redirect); };//TODO: FIX ALL REDIRECTION BULLSHIT INTO PAIR FROM PREVIOUS STRING
+	std::pair<std::string, std::string>	getRedirect(void) const { return (this->_redirect); };
 
 	void	setPath(std::string path) { this->_path = path; };
 	void	setRoot(std::string root) { this->_root = root; };
@@ -52,13 +49,8 @@ public:
 	void	setDefaultFile(std::string default_file) { this->_default_file = default_file; };
 	void	setClientBodyLimit(size_t client_body_limit) { this->_client_body_limit = client_body_limit; };
 	void	setSetCookie(std::string set_cookie) { this->_set_cookie = set_cookie; };
-
-
-
 	void	setRequireCookie(std::string require_cookie) { this->_require_cookie = require_cookie; };
 	void	setRedirect(std::pair<std::string, std::string> redirect) { this->_redirect = redirect; };
-
-
 
 
 

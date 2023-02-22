@@ -255,7 +255,6 @@ void	location_line(std::string & line, bool & in_location, Location & loc) {
 		throw ConfigFormatException();//key without value
 	}
 	std::string	key = line.substr(key_start, i - key_start);
-	//TODO: add a switch case for the different keys and add the values to the server
 	switch (str_to_e_loc(key))
 	{
 	case LAR_redirect:

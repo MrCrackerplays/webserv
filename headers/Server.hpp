@@ -13,10 +13,6 @@ protected:
 	std::vector<std::string>			_names;
 	std::map<std::string, std::string>	_error_pages;
 	std::map<std::string, Location>		_paths;
-
-	//add error page(s), client body size limit, list of routes that have 1..n rules
-	//check https://github.com/AirisX/nginx_cookie_flag_module#synopsis for an idea on cookies
-	//check RFC 3875
 public:
 	Server(int port, std::string host,
 			size_t client_body_limit = 0,
@@ -38,7 +34,7 @@ public:
 	void				setClientBodyLimit(size_t cbl) {this->_client_body_limit = cbl;}
 
 	std::string			generateResponse(std::string request) const;
-// protected:
+
 	size_t				getClientBodyLimit(void) const { return (this->_client_body_limit);}
 	size_t				getClientBodyLimit(std::string path) const;
 	const std::string	getErrorPage(std::string error_code, std::string path) const;
