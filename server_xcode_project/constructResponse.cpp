@@ -6,7 +6,7 @@
 //
 
 #include "constructResponse.hpp"
-#include "parsingRequest.hpp"
+#include "parseRequest.hpp"
 #include <string>
 #include <fstream>
 #include <iostream>
@@ -82,7 +82,7 @@ std::string constructResponseBody(std::string filename) {
 	return responseBody;
 }
 
-std::string	formResponseString(request type, int codeStatus, std::string filename){
+std::string	formResponseString(method type, int codeStatus, std::string filename){
 	
 	std::string response;
 	std::string responseBody;

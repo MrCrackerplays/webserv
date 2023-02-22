@@ -1,15 +1,17 @@
 //
-//  parsingRequest.hpp
+//  parseRequest.hpp
 //  server_xcode_project
 //
 //  Created by Julia Demura on 16/02/2023.
 //
 
-#ifndef parsingRequest_hpp
-#define parsingRequest_hpp
+#ifndef parseRequest_hpp
+#define parseRequest_hpp
 
 #include <stdio.h>
 #include <string>
+#include <map>
+#include <vector>
 
 typedef enum {
 	
@@ -18,7 +20,7 @@ typedef enum {
 	DELETE = 2,
 	NOTSPECIF = 3
 	
-}	request;
+}	method;
 
 typedef enum {
 	
@@ -37,15 +39,18 @@ typedef enum {
 
 typedef struct {
 	
-	request method;
-	codeStatus status;
-	
+	method method;
 	std::string path;
 	std::string httpVers;
+
+	std::map<std::string, std::vector<std::string>> query;
+	std::map<std::string, std::vector<std::string>> headers;
 	
 	
-}	parsRes;
+	codeStatus status;
+	//need to think about the rest if recv return an ugly edge of buffer
+}	parsRequest;
 
-void parsingRequest(char *parsBuff);
+void parseRequest(char *parsBuff);
 
-#endif /* parsingRequest_hpp */
+#endif /* parseRequest_hpp */
