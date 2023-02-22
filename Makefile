@@ -8,9 +8,9 @@ ifdef DEBUG
 CFLAGS := -g $(CFLAGS)
 endif
 
-CLASSES := Example
-OBJECTS := main.o
-HEADER_FILES :=
+CLASSES := Server Location
+OBJECTS := main.o config.o server_block_util.o location_block_util.o
+HEADER_FILES := config.hpp
 INCLUDE := headers
 
 OBJECTS := $(OBJECTS) $(addsuffix .o,$(CLASSES))
