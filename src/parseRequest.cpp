@@ -45,13 +45,6 @@ method	getMethod(std::istringstream & requestStream){
 	return NOTSPECIF;
 }
 
-bool isValidRequest(parsRequest request){
-	
-	return true;
-	
-}
-
-
 void	getQueryParams(std::string &path, std::map<std::string, std::vector<std::string>> & requestQuery){
 	
 	std::string::size_type pos = path.find('?');
@@ -74,16 +67,6 @@ void	getQueryParams(std::string &path, std::map<std::string, std::vector<std::st
 	}
 	
 }
-
-//	std::map<std::string, std::vector<std::string>>::iterator it = headers.find(headerName);
-//	if (it != headers.end()) {
-//		// Key found, update value
-//		it->second.push_back("application/json");
-//	} else {
-//		// Key not found, add new element
-//		std::vector<std::string> values = {"application/json"};
-//		headers.insert(std::make_pair(headerName, values));
-//	}
 
 void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<std::string, std::vector<std::string>>& headers){
 	
@@ -108,6 +91,12 @@ void	getHeaders(std::istringstream& requestStream, std::map<std::string, std::ve
 			packHeaderInMap(headerName, headerBody, headers);
 		}
 	}
+}
+
+bool isValidRequest(parsRequest request){
+	//unfinished, error check
+	return true;
+	
 }
 
 
