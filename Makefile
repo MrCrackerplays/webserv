@@ -9,8 +9,8 @@ CFLAGS := -g $(CFLAGS)
 endif
 
 CLASSES := Server Location
-OBJECTS := main.o config.o server_block_util.o location_block_util.o
-HEADER_FILES := config.hpp
+OBJECTS := main.o config.o server_block_util.o location_block_util.o autoindex.o
+HEADER_FILES := config.hpp autoindex.hpp
 INCLUDE := headers
 
 OBJECTS := $(OBJECTS) $(addsuffix .o,$(CLASSES))
