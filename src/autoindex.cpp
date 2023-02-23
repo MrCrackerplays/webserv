@@ -53,7 +53,7 @@ std::string generate_autoindex(std::string path, std::string display_path)
 	index << "td:first-child {padding-left:0}";
 	index << "</style>";
 	index << "</head>";
-	index << "<body background-color=\"white\">";
+	index << "<body>";
 	index << "<h1>Index of " + display_path + "</h1>";
 	index << "<hr>";
 	index << "<table>";
