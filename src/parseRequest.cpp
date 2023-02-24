@@ -109,10 +109,9 @@ bool isFile(std::string& path) {
 
 bool ifFileExsist(std::string path){
 	
-	if (access(path.c_str(), F_OK) != 0)
-		return false;
-	
-	return true;
+	if (access(path.c_str(), F_OK) == 0)
+		return true;
+	return false;
 }
 
 
