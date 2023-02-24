@@ -18,7 +18,7 @@ typedef enum {
 	GET = 0,
 	POST = 1,
 	DELETE = 2,
-	NOTSPECIF = 3
+	NOTSPECIFERR = 3
 	
 }	method;
 
