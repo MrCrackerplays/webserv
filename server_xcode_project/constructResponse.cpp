@@ -88,6 +88,8 @@ std::string	formResponseString(method type, int codeStatus, std::string filename
 	std::string responseBody;
 	
 	switch (type) {
+		case NOTSPECIFERR: //error in request
+			return 0;
 		case GET:
 			return response = constructResponseHeader(0, codeStatus);
 		case POST:
@@ -95,6 +97,7 @@ std::string	formResponseString(method type, int codeStatus, std::string filename
 			return response = constructResponseHeader(responseBody.length(), codeStatus);
 		case DELETE:
 			return response = constructResponseHeader(0, codeStatus);
+			
 	}
 	return 0;
 }

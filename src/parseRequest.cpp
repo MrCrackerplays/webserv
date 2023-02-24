@@ -9,6 +9,9 @@
 
 #include <iostream>
 #include <sstream>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 //https://cplusplus.com/reference/sstream/istringstream/
 
 void	getQueryParams(std::string &path, std::map<std::string, std::vector<std::string>> & requestQuery){
@@ -76,6 +79,43 @@ method	getMethod(std::istringstream & requestStream){
 }
 
 
+
+bool isDirectory(std::string& path) {
+	
+	struct stat info;
+	if (stat(path.c_str(), &info) != 0) {
+		// error 404?
+		return false;
+	}
+	if (info.st_mode & S_IFDIR) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+bool isFile(std::string& path) {
+	struct stat info;
+	if (stat(path.c_str(), &info) != 0) {
+		// error 404?
+		return false;
+	}
+	if (info.st_mode & S_IFREG) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+bool ifFileExsist(std::string path){
+	
+	if (access(path.c_str(), F_OK) != 0)
+		return false;
+	
+	return true;
+}
+
+
 void parseRequest(char *parsBuff){
 	
 	parsRequest pars;
@@ -94,9 +134,11 @@ void parseRequest(char *parsBuff){
 		pars.status = BADRQST;
 		return ;
 	}
-	
 	getQueryParams(pars.path, pars.query);
-	//if the path contains directory not sure how and when to check access to it
+	if (!ifFileExsist(pars.path)){
+		//error 404? file not found
+	}
+	//can also check here if we have a directory in path or file, not sure if needed
 	
 	getHeaders(requestStream, pars.headers);
 }
