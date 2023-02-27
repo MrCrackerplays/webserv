@@ -20,14 +20,15 @@
 #include <vector>
 
 //https://pubs.opengroup.org/onlinepubs/009604499/functions/socket.html
-//  Create a socket using the socket function
 
 class Socket : public Sockadrs{
 	
 protected:
-	int _listenFd; //opened in constructor
-	//struct pollfd *_fds;
+	int _listenFd;
 	std::vector<pollfd> _vFds;
+	std::vector<std::string> _buffer;
+	size_t _recvBites;
+	
 
 	void	setToNonBlocking();
 	void	bindToPort();
@@ -43,7 +44,7 @@ protected:
 	
 	//new approach
 	void	acceptNewConnect(int i);
-	void	recNewConnect(int i);
+	void	recvConnection(int i);
 	
 	
 public:
