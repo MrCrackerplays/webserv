@@ -51,6 +51,9 @@ typedef struct {
 	//need to think about the rest if recv return an ugly edge of buffer
 }	parsRequest;
 
-void parseRequest(char *parsBuff);
+void parseRequest(std::string parsBuff);
+bool isDirectory(std::string& path);
+bool isFile(std::string& path);
+bool ifFileExsist(std::string &path);
 
 #endif /* parseRequest_hpp */

@@ -48,20 +48,19 @@ void	Socket::recvConnection(int i){
 			}
 			break;
 		}
-		//adding up buff and bites read
 		_recvBites += res; //not in case -res though
-		_buffer.push_back(buffer);
+		_buffer.push_back(buffer); //vector option
+		_buff += buffer; //std::string option
 		
 		
 		//test print
-		printf("\n **************************test START \n %s \n test FINISH**************************\n", buff);
-		parseRequest(buff);
+		//printf("\n **************************test START \n %s \n test FINISH**************************\n", buff);
+		//parseRequest(buff);
 		
 		
 		if (res == 0){ //connection was closed by client
 			std::cout << "connection was closed by client   " << "for fd " << _vFds[i].fd << std::endl;
 			close(_vFds[i].fd);
-//			exit(33);
 			break;
 		}
 		else{
@@ -69,6 +68,7 @@ void	Socket::recvConnection(int i){
 			//here can be different actions
 			//std::cout << "senddata call   " << "for fd " << _vFds[i].fd << std::endl;
 			sendData(_vFds[i].fd);
+			close(_vFds[i].fd);
 			break;
 		}
 		

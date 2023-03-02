@@ -27,9 +27,9 @@ protected:
 	int _listenFd;
 	std::vector<pollfd> _vFds;
 	std::vector<std::string> _buffer;
+	std::string _buff;
 	size_t _recvBites;
 	
-
 	void	setToNonBlocking();
 	void	bindToPort();
 	void	setToListen();

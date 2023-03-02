@@ -6,11 +6,6 @@
 //
 
 #include "constructResponse.hpp"
-#include "parseRequest.hpp"
-#include <string>
-#include <fstream>
-#include <iostream>
-#include <sys/socket.h>
 
 std::string pickCodeMessage(int codeStat){
 	
@@ -85,16 +80,24 @@ std::string constructResponseBody(std::string filename) {
 std::string	formResponseString(method type, int codeStatus, std::string filename){
 	
 	std::string response;
-	std::string responseBody;
+	std::string body;
+	std::string head;
 	
 	switch (type) {
 		case NOTSPECIFERR: //error in request
 			return 0;
+		
+		
 		case GET:
-			return response = constructResponseHeader(0, codeStatus);
+			body = constructResponseBody(filename);
+			head = constructResponseHeader(body.length(), codeStatus);
+			return head + body;
+		
+		
+		
 		case POST:
-			responseBody = constructResponseBody(filename);
-			return response = constructResponseHeader(responseBody.length(), codeStatus);
+			body = constructResponseBody(filename);
+			return response = constructResponseHeader(body.length(), codeStatus);
 		case DELETE:
 			return response = constructResponseHeader(0, codeStatus);
 			

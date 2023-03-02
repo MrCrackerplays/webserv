@@ -107,15 +107,14 @@ bool isFile(std::string& path) {
 	}
 }
 
-bool ifFileExsist(std::string path){
+bool ifFileExsist(std::string &path){
 	
 	if (access(path.c_str(), F_OK) == 0)
 		return true;
 	return false;
 }
 
-
-void parseRequest(char *parsBuff){
+void parseRequest(std::string parsBuff){
 	
 	parsRequest pars;
 	std::string request(parsBuff);
@@ -127,15 +126,15 @@ void parseRequest(char *parsBuff){
 	requestStream >> pars.path >> pars.httpVers;
 	if (pars.method == NOTSPECIFERR || pars.path.empty() || pars.httpVers.empty()){
 		pars.status = BADRQST;
-		return ;
+		//return ;
 	}
 	if (pars.httpVers.compare("HTTP/1.1") != 0){ //there might be other check
 		pars.status = BADRQST;
-		return ;
+//		return ;
 	}
 	getQueryParams(pars.path, pars.query);
 	if (!ifFileExsist(pars.path)){
-		//error 404? file not found
+		pars.status = NOTFOUND;
 	}
 	//can also check here if we have a directory in path or file, not sure if needed
 	
