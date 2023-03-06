@@ -42,7 +42,7 @@ typedef struct {
 	method method;
 	std::string path;
 	std::string httpVers;
-
+	
 	std::map<std::string, std::vector<std::string>> query;
 	std::map<std::string, std::vector<std::string>> headers;
 	

@@ -25,7 +25,7 @@
 
 void	methods(parsRequest parsRes){
 
-	//additional checks for status needed?
+	//get should +- work
 	
 	formResponseString(parsRes.method, parsRes.status, parsRes.path);
 	

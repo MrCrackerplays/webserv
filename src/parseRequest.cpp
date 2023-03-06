@@ -78,8 +78,6 @@ method	getMethod(std::istringstream & requestStream){
 	return NOTSPECIFERR;
 }
 
-
-
 bool isDirectory(std::string& path) {
 	
 	struct stat info;

@@ -9,29 +9,6 @@
 
 std::string pickCodeMessage(int codeStat){
 	
-//	std::string codeMessage;
-//	switch (codeStat) {
-//		case INFO:
-//			return codeMessage = "";
-//		case OK:
-//			return codeMessage = " OK";
-//		case CREATED:
-//			return codeMessage = " Created";
-//		case NOCONTENT:
-//			return codeMessage = " No Content";
-//		case MOVEDPERM:
-//			return codeMessage = " Moved Permanently";
-//		case FOUND:
-//			return codeMessage = " Found";
-//		case NOTMODIF:
-//			return codeMessage = " Not Modified";
-//		case BADRQST:
-//			return codeMessage = " Bad Request";
-//		case UNAUTHORZD:
-//			return codeMessage = " Unauthorized";
-//		case NOTFOUND:
-//			return codeMessage = " Not Found";
-//	}
 	std::string codeMessage;
 	switch (codeStat) {
 		case 100:
@@ -62,7 +39,7 @@ std::string constructResponseHeader(unsigned long contentLength, int codeStatus)
 	
 	std::string codeMessage = pickCodeMessage(codeStatus);
 	
-	std::string responseHeader = "HTTP/1.0 " + std::to_string(codeStatus) + codeMessage + "\r\n";
+	std::string responseHeader = "HTTP/1.1 " + std::to_string(codeStatus) + codeMessage + "\r\n";
 	responseHeader += "Content-Type: text/html\r\n";
 	responseHeader += "Content-Length: " + std::to_string(contentLength) + "\r\n";
 	responseHeader += "\r\n";
@@ -94,10 +71,12 @@ std::string	formResponseString(method type, int codeStatus, std::string filename
 			return head + body;
 		
 		
-		
 		case POST:
 			body = constructResponseBody(filename);
-			return response = constructResponseHeader(body.length(), codeStatus);
+			head = constructResponseHeader(body.length(), codeStatus);
+			return head + body;
+			
+		
 		case DELETE:
 			return response = constructResponseHeader(0, codeStatus);
 			
