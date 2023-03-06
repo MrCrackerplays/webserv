@@ -10,41 +10,51 @@
 
 #define EVENTS_NUM 5
 
-#include "Port.hpp"
+#include "Sockadrs.hpp"
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <stdexcept>
 #include <poll.h>
 #include <sys/select.h>
+#include <vector>
 
 //https://pubs.opengroup.org/onlinepubs/009604499/functions/socket.html
-//  Create a socket using the socket function
 
-class Socket : public Port{
+class Socket : public Sockadrs{
 	
 protected:
-	int _socketFd; //opened in constructor
-	struct pollfd *_fds;
+	int _listenFd;
+	std::vector<pollfd> _vFds;
+	std::vector<std::string> _buffer;
+	std::string _buff;
+	size_t _recvBites;
 	
 	void	setToNonBlocking();
 	void	bindToPort();
 	void	setToListen();
+	void	addInEventQueu(int client_socket);
+	void	initiateVect();
 	void	pollLoop();
 	void	sendData(int client_socket);
 	void	receiveData();
-	void	initiate_struct();
+	void	initiateStruct();
 	void	handleEvents();
 	void	incomingConnection();
 	
+	//new approach
+	void	acceptNewConnect(int i);
+	void	recvConnection(int i);
+	
+	
 public:
-	Socket(void *inp); //this will create a socket
+	Socket(char * hostName, char * portNumber);
 	~Socket();
-	
-	
 	int		getSocketFd();
 	void	setupSocket();
 	
+	//void	setListenSocket();
+	//pollfd *		getVFd();
 };
 
 #endif /* Socket_hpp */

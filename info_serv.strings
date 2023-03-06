@@ -6,6 +6,27 @@
   
 */
 
+
+add to the parsing search of the server where the resourse is located (in location/server maybe by the host header)
+- if none, it is 1st, if not found it is first
+- there can be multiple requests from client to different servers
+
+
+
+get closest location function takes path from http request and gives the
+-> get root function that gives physical root
+
+closest loc + get root -> this i can check as actuall resourse path
+
+
+cgi reference is vector of str
+after I get cgi from request i can compare if this one will work for us
+if the cgi I want to see closest location methods list and compare
+
+
+POST can be upload
+
+
 '******************'How to test?'******************'
 command "nc"
 nc localhost [number of port] [-v for details]
@@ -56,6 +77,37 @@ The & operator compares the revents field to the POLLIN constant and returns tru
 So this line of code is checking if the event POLLIN occurred on the file descriptor stored in the first element of the fds array, if it did it will enter the if statement block.
 
 Its important to note that poll can return multiple events at the same time, so a bitwise AND operator is used to check if a specific event occurred.
+
+
+'******************'"status_codes"'******************'
+
+There are many different HTTP status codes, each with its own specific meaning. Here are some of the most common status codes and their meanings:
+
+1xx (Informational): These status codes indicate that the server has received the request and is continuing to process it.
+
+2xx (Success): These status codes indicate that the request was successfully received, understood, and processed.
+
+	200 (OK): The request was successful, and the server is returning the requested data in the response body.
+	201 (Created): The request was successful, and a new resource has been created as a result.
+	204 (No Content): The request was successful, but there is no data to return in the response body.
+
+3xx (Redirection): These status codes indicate that the client must take additional action to complete the request.
+
+	301 (Moved Permanently): The requested resource has been permanently moved to a new URL.
+	302 (Found): The requested resource has been temporarily moved to a new URL.
+	304 (Not Modified): The client has made a conditional request, and the server has indicated that the data has not been modified since the client last requested it.
+
+4xx (Client Error): These status codes indicate that there was an error on the client side of the request.
+
+	400 (Bad Request): The request was malformed or invalid.
+	401 (Unauthorized): The client must provide authentication credentials in order to access the requested resource.
+	404 (Not Found): The requested resource could not be found on the server.
+
+5xx (Server Error): These status codes indicate that there was an error on the server side of the request.
+
+	500 (Internal Server Error): There was an internal server error that prevented the request from being processed.
+	503 (Service Unavailable): The server is currently unable to handle the request.
+
 
 
 '******************FUNCTIONS******************'
@@ -165,7 +217,50 @@ listen,
 send,
 recv,
 
-setsockopt,
+************'setsockopt'*************
+#include <iostream>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+int main() {
+  int sock = socket(AF_INET, SOCK_STREAM, 0);
+
+  int reuse = 1;
+  setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
+
+  //SOL_SOCKET: This flag specifies that the options being set are at the socket level.
+  //SO_REUSEADDR: This flag enables the reuse of local addresses. When this option is set on a socket, the system will allow the socket to bind to an address that is already in use by another socket. This can be useful when you want to reuse a socket without having to wait for the socket to time out.
+
+  return 0;
+}
+This code creates a socket using the socket function and then sets the SO_REUSEADDR option using the setsockopt function to allow the socket to be reused.
+
+
+If you are limited to using only the setsockopt function, you can use the following workaround:
+Set the SO_LINGER option on the socket. You can set the l_onoff field to 0 to disable the linger, and the l_linger field to 0 to close the socket immediately.
+Set the SO_REUSEADDR option on the socket. This will allow you to reuse the socket address immediately after the socket is closed.
+Here's an example code:
+
+#include <iostream>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+int main() {
+  int sock = socket(AF_INET, SOCK_STREAM, 0);
+  struct linger ling = {0, 0};
+  setsockopt(sock, SOL_SOCKET, SO_LINGER, &ling, sizeof(linger));
+
+  int reuse = 1;
+  setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(int));
+
+  return 0;
+}
+This code sets the SO_LINGER and SO_REUSEADDR options on the socket using the setsockopt function. The SO_LINGER option will cause the socket to be closed immediately, and the SO_REUSEADDR option will allow the socket address to be reused immediately after the socket is closed.
+
+
+*************************************************************************
+
 getsockname,
 getprotobyname,
 
