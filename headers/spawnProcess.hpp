@@ -8,6 +8,6 @@
 #ifndef spawnProcess_hpp
 #define spawnProcess_hpp
 
-#include <stdio.h>
+#include "envpGenerate.hpp"
 
 #endif /* spawnProcess_hpp */

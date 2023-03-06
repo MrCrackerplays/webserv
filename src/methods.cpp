@@ -27,7 +27,7 @@ void	methods(parsRequest parsRes){
 
 	//get should +- work
 	
-	formResponseString(parsRes.method, parsRes.status, parsRes.hostName);
+	formResponseString(parsRes.method, parsRes.status, parsRes.urlPath);
 	
 }
 

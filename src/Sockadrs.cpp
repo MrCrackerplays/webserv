@@ -58,6 +58,8 @@ Sockadrs::Sockadrs(char * hostName, char * portNumber){
 	if (status < 0){
 		throw std::runtime_error("Port : getaddrinfo");
 	}
+	_portNumber = portNumber;
+	_hostName = hostName;
 	
 //	simplified struct that is shorter version that addrinfo
 //	_simp_res.sin_family = AF_INET;
@@ -66,6 +68,14 @@ Sockadrs::Sockadrs(char * hostName, char * portNumber){
 //	_simp_res.sin_addr.s_addr = INADDR_ANY;
 }
 
+
+std::string Sockadrs::getPortNumber(){
+	return _portNumber;
+}
+
+std::string Sockadrs::getHostName(){
+	return _hostName;
+}
 
 Sockadrs::~Sockadrs(){
 	freeaddrinfo(_res);

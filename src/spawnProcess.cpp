@@ -6,9 +6,25 @@
 //
 
 #include "spawnProcess.hpp"
-#include "parseRequest.hpp"
+#include <string>
+
+//dataForProcess initiateData(std::string hostName, std::string portNumber, parsRequest request){
+//	dataForProcess data;
+//
+//	data.portNumber = portNumber;
+//	data.hostName = hostName;
+//	data.request = request;
+//
+//	return data;
+//}
 
 void	spawnProcess(){
+	
+//	dataForProcess data;
+//
+//	data.portNumber = portNumber;
+//	data.hostName = hostName;
+			// - not sure i do it here not before
 	
 	//need to generate envp - what do I need there?
 	

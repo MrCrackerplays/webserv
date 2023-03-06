@@ -7,11 +7,21 @@
 
 #include "envpGenerate.hpp"
 #include "parseRequest.hpp"
+#include <string>
 
-const char **envpGenerate(parsRequest request){
+//typedef struct {
+//
+//	std::string hostName;
+//	std::string portNumber;
+//	parsRequest request;
+//
+//}dataForProcess;
+
+const char **envpGenerate(parsRequest request, std::string portNumberSocket, std::string hostNameSocket){
 	
 	const char *envp[17];
 	std::string str;
+	
 	
 	
 	//always same, hardcoded
@@ -20,13 +30,22 @@ const char **envpGenerate(parsRequest request){
 	str = "GATEWAY_INTERFACE=CGI/1.1";
 	envp[1] = str.c_str();
 	
-	
 	//generated
-	str = "SERVER_NAME=";
+	
+	//maybe could just use hostNameSocket?
+	size_t pos = request.urlPath.find('/');
+	std::string hostName = request.urlPath.substr(0, pos);
+	str = "SERVER_NAME=" + hostName;
 	envp[2] = str.c_str();
-	
-	
-	
+	// end of doubts
+	str = "SERVER_PROTOCOL=" + request.httpVers;
+	envp[3] = str.c_str();
+	str = "SERVER_PORT=" + portNumberSocket;
+	envp[4] = str.c_str();
+	str = "REQUEST_METHOD=" + request.methodString;
+	envp[5] = str.c_str();
+	str = "QUERY_STRING=" + request.queryString;
+	envp[6] = str.c_str();
 	
 	
 	return envp;

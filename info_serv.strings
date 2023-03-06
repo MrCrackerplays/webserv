@@ -9,13 +9,9 @@
 "hardcoded"
 SERVER_SOFTWARE=webserv/1.0
 GATEWAY_INTERFACE=CGI/1.1
-
+'means not sure'
 "generated"
-SERVER_NAME=localhost -> before 1st slash -> example Host: localhost:8011
-
-
-
-
+'SERVER_NAME'=localhost -> before 1st slash -> example Host: localhost:8011
 SERVER_PROTOCOL=
 //The name and revision of the information protcol this request came in with. Format: protocol/revision
 SERVER_PORT=
@@ -24,19 +20,23 @@ REQUEST_METHOD=
 //The method with which the request was made. For HTTP, this is "GET", "HEAD", "POST", etc.
 QUERY_STRING=
 //The information which follows the ? in the URL which referenced this script. This is the query information. It should not be decoded in any fashion. This variable should always be set when there is query information, regardless of command line decoding.
+
+
+
+
 CONTENT_TYPE=
 //For queries which have attached information, such as HTTP POST and PUT, this is the content type of the data.
 CONTENT_LENGTH=
 //The length of t
-
+SCRIPT_NAME=
+//A virtual path to the script being executed, used for self-referencing URLs.
 
 "need to figure out"
 PATH_INFO=
 //The extra path information, as given by the client. In other words, scripts can be accessed by their virtual pathname, followed by extra information at the end of this path. The extra information is sent as PATH_INFO. This information should be decoded by the server if it comes from a URL before it is passed to the CGI script.
 PATH_TRANSLATED=
 //The server provides a translated version of PATH_INFO, which takes the path and does any virtual-to-physical mapping to it.
-SCRIPT_NAME=
-//A virtual path to the script being executed, used for self-referencing URLs.
+
 REMOTE_HOST=
 //The hostname making the request. If the server does not have this information, it should set REMOTE_ADDR and leave this unset.
 REMOTE_ADDR=
@@ -52,7 +52,6 @@ plan
 
 1. envp generator, learn about rest, make one I know
 
-? 2. create class parsing result with members instead of struct. maybe with inheritance from location/socket?
 
 3. add on to parsing.
 
