@@ -121,8 +121,8 @@ void parseRequest(std::string parsBuff){
 	pars.status = OK;
 	
 	pars.method = getMethod(requestStream);
-	requestStream >> pars.path >> pars.httpVers;
-	if (pars.method == NOTSPECIFERR || pars.path.empty() || pars.httpVers.empty()){
+	requestStream >> pars.hostName >> pars.httpVers;
+	if (pars.method == NOTSPECIFERR || pars.hostName.empty() || pars.httpVers.empty()){
 		pars.status = BADRQST;
 		//return ;
 	}
@@ -130,8 +130,8 @@ void parseRequest(std::string parsBuff){
 		pars.status = BADRQST;
 //		return ;
 	}
-	getQueryParams(pars.path, pars.query);
-	if (!ifFileExsist(pars.path)){
+	getQueryParams(pars.hostName, pars.query);
+	if (!ifFileExsist(pars.hostName)){
 		pars.status = NOTFOUND;
 	}
 	//can also check here if we have a directory in path or file, not sure if needed
