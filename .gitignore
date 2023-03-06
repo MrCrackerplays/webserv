@@ -7,3 +7,4 @@ webserv
 *.xcodeproj
 server_xcode_project/
 server_xcode_project
+cgi-check
