@@ -91,7 +91,6 @@ static std::string	get_server_value(std::istringstream & serv, std::string key) 
 }
 
 static void	add_server(std::map<std::string, std::vector<Server> > & servers, std::string & block) {
-	int	port = 0;
 	std::istringstream	serv(block);
 	std::string	host = get_server_value(serv, "host");
 	std::string	port_str = get_server_value(serv, "port");
@@ -103,13 +102,13 @@ static void	add_server(std::map<std::string, std::vector<Server> > & servers, st
 		std::cerr << "found a non-numerical character" << std::endl;
 		throw ConfigPortFormatException();
 	}
-	port = std::atoi(port_str.c_str());
+	int	port = std::atoi(port_str.c_str());
 	if (port < 1 || port > 65535) {
 		std::cerr << "port out of range " << port << " from '" << port_str << "'" << std::endl;
 		throw ConfigPortFormatException();
 	}
-	std::vector<Server> & vec = servers[host + port_str];
-	vec.push_back(Server(port, host));
+	std::vector<Server> & vec = servers[host + ":" + port_str];
+	vec.push_back(Server(port_str, host));
 	Server & server = vec.back();
 	std::string	line;
 	std::string	location;
@@ -143,7 +142,6 @@ void	initialize_servers(std::map<std::string, std::vector<Server> > & servers, s
 		block = extract_server_block(config, i);
 		add_server(servers, block);
 	}
-	std::cout << "past while" << std::endl;
 	if (servers.size() == 0)
 		throw std::exception();
 }
