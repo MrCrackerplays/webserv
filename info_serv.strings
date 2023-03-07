@@ -47,20 +47,20 @@ REMOTE_IDENT
 
 plan
 
-1. envp generator, learn about rest, make one I know
++   1. envp generator, learn about rest, make one I know
 
 
-3. add on to parsing.
++   3. add on to parsing.
 
-add to the parsing search of the server where the resourse is located (in location/server maybe by the host header)
-- if none, it is 1st, if not found it is first
-- there can be multiple requests from client to different servers
+		add to the parsing search of the server where the resourse is located (in location/server maybe by the host header)
+		- if none, it is 1st, if not found it is first
+		- there can be multiple requests from client to different servers
 
 
-3.1 check access change in parsing
-get closest location function takes path from http request and gives the
--> get root function that gives physical root
-closest loc + get root -> this i can check as actuall resourse path
++	3.1 check access change in parsing
+		get closest location function takes path from http request and gives the
+		-> get root function that gives physical root
+		closest loc + get root -> this i can check as actuall resourse path
 
 3.2 check if i have cgi match with method and if I need execve
 cgi reference is vector of str

@@ -22,8 +22,8 @@ void	smallTest(const char *hostname, const char *port){
 }
 
 int	main(int argc, char **argv) {
-	smallTest("", "8011");
-	return 0;
+//	smallTest("", "8011");
+//	return 0;
 	
 	std::string	config_file = "configs/default.conf";
 	if (argc > 2) {

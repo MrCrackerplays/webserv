@@ -6,81 +6,82 @@
 //
 
 #include "spawnProcess.hpp"
+#include "envpGenerate.hpp"
+#include "parseRequest.hpp"
 #include <string>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
-//dataForProcess initiateData(std::string hostName, std::string portNumber, parsRequest request){
-//	dataForProcess data;
-//
-//	data.portNumber = portNumber;
-//	data.hostName = hostName;
-//	data.request = request;
-//
-//	return data;
-//}
+void	makeNonBlocking(int fd){
+	int flagsForFd = fcntl(fd, F_GETFL, 0);
+	if (flagsForFd < 0){
+		throw std::runtime_error("Socket : fcntl");
+	}
+	if (fcntl(fd, F_SETFL, flagsForFd | O_NONBLOCK) < 0){
+		throw std::runtime_error("Socket : fcntl");
+	}
+}
 
 
-
-void	spawnProcess(){
+std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket){
 	
-
+	//check if the cgi is actually executable before execve
 	
+	int pipeFD[2];
+	pid_t childPid;
+	char **envp;
+	char *args[2];
+	std::string response = "";
 	
-	
+	if (pipe(pipeFD) == -1){
+		throw std::runtime_error("spawnProcess : pipe");
+	}
+	//make pipes NON-BLOCKABLE
+	makeNonBlocking(pipeFD[0]);
+	makeNonBlocking(pipeFD[1]);
 
-// Parse the CGI path from the HTTP request and store it in `cgi_path`
-// ...
-
-// Create a pipe
-//int pipe_fd[2];
-//if (pipe(pipe_fd) == -1) {
-//	perror("pipe");
-//	exit(EXIT_FAILURE);
-//}
-//
-//// Create a child process
-//pid_t pid = fork();
-//if (pid == -1) {
-//	perror("fork");
-//	exit(EXIT_FAILURE);
-//}
-//
-//if (pid == 0) {
-//	// Child process
-//
-//	// Close the write end of the pipe
-//	close(pipe_fd[1]);
-//
-//	// Redirect the read end of the pipe to stdin
-//	if (dup2(pipe_fd[0], STDIN_FILENO) == -1) {
-//		perror("dup2");
-//		exit(EXIT_FAILURE);
-//	}
-//
-//	// Execute the CGI script
-//	if (execl(cgi_path, cgi_path, NULL) == -1) {
-//		perror("execl");
-//		exit(EXIT_FAILURE);
-//	}
-//} else {
-//	// Parent process
-//
-//	// Close the read end of the pipe
-//	close(pipe_fd[0]);
-//
-//	// Write the HTTP response to the write end of the pipe
-//	// ...
-//
-//	// Wait for the child process to exit
-//	int status;
-//	if (waitpid(pid, &status, 0) == -1) {
-//		perror("waitpid");
-//		exit(EXIT_FAILURE);
-//	}
-//}
-
-
+	childPid = fork();
+	if (childPid < 0){
+		throw std::runtime_error("spawnProcess : pipe");
+	}
+	else if (childPid == 0){ //we are in child process
+		
+		args[0] = (char *)request.physicalPathCgi.c_str();
+		args[1] = NULL;
+		if (access(args[0], R_OK | X_OK) < 0){
+			throw std::runtime_error("spawnProcess : access"); //not sure
+		}
+		envp = envpGenerate(request, portNumSocket, hostNameSocket);
+		if (envp == NULL){
+			throw std::runtime_error("spawnProcess : malloc"); }
+		
+		//manage FD pipes
+		dup2(pipeFD[0], STDIN_FILENO); //dup read into STDIN
+		close(pipeFD[0]); //close read after dup
+		close(pipeFD[1]); //close write.
+		
+		
+		execve(args[0], const_cast<char **>(args), const_cast<char **>(envp));
+		throw std::runtime_error("spawnProcess : execve");
+	}
+	else { //parent
+		
+		//check what pipes I need to close
+		write(pipeFD[1], request.body.c_str(), request.body.length());
+		
+		int status;
+		wait(&status);
+		const int BUFFER_SIZE = 1024;
+		char buffer[BUFFER_SIZE];
+		size_t nbytes = 0;
+		while ((nbytes = read(pipeFD[0], buffer, BUFFER_SIZE)) > 0){
+			response.append(buffer, nbytes);
+		}
+		close(pipeFD[0]);
+		close(pipeFD[1]);
+	}
+	return response;
 }
 
 

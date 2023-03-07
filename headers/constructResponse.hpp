@@ -14,7 +14,7 @@
 #include <iostream>
 #include <sys/socket.h>
 
-std::string	formResponseString(method type, int codeStatus, std::string filename);
+std::string	formResponseString(method type, int codeStatus, std::string& filename);
 std::string pickCodeMessage(int codeStat);
 
 #endif /* constructResponse_hpp */

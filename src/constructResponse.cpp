@@ -46,7 +46,7 @@ std::string constructResponseHeader(unsigned long contentLength, int codeStatus)
 	return responseHeader;
 }
 
-std::string constructResponseBody(std::string filename) {
+std::string constructResponseBody(std::string& filename) {
 	
 	std::ifstream file(filename);
 	
@@ -54,7 +54,7 @@ std::string constructResponseBody(std::string filename) {
 	return responseBody;
 }
 
-std::string	formResponseString(method type, int codeStatus, std::string filename){
+std::string	formResponseString(method type, int codeStatus, std::string& filename){
 	
 	std::string response;
 	std::string body;
