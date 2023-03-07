@@ -43,8 +43,8 @@ typedef struct {
 	std::string path;
 	std::string httpVers;
 	
-	std::map<std::string, std::vector<std::string>> query;
-	std::map<std::string, std::vector<std::string>> headers;
+	std::map<std::string, std::vector<std::string> > query;
+	std::map<std::string, std::vector<std::string> > headers;
 	
 	
 	codeStatus status;

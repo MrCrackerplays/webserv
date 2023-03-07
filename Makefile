@@ -8,9 +8,9 @@ ifdef DEBUG
 CFLAGS := -g $(CFLAGS)
 endif
 
-CLASSES := Server Location
-OBJECTS := main.o config.o server_block_util.o location_block_util.o autoindex.o
-HEADER_FILES := config.hpp autoindex.hpp
+CLASSES := Server Location Socket Sockadrs
+OBJECTS := main.o config.o server_block_util.o location_block_util.o autoindex.o SocketLoop.o
+HEADER_FILES := config.hpp autoindex.hpp parseRequest.hpp
 INCLUDE := headers
 
 OBJECTS := $(OBJECTS) $(addsuffix .o,$(CLASSES))
