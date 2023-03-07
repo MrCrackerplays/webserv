@@ -20,14 +20,11 @@ REQUEST_METHOD=
 //The method with which the request was made. For HTTP, this is "GET", "HEAD", "POST", etc.
 QUERY_STRING=
 //The information which follows the ? in the URL which referenced this script. This is the query information. It should not be decoded in any fashion. This variable should always be set when there is query information, regardless of command line decoding.
-
-
-
-
 CONTENT_TYPE=
 //For queries which have attached information, such as HTTP POST and PUT, this is the content type of the data.
 CONTENT_LENGTH=
-//The length of t
+
+
 SCRIPT_NAME=
 //A virtual path to the script being executed, used for self-referencing URLs.
 
