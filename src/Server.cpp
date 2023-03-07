@@ -1,6 +1,6 @@
 #include "Server.hpp"
 
-Server::Server(int port, std::string host,
+Server::Server(std::string port, std::string host,
 				size_t client_body_limit, std::vector<std::string> names)
 	: _port(port), _host(host), _client_body_limit(client_body_limit), _names(names), _error_pages()
 {
