@@ -50,8 +50,10 @@ void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<
 		}
 }
 
-void	getHeaders(std::istringstream& requestStream, std::map<std::string, std::vector<std::string>>& headers){
+std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, std::vector<std::string>>& headers){
 	
+	
+	std::string hostNameHeader;
 	std::string line;
 	while (std::getline(requestStream, line) && line != "\r"){
 		
@@ -60,9 +62,15 @@ void	getHeaders(std::istringstream& requestStream, std::map<std::string, std::ve
 			
 			std::string headerName = line.substr(0, pos);
 			std::string headerBody = line.substr(pos + 2);
+			if (headerName == "Host"){
+				hostNameHeader = headerBody;
+			} else {
+				hostNameHeader = "";
+			}
 			packHeaderInMap(headerName, headerBody, headers);
 		}
 	}
+	return hostNameHeader;
 }
 
 method	getMethod(std::string method){
@@ -113,13 +121,43 @@ bool ifFileExsist(std::string &path){
 	return false;
 }
 
-void parseRequest(std::string parsBuff){
+#include "Server.hpp"
+std::string getFileFromAnyServer(std::map<std::string, std::vector<Server>> & servers, std::string hostPort, std::string hostNameHeader, std::string url){
+	
+	std::string physicalPathCgi;
+	std::vector<Server> serversVect = servers[hostPort];
+	std::vector<Server>::iterator it;
+	if (hostNameHeader.length()){
+		for (it = serversVect.begin(); it < serversVect.end(); it++) {
+			Server & local = *it;
+			for (std::vector<const std::string>::iterator it2 = local.getNames().begin(); it2 < local.getNames().end(); it2++){
+				std::string str = *it2;
+				if (str == hostNameHeader){
+					const Location & closestLocation = local.getClosestLocation(url);
+					std::string root = closestLocation.getRoot();
+					std::string path = closestLocation.getPath();
+					physicalPathCgi = root + url.substr(path.length());
+					return physicalPathCgi;
+				}
+			}
+		}
+	}
+	const Location & closestLocation = serversVect.at(0).getClosestLocation(url);
+	std::string root = closestLocation.getRoot();
+	std::string path = closestLocation.getPath();
+	physicalPathCgi = root + url.substr(path.length());
+	return physicalPathCgi;
+}
+
+void parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server>> &servers, std::string port, std::string host){
 	
 	parsRequest pars;
 	std::string request(parsBuff);
 	std::istringstream requestStream(request);
 	
 	pars.status = OK;
+	pars.contentLenght = request.length();
+	
 	
 	requestStream >> pars.methodString;
 	pars.method = getMethod(pars.methodString);
@@ -128,6 +166,8 @@ void parseRequest(std::string parsBuff){
 		pars.status = BADRQST;
 		//body should be set to error file ;
 	}
+	
+	
 	if (pars.httpVers.compare("HTTP/1.1") != 0){ //there might be other check
 		pars.status = BADRQST;
 			//body should be set to error file ;
@@ -138,7 +178,8 @@ void parseRequest(std::string parsBuff){
 	}
 	//can also check here if we have a directory in path or file, not sure if needed
 	
-	getHeaders(requestStream, pars.headers);
+	pars.hostNameHeader = getHeaders(requestStream, pars.headers);
+	pars.physicalPathCgi = getFileFromAnyServer(servers, (host + ":" + port), pars.hostNameHeader, pars.urlPath);
 }
 
 //example

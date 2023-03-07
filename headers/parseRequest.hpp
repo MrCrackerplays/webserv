@@ -40,11 +40,16 @@ typedef enum {
 typedef struct {
 	
 	method method;
-	std::string path;
+	std::string physicalPathCgi;
+	size_t contentLenght;
+	std::string methodString;
+	std::string urlPath;
 	std::string httpVers;
 	
 	std::map<std::string, std::vector<std::string>> query;
 	std::map<std::string, std::vector<std::string>> headers;
+	std::string hostNameHeader;
+	std::string queryString;
 	
 	
 	codeStatus status;
