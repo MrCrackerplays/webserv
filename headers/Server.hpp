@@ -7,14 +7,14 @@
 
 class Server {
 protected:
-	int			_port;
+	std::string	_port;
 	std::string	_host;
 	size_t		_client_body_limit;
 	std::vector<std::string>			_names;
 	std::map<std::string, std::string>	_error_pages;
 	std::map<std::string, Location>		_paths;
 public:
-	Server(int port, std::string host,
+	Server(std::string port, std::string host,
 			size_t client_body_limit = 0,
 			std::vector<std::string> names = std::vector<std::string>());
 	Server(Server const & src);
@@ -23,7 +23,7 @@ public:
 
 	Server & operator=(Server const & rhs);
 
-	int					getPort(void) const { return (this->_port);}
+	const std::string&	getPort(void) const { return (this->_port);}
 	const std::string&	getHost(void) const { return (this->_host);}
 
 	const std::vector<std::string>&	getNames(void) const { return (this->_names);}
