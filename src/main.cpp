@@ -18,10 +18,11 @@ int	main(int argc, char **argv) {
 		std::map<std::string, std::vector<Server> >::iterator it;
 		for (it = servers.begin(); it != servers.end(); it++)
 		{
+			std::cout << it->second[0].getHost() << ":" << it->second[0].getPort() << std::endl;
 			sockets.insert(std::pair<std::string, Socket>(it->first,
 				Socket(
-					(char*)it->second[0].getPort().c_str(),
-					(char*)it->second[0].getHost().c_str()
+					(char*)it->second[0].getHost().c_str(),
+					(char*)it->second[0].getPort().c_str()
 					)
 				));
 		}
