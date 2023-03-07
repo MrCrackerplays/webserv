@@ -14,7 +14,9 @@
 #include <unistd.h>
 //https://cplusplus.com/reference/sstream/istringstream/
 
-void	getQueryParams(std::string &path, std::map<std::string, std::vector<std::string>> & requestQuery){
+std::string	getQueryParams(std::string &path, std::map<std::string, std::vector<std::string>> & requestQuery){
+	
+	std::string queryString;
 	
 	std::string::size_type pos = path.find('?');
 	std::string extractedQueryParams;
@@ -25,6 +27,7 @@ void	getQueryParams(std::string &path, std::map<std::string, std::vector<std::st
 		std::string parameter;
 		
 		while(std::getline(queryStream, parameter, '&')){
+			queryString += parameter; ///create queryString for envp further
 			std::string::size_type equalsPos = parameter.find('=');
 			if (equalsPos != std::string::npos){ //instead of npos
 				std::string key = parameter.substr(0, equalsPos);
@@ -33,6 +36,7 @@ void	getQueryParams(std::string &path, std::map<std::string, std::vector<std::st
 			}
 		}
 	}
+	return queryString;
 }
 
 void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<std::string, std::vector<std::string>>& headers){
@@ -46,8 +50,10 @@ void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<
 		}
 }
 
-void	getHeaders(std::istringstream& requestStream, std::map<std::string, std::vector<std::string>>& headers){
+std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, std::vector<std::string>>& headers){
 	
+	
+	std::string hostNameHeader;
 	std::string line;
 	while (std::getline(requestStream, line) && line != "\r"){
 		
@@ -56,15 +62,18 @@ void	getHeaders(std::istringstream& requestStream, std::map<std::string, std::ve
 			
 			std::string headerName = line.substr(0, pos);
 			std::string headerBody = line.substr(pos + 2);
+			if (headerName == "Host"){
+				hostNameHeader = headerBody;
+			} else {
+				hostNameHeader = "";
+			}
 			packHeaderInMap(headerName, headerBody, headers);
 		}
 	}
+	return hostNameHeader;
 }
 
-method	getMethod(std::istringstream & requestStream){
-	
-	std::string method;
-	requestStream >> method;
+method	getMethod(std::string method){
 	
 	if (method.empty()){
 		return NOTSPECIFERR;
@@ -112,30 +121,102 @@ bool ifFileExsist(std::string &path){
 	return false;
 }
 
-void parseRequest(std::string parsBuff){
+#include "Server.hpp"
+std::string getFileFromAnyServer(std::map<std::string, std::vector<Server>> & servers, std::string hostPort, std::string hostNameHeader, std::string url){
+	
+	std::string physicalPathCgi;
+	std::vector<Server> serversVect = servers[hostPort];
+	std::vector<Server>::iterator it;
+	if (hostNameHeader.length()){
+		for (it = serversVect.begin(); it < serversVect.end(); it++) {
+			Server & local = *it;
+			for (std::vector<const std::string>::iterator it2 = local.getNames().begin(); it2 < local.getNames().end(); it2++){
+				std::string str = *it2;
+				if (str == hostNameHeader){
+					const Location & closestLocation = local.getClosestLocation(url);
+					std::string root = closestLocation.getRoot();
+					std::string path = closestLocation.getPath();
+					physicalPathCgi = root + url.substr(path.length());
+					return physicalPathCgi;
+				}
+			}
+		}
+	}
+	const Location & closestLocation = serversVect.at(0).getClosestLocation(url);
+	std::string root = closestLocation.getRoot();
+	std::string path = closestLocation.getPath();
+	physicalPathCgi = root + url.substr(path.length());
+	return physicalPathCgi;
+}
+
+void parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server>> &servers, std::string port, std::string host){
 	
 	parsRequest pars;
 	std::string request(parsBuff);
 	std::istringstream requestStream(request);
 	
 	pars.status = OK;
+	pars.contentLenght = request.length();
 	
-	pars.method = getMethod(requestStream);
-	requestStream >> pars.path >> pars.httpVers;
-	if (pars.method == NOTSPECIFERR || pars.path.empty() || pars.httpVers.empty()){
+	
+	requestStream >> pars.methodString;
+	pars.method = getMethod(pars.methodString);
+	requestStream >> pars.urlPath >> pars.httpVers;
+	if (pars.method == NOTSPECIFERR || pars.urlPath.empty() || pars.httpVers.empty()){
 		pars.status = BADRQST;
-		//return ;
+		//body should be set to error file ;
 	}
+	
+	
 	if (pars.httpVers.compare("HTTP/1.1") != 0){ //there might be other check
 		pars.status = BADRQST;
-//		return ;
+			//body should be set to error file ;
 	}
-	getQueryParams(pars.path, pars.query);
-	if (!ifFileExsist(pars.path)){
+	pars.queryString = getQueryParams(pars.urlPath, pars.query);
+	if (!ifFileExsist(pars.urlPath)){
 		pars.status = NOTFOUND;
 	}
 	//can also check here if we have a directory in path or file, not sure if needed
 	
-	getHeaders(requestStream, pars.headers);
+	pars.hostNameHeader = getHeaders(requestStream, pars.headers);
+	pars.physicalPathCgi = getFileFromAnyServer(servers, (host + ":" + port), pars.hostNameHeader, pars.urlPath);
 }
 
+//example
+//GET /favicon.ico HTTP/1.1
+//Host: localhost:8011
+//Connection: keep-alive
+//sec-ch-ua: "Chromium";v="110", "Not A(Brand";v="24", "Google Chrome";v="110"
+//sec-ch-ua-mobile: ?0
+//User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36
+//sec-ch-ua-platform: "macOS"
+//Accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8
+//Sec-Fetch-Site: same-origin
+//Sec-Fetch-Mode: no-cors
+//Sec-Fetch-Dest: image
+//Referer: http://localhost:8011/bla
+//Accept-Encoding: gzip, deflate, br
+//Accept-Language: en-US,en;q=0.9,uk;q=0.8,ru-RU;q=0.7,ru;q=0.6,nl;q=0.5
+//
+//oding: gzip, deflate, br
+//Accept-Language: en-US,en;q=0.9,uk;q=0.8,ru-RU;q=0.7,ru;q=0.6,nl;q=0.5
+//
+//\337o
+///</html> <body>
+//	<h1 align="center">information & practice<br>2 in 1</h1>
+//
+//	<img src="https://www.petmd.com/sites/default/files/smart-cat-incopy-483561506.jpg" height="100"/>
+//
+//	<h3>links:</h3>
+//	<p><a href="https://github.com/MrCrackerplays/webserv">our github</a></p>
+//	<p><a href="https://html.com/">html documentation</a></p>
+//	<br>
+//
+///</body> </html>
+
+
+//header : bite sent: 65 response lenght: 65
+//body : bite sent: 348 response lenght: 348
+//new fd after accept   5
+//new fd after accept   6
+//res of recv 701   for fd 5

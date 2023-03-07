@@ -19,12 +19,16 @@ class Sockadrs{
 	
 protected:
 	struct addrinfo *_res;
+	std::string _hostName;
+	std::string _portNumber;
 	//struct sockaddr_in _simp_res;
 	
 public:
 	Sockadrs(char * hostName, char * portNumber);
 	~Sockadrs();
 	addrinfo *	getRes();
+	std::string getHostName();
+	std::string getPortNumber();
 	//sockaddr_in getSimplRes();
 };
 
