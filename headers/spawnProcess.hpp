@@ -9,5 +9,9 @@
 #define spawnProcess_hpp
 
 #include "envpGenerate.hpp"
+#include "parseRequest.hpp"
+
+
+std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket);
 
 #endif /* spawnProcess_hpp */

@@ -46,8 +46,10 @@ typedef struct {
 	std::string urlPath;
 	std::string httpVers;
 	
-	std::map<std::string, std::vector<std::string>> query;
-	std::map<std::string, std::vector<std::string>> headers;
+	std::string body;
+	
+	std::map <std::string, std::vector<std::string> > query;
+	std::map <std::string, std::vector<std::string> > headers;
 	std::string hostNameHeader;
 	std::string queryString;
 	
@@ -60,5 +62,6 @@ void parseRequest(std::string parsBuff);
 bool isDirectory(std::string& path);
 bool isFile(std::string& path);
 bool ifFileExsist(std::string &path);
+std::string getHeaderByKey(std::map <std::string, std::vector<std::string> >& headers, const std::string& key);
 
 #endif /* parseRequest_hpp */

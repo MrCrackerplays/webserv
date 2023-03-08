@@ -23,6 +23,14 @@
 //}
 
 
+//note
+
+//check if i have cgi match with method and if I need execve cgi reference is vector of str
+//after I get cgi from request i can compare if this one will work for us
+//if the cgi I want to see closest location methods list and compare
+
+
+
 void	methods(parsRequest parsRes){
 
 	//get should +- work

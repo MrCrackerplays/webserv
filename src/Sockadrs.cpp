@@ -58,7 +58,7 @@ Sockadrs::Sockadrs(char * hostName, char * portNumber){
 	if (status < 0){
 		throw std::runtime_error("Port : getaddrinfo");
 	}
-	std::cout << _res << std::endl;
+	//std::cout << _res << std::endl;
 	_portNumber = portNumber;
 	_hostName = hostName;
 	

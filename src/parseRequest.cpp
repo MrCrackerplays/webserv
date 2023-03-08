@@ -14,7 +14,24 @@
 #include <unistd.h>
 //https://cplusplus.com/reference/sstream/istringstream/
 
-std::string	getQueryParams(std::string &path, std::map<std::string, std::vector<std::string>> & requestQuery){
+std::string getHeaderByKey(std::map<std::string, std::vector<std::string> >& headers, const std::string& key){
+	
+	std::map<std::string, std::vector<std::string> >::iterator mapIt;
+	std::vector<std::string> neededVector;
+	std::vector<std::string>::iterator vectorIt;
+	std::string result;
+
+	mapIt = headers.find(key);
+	neededVector = mapIt->second;
+	for (vectorIt = neededVector.begin(); vectorIt != neededVector.end(); vectorIt++) {
+		std::string dereferencedString = *vectorIt;
+		result += dereferencedString;
+	}
+	return result;
+	
+}
+
+std::string	getQueryParams(std::string &path, std::map<std::string, std::vector<std::string> >& requestQuery){
 	
 	std::string queryString;
 	
@@ -39,10 +56,10 @@ std::string	getQueryParams(std::string &path, std::map<std::string, std::vector<
 	return queryString;
 }
 
-void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<std::string, std::vector<std::string>>& headers){
+void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<std::string, std::vector<std::string> >& headers){
 	
 	//auto it = headers.find(headerName);
-	std::map<std::string, std::vector<std::string>>::iterator it = headers.find(headerName);
+	std::map<std::string, std::vector<std::string> >::iterator it = headers.find(headerName);
 		if (it != headers.end()) {
 			it->second.push_back(headerBody);
 		} else {
@@ -50,7 +67,7 @@ void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<
 		}
 }
 
-std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, std::vector<std::string>>& headers){
+std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, std::vector<std::string> >& headers){
 	
 	
 	std::string hostNameHeader;
@@ -73,7 +90,7 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 	return hostNameHeader;
 }
 
-method	getMethod(std::string method){
+method	getMethod(std::string& method){
 	
 	if (method.empty()){
 		return NOTSPECIFERR;
@@ -114,7 +131,7 @@ bool isFile(std::string& path) {
 	}
 }
 
-bool ifFileExsist(std::string &path){
+bool ifFileExsist(std::string& path){
 	
 	if (access(path.c_str(), F_OK) == 0)
 		return true;
@@ -122,7 +139,7 @@ bool ifFileExsist(std::string &path){
 }
 
 #include "Server.hpp"
-std::string getFileFromAnyServer(std::map<std::string, std::vector<Server>> & servers, std::string hostPort, std::string hostNameHeader, std::string url){
+std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& servers, std::string& hostPort, std::string& hostNameHeader, std::string& url){
 	
 	std::string physicalPathCgi;
 	std::vector<Server> serversVect = servers[hostPort];
@@ -149,7 +166,7 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server>> & se
 	return physicalPathCgi;
 }
 
-void parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server>> &servers, std::string port, std::string host){
+void parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
 	
 	parsRequest pars;
 	std::string request(parsBuff);
@@ -179,7 +196,8 @@ void parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server
 	//can also check here if we have a directory in path or file, not sure if needed
 	
 	pars.hostNameHeader = getHeaders(requestStream, pars.headers);
-	pars.physicalPathCgi = getFileFromAnyServer(servers, (host + ":" + port), pars.hostNameHeader, pars.urlPath);
+	std::string hostPort = host + ":" + port;
+	pars.physicalPathCgi = getFileFromAnyServer(servers, hostPort, pars.hostNameHeader, pars.urlPath);
 }
 
 //example
