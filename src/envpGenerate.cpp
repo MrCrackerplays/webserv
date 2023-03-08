@@ -6,6 +6,7 @@
 //
 
 #include "envpGenerate.hpp"
+#include <iostream>
 
 char **envpGenerate(parsRequest request, std::string portNumberSocket, std::string hostNameSocket){
 	
@@ -67,5 +68,10 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	std::string str16 = "REMOTE_IDENT=";
 	envp[16] = (char *)str16.c_str();
 	envp[17] = NULL;
+	
+	for (int i = 0; i < 17; i++) {
+		std::cout << envp[i] << std::endl;
+	}
+	
 	return envp;
 }

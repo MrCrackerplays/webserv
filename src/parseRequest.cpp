@@ -14,9 +14,9 @@
 #include <unistd.h>
 //https://cplusplus.com/reference/sstream/istringstream/
 
-std::string getHeaderByKey(std::map<std::string, std::vector<std::string>>& headers, const std::string& key){
+std::string getHeaderByKey(std::map<std::string, std::vector<std::string> >& headers, const std::string& key){
 	
-	std::map<std::string, std::vector<std::string>>::iterator mapIt;
+	std::map<std::string, std::vector<std::string> >::iterator mapIt;
 	std::vector<std::string> neededVector;
 	std::vector<std::string>::iterator vectorIt;
 	std::string result;
@@ -31,7 +31,7 @@ std::string getHeaderByKey(std::map<std::string, std::vector<std::string>>& head
 	
 }
 
-std::string	getQueryParams(std::string &path, std::map<std::string, std::vector<std::string>>& requestQuery){
+std::string	getQueryParams(std::string &path, std::map<std::string, std::vector<std::string> >& requestQuery){
 	
 	std::string queryString;
 	
@@ -56,10 +56,10 @@ std::string	getQueryParams(std::string &path, std::map<std::string, std::vector<
 	return queryString;
 }
 
-void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<std::string, std::vector<std::string>>& headers){
+void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<std::string, std::vector<std::string> >& headers){
 	
 	//auto it = headers.find(headerName);
-	std::map<std::string, std::vector<std::string>>::iterator it = headers.find(headerName);
+	std::map<std::string, std::vector<std::string> >::iterator it = headers.find(headerName);
 		if (it != headers.end()) {
 			it->second.push_back(headerBody);
 		} else {
@@ -67,7 +67,7 @@ void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<
 		}
 }
 
-std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, std::vector<std::string>>& headers){
+std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, std::vector<std::string> >& headers){
 	
 	
 	std::string hostNameHeader;
@@ -139,7 +139,7 @@ bool ifFileExsist(std::string& path){
 }
 
 #include "Server.hpp"
-std::string getFileFromAnyServer(std::map<std::string, std::vector<Server>>& servers, std::string& hostPort, std::string& hostNameHeader, std::string& url){
+std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& servers, std::string& hostPort, std::string& hostNameHeader, std::string& url){
 	
 	std::string physicalPathCgi;
 	std::vector<Server> serversVect = servers[hostPort];
@@ -166,7 +166,7 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server>>& ser
 	return physicalPathCgi;
 }
 
-void parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server>> &servers, std::string port, std::string host){
+void parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
 	
 	parsRequest pars;
 	std::string request(parsBuff);
