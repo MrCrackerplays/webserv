@@ -6,12 +6,12 @@
 //
 
 #include "spawnProcess.hpp"
-#include "envpGenerate.hpp"
 #include <string>
 #include <iostream>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+//https://www.rfc-editor.org/rfc/rfc3875
 
 char **envpGenerate(parsRequest request, std::string portNumberSocket, std::string hostNameSocket){
 	

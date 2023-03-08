@@ -9,27 +9,8 @@
 
 #include <iostream>
 #include <sstream>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
+
 //https://cplusplus.com/reference/sstream/istringstream/
-
-std::string getHeaderByKey(std::map<std::string, std::vector<std::string> >& headers, const std::string& key){
-	
-	std::map<std::string, std::vector<std::string> >::iterator mapIt;
-	std::vector<std::string> neededVector;
-	std::vector<std::string>::iterator vectorIt;
-	std::string result;
-
-	mapIt = headers.find(key);
-	neededVector = mapIt->second;
-	for (vectorIt = neededVector.begin(); vectorIt != neededVector.end(); vectorIt++) {
-		std::string dereferencedString = *vectorIt;
-		result += dereferencedString;
-	}
-	return result;
-	
-}
 
 std::string	getQueryParams(std::string &path, std::map<std::string, std::vector<std::string> >& requestQuery){
 	
@@ -104,40 +85,6 @@ method	getMethod(std::string& method){
 	return NOTSPECIFERR;
 }
 
-bool isDirectory(std::string& path) {
-	
-	struct stat info;
-	if (stat(path.c_str(), &info) != 0) {
-		// error 404?
-		return false;
-	}
-	if (info.st_mode & S_IFDIR) {
-		return true;
-	} else {
-		return false;
-	}
-}
-
-bool isFile(std::string& path) {
-	struct stat info;
-	if (stat(path.c_str(), &info) != 0) {
-		// error 404?
-		return false;
-	}
-	if (info.st_mode & S_IFREG) {
-		return true;
-	} else {
-		return false;
-	}
-}
-
-bool ifFileExsist(std::string& path){
-	
-	if (access(path.c_str(), F_OK) == 0)
-		return true;
-	return false;
-}
-
 #include "Server.hpp"
 std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& servers, std::string& hostPort, std::string& hostNameHeader, std::string& url){
 	
@@ -175,7 +122,6 @@ void parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server
 	pars.status = OK;
 	pars.contentLenght = request.length();
 	
-	
 	requestStream >> pars.methodString;
 	pars.method = getMethod(pars.methodString);
 	requestStream >> pars.urlPath >> pars.httpVers;
@@ -183,18 +129,11 @@ void parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server
 		pars.status = BADRQST;
 		//body should be set to error file ;
 	}
-	
-	
 	if (pars.httpVers.compare("HTTP/1.1") != 0){ //there might be other check
 		pars.status = BADRQST;
 			//body should be set to error file ;
 	}
 	pars.queryString = getQueryParams(pars.urlPath, pars.query);
-	if (!ifFileExsist(pars.urlPath)){
-		pars.status = NOTFOUND;
-	}
-	//can also check here if we have a directory in path or file, not sure if needed
-	
 	pars.hostNameHeader = getHeaders(requestStream, pars.headers);
 	std::string hostPort = host + ":" + port;
 	pars.physicalPathCgi = getFileFromAnyServer(servers, hostPort, pars.hostNameHeader, pars.urlPath);
@@ -231,8 +170,6 @@ void parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server
 //	<br>
 //
 ///</body> </html>
-
-
 //header : bite sent: 65 response lenght: 65
 //body : bite sent: 348 response lenght: 348
 //new fd after accept   5

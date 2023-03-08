@@ -14,7 +14,15 @@
 #include <iostream>
 #include <sys/socket.h>
 
+//typedef struct {
+//	
+//	std::string header;
+//	std::string body;
+//	std::string codeMessage;
+//	codeStatus codeStatus;
+//	
+//} response;
+
 std::string	formResponseString(method type, int codeStatus, std::string& filename);
-std::string pickCodeMessage(int codeStat);
 
 #endif /* constructResponse_hpp */
