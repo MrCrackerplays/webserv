@@ -5,22 +5,6 @@
 #include <fstream>
 
 
-void	smallTest(const char *hostname, const char *port){
-	try {
-		std::fstream fs;
-		fs.open("/Users/yuliia/Codam/webserv/info_serv.strings", std::fstream::in);
-
-		
-		
-		Socket test((char *)hostname,(char *)port);
-		test.setupSocket();
-
-		//acceptServ(test.getSocketFd());
-	} catch (std::exception &e) {
-		std::cerr << e.what() << std::endl;
-	}
-}
-
 int	main(int argc, char **argv) {
 //	smallTest("", "8011");
 //	return 0;

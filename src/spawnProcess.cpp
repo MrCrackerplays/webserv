@@ -13,6 +13,75 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
+char **envpGenerate(parsRequest request, std::string portNumberSocket, std::string hostNameSocket){
+	
+	char **envp;
+	
+	envp = (char **)malloc(sizeof(char *) * 17);
+	if (envp == NULL)
+		return NULL;
+	
+	std::string str0 = "SERVER_SOFTWARE=webserv/1.0";
+	envp[0] = (char *)str0.c_str();
+	
+	std::string str1 = "GATEWAY_INTERFACE=CGI/1.1";
+	envp[1] = (char *)str1.c_str();
+	size_t pos = request.urlPath.find('/');
+	if (pos == std::string::npos){
+		pos = 0;
+	}
+	std::string hostName = request.urlPath.substr(0, pos);
+	std::string str2 = "SERVER_NAME=" + hostName;
+	envp[2] = (char *)str2.c_str();
+	std::string str3 = "SERVER_PROTOCOL=" + request.httpVers;
+	envp[3] = (char *)str3.c_str();
+	std::string str4 = "SERVER_PORT=" + portNumberSocket;
+	envp[4] = (char *)str4.c_str();
+	std::string str5 = "REQUEST_METHOD=" + request.methodString;
+	envp[5] = (char *)str5.c_str();
+	std::string str6 = "QUERY_STRING=" + request.queryString;
+	envp[6] = (char *)str6.c_str();
+	
+	
+	//FIX - check if the cont type is correct name for header
+	std::string contType = getHeaderByKey(request.headers, "content-type");
+	std::string str7 = "CONTENT_TYPE=" + contType; //content-type in the header
+	envp[7] = (char *)str7.c_str();
+	//FIX
+	
+	std::string str8 = "CONTENT_LENGTH=" + std::to_string(request.contentLenght);
+	envp[8] = (char *)str8.c_str();
+	pos = request.urlPath.find('/');
+	if (pos == std::string::npos){
+		pos = 0;
+	}
+	std::string scriptN = request.urlPath.substr(pos+1, request.urlPath.length());
+	std::string str9 = "SCRIPT_NAME=" + scriptN;
+	envp[9] = (char *)str9.c_str();
+	std::string str10 = "PATH_INFO=" + request.hostNameHeader;
+	envp[10] = (char *)str10.c_str();
+	std::string str11 = "PATH_TRANSLATED="  + request.hostNameHeader;
+	envp[11] = (char *)str11.c_str();
+	std::string str12 = "REMOTE_HOST=";
+	envp[12] = (char *)str12.c_str();
+	std::string str13 = "REMOTE_ADDR=";
+	envp[13] = (char *)str13.c_str();
+	std::string str14 = "AUTH_TYPE=";
+	envp[14] = (char *)str14.c_str();
+	std::string str15 = "REMOTE_USER=";
+	envp[15] = (char *)str15.c_str();
+	std::string str16 = "REMOTE_IDENT=";
+	envp[16] = (char *)str16.c_str();
+	envp[17] = NULL;
+	
+	for (int i = 0; i < 17; i++) {
+		std::cout << envp[i] << std::endl;
+	}
+	
+	return envp;
+}
+
+
 void	makeNonBlocking(int fd){
 	int flagsForFd = fcntl(fd, F_GETFL, 0);
 	if (flagsForFd < 0){
@@ -25,99 +94,30 @@ void	makeNonBlocking(int fd){
 
 std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket){
 	
-	//check if the cgi is actually executable before execve
-	
-	int pipeFD[2];
-	pid_t childPid;
-	//char **envp;
-	char *args[2];
-	std::string response = "";
-	
-	if (pipe(pipeFD) == -1){
-		throw std::runtime_error("spawnProcess : pipe");
-	}
-	//make pipes NON-BLOCKABLE
-	makeNonBlocking(pipeFD[0]);
-	makeNonBlocking(pipeFD[1]);
-//	envp = envpGenerate(request, portNumSocket, hostNameSocket);
-//	if (envp == NULL){
-//		throw std::runtime_error("spawnProcess : malloc"); }
-
-	childPid = fork();
-	if (childPid < 0){
-		throw std::runtime_error("spawnProcess : pipe");
-	}
-	else if (childPid == 0){ //we are in child process
-		args[0] = (char *)request.physicalPathCgi.c_str();
-		args[1] = NULL;
-		if (access(args[0], R_OK | X_OK) < 0){
-			throw std::runtime_error("spawnProcess : access"); //not sure
-		}
-		//TEST ENVP
-		char *envp[] = {NULL};
-		
-		//manage FD pipes
-		dup2(pipeFD[0], STDIN_FILENO); //dup read into STDIN
-		dup2(pipeFD[1], STDOUT_FILENO); //dup write into STDOUT
-		close(pipeFD[0]); //close read after dup
-		close(pipeFD[1]); //close write.
-		execve(args[0], args, envp);
-		throw std::runtime_error("spawnProcess : execve");
-	}
-	else { //parent
-		
-		//check what pipes I need to close
-		write(pipeFD[1], request.body.c_str(), request.body.length());
-		
-		int status;
-		wait(&status);//Wno hang - flag for waitpid
-		const int BUFFER_SIZE = 1024;
-		char buffer[BUFFER_SIZE];
-		size_t nbytes = 0;
-		while ((nbytes = read(pipeFD[0], buffer, BUFFER_SIZE)) > 0){
-			response += buffer;
-			std::cout << response << std::endl;
-			break;
-		}
-		close(pipeFD[0]);
-		close(pipeFD[1]);
-		
-		
-		
-		
-		std::cout << "in parent" << std::endl << "parent pipes after: " << pipeFD[0] << ", " << pipeFD[1] << std::endl;
-	}
-	return response;
-}
-
-
-
-void	spawnProcessTwo(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket){
-	
 	std::string reply;
 	int pipeFdIn[2];
 	int pipeFdOut[2];
 	pid_t childPid;
 	char *args[2] = {(char *)request.physicalPathCgi.c_str(), NULL};
-	char *envp[] = {NULL};
+	char *envp[] = {NULL}; //temp untill envp is tested
+	//char **envp = envpGenerate(request, portNumSocket, hostNameSocket);
 	char buff[1024];
-	
-	makeNonBlocking(pipeFdIn[0]);
-	makeNonBlocking(pipeFdIn[1]);
-	makeNonBlocking(pipeFdOut[0]);
-	makeNonBlocking(pipeFdOut[1]);
 	
 	
 	if (pipe(pipeFdIn) == -1 || pipe(pipeFdOut) == -1){
 		throw std::runtime_error("spawnProcess : pipe");
 	}
 	
+	makeNonBlocking(pipeFdIn[0]);
+	makeNonBlocking(pipeFdIn[1]);
+	makeNonBlocking(pipeFdOut[0]);
+	makeNonBlocking(pipeFdOut[1]);
+	
 	childPid = fork();
 	if (childPid < 0){
 		throw std::runtime_error("spawnProcess : pipe");
 	}
 	else if (childPid == 0){ //we are in child process
-		std::cerr << "in child " << std::endl;
 		//child
 		close(pipeFdIn[1]);
 		dup2(pipeFdIn[0], STDIN_FILENO);
@@ -136,14 +136,23 @@ void	spawnProcessTwo(parsRequest request, std::string& portNumSocket, std::strin
 		
 		int status;
 		waitpid(childPid, &status, 0);
-		
 		close(pipeFdOut[1]);
-		while (read(pipeFdOut[0], buff, 1024)){
-			reply += buff;
-			std::cout << buff << std::endl;
+		size_t res = 1;
+		while (res > 0){
+			res = read(pipeFdOut[0], buff, 1024);
+			if (res < 0)
+				throw std::runtime_error("spawnProcess : read");
+			else if (res == 0){
+				reply.append(buff);
+				break;
+			} else {
+				reply.append(buff);
+			}
+			memset(buff, 0, 1024);
 		}
+		std::cerr << "END, buff: " << reply << std::endl;
 	}
-
+	return reply;
 }
 
 
