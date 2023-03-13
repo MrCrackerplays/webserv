@@ -74,7 +74,7 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 method	getMethod(std::string& method){
 	
 	if (method.empty()){
-		return NOTSPECIFERR;
+		return ERR;
 	}else if (method.compare("GET") == 0){
 		return GET;
 	} else if (method.compare("POST") == 0) {
@@ -82,7 +82,7 @@ method	getMethod(std::string& method){
 	} else if (method.compare("DELETE") == 0) {
 		return DELETE;
 	}
-	return NOTSPECIFERR;
+	return ERR;
 }
 
 #include "Server.hpp"
@@ -113,7 +113,7 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& se
 	return physicalPathCgi;
 }
 
-void parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
+parsRequest parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
 	
 	parsRequest pars;
 	std::string request(parsBuff);
@@ -125,18 +125,21 @@ void parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server
 	requestStream >> pars.methodString;
 	pars.method = getMethod(pars.methodString);
 	requestStream >> pars.urlPath >> pars.httpVers;
-	if (pars.method == NOTSPECIFERR || pars.urlPath.empty() || pars.httpVers.empty()){
+	if (pars.method == ERR || pars.urlPath.empty() || pars.httpVers.empty()){
 		pars.status = BADRQST;
 		//body should be set to error file ;
+		return pars;
 	}
-	if (pars.httpVers.compare("HTTP/1.1") != 0){ //there might be other check
+	if (pars.httpVers != "HTTP/1.1" && pars.httpVers != "HTTP/1.0") {
 		pars.status = BADRQST;
 			//body should be set to error file ;
+		return pars;
 	}
 	pars.queryString = getQueryParams(pars.urlPath, pars.query);
 	pars.hostNameHeader = getHeaders(requestStream, pars.headers);
 	std::string hostPort = host + ":" + port;
 	pars.physicalPathCgi = getFileFromAnyServer(servers, hostPort, pars.hostNameHeader, pars.urlPath);
+	return pars;
 }
 
 //example

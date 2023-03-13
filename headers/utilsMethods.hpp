@@ -13,6 +13,15 @@
 #include <map>
 #include <vector>
 
+typedef enum {
+	
+	GET = 0,
+	POST = 1,
+	DELETE = 2,
+	ERR = -1
+	
+}	method;
+
 std::string getHeaderByKey(std::map<std::string, std::vector<std::string> >& headers, const std::string& key);
 bool isDirectory(std::string& path);
 bool isFile(std::string& path);

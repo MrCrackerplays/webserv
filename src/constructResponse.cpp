@@ -10,7 +10,7 @@
 std::string constructResponseHeader(unsigned long contentLength, int codeStatus, std::string& codeMessage) {
 
 	std::string responseHeader = "HTTP/1.1 " + codeMessage + "\r\n"; ///in later codes version the codeStatus is already in a code message string
-	responseHeader += "Content-Type: text/html\r\n";
+	responseHeader += "Content-Type: text/html\r\n";// make HTML variable so we change the type
 	responseHeader += "Content-Length: " + std::to_string(contentLength) + "\r\n";
 	responseHeader += "\r\n";
 	return responseHeader;
@@ -23,17 +23,17 @@ std::string constructResponseBody(std::string& filename) {
 	return responseBody;
 }
 
-std::string	formResponseString(method type, int codeStatus, std::string& filename){
+std::string	formResponseString(response res, std::string& filename){
 	
 	std::string response;
 	std::string body;
 	std::string head;
 	std::string codeMessage;
+	int codeStatus;
+	method type; //temp placement
 	
-	codes(codeStatus, codeMessage, body);
-	
-	switch (type) {
-		case NOTSPECIFERR: //error in request
+	switch (res.method) {
+		case ERR: //error in request
 			return 0;
 		
 		case GET:

@@ -9,16 +9,8 @@
 #define parseRequest_hpp
 
 #include "utilsMethods.hpp"
+#include "Server.hpp"
 #include "codes.hpp"
-
-typedef enum {
-	
-	GET = 0,
-	POST = 1,
-	DELETE = 2,
-	NOTSPECIFERR = 3
-	
-}	method;
 
 typedef struct {
 	
@@ -41,7 +33,8 @@ typedef struct {
 	//need to think about the rest if recv return an ugly edge of buffer
 }	parsRequest;
 
-void parseRequest(std::string parsBuff);
+//void parseRequest(std::string parsBuff);
+parsRequest parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host);
 std::string getHeaderByKey(std::map <std::string, std::vector<std::string> >& headers, const std::string& key);
 
 #endif /* parseRequest_hpp */
