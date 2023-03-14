@@ -57,18 +57,25 @@ response responseStruct(std::map<std::string, std::vector<Server> > &servers, st
 	
 	response res;
 	
-	res.method = request.method;
-	codes(request.code, res.codeMessage);
-	res.contentType = getContentType(request.physicalPathCgi);
-	
 	if (request.code != OK){
 		res.body = "";
+		//any default error page?
 		res.errorPageByCode = getServer(servers, hostPort, request.hostNameHeader).getErrorPage(std::to_string(request.code), request.urlPath);
-		
+		res.contentLenght = res.errorPageByCode.length();
+		res.contentType = getContentType(res.errorPageByCode);
 	} else {
 		res.errorPageByCode = "";
 		res.body = body;
+		res.contentType = getContentType(res.body);
+		//or
+		//res.contentType = getContentType(request.physicalPathCgi);
+		//??
+		res.contentLenght = res.body.length();
 	}
+	
+	res.method = request.method;
+	codes(request.code, res.codeMessage);
+	
 	return res;
 }
 
@@ -91,15 +98,33 @@ bool	ifCallCGI(parsRequest& request, std::map<std::string, std::vector<Server> >
 	return false;
 }
 
-void	parseResponseCGI(std::string& CGIbuff){
+void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 	
+	std::string contentHeader = "Content-Type:";
+	size_t pos = CGIbuff.find("\r\n\r\n"); //end of header
 	
+	//header
+	std::string headerAfterCgi = CGIbuff.substr(0, pos);
+	size_t start = headerAfterCgi.find(contentHeader);
+	size_t end = headerAfterCgi.find("\r\n");
+	if (start != end){
+		response.contentType = headerAfterCgi.substr(start + contentHeader.length(), end);
+	} else {
+			response.contentType = "";
+	}
+	//body
+	response.body = CGIbuff.substr(pos+4, CGIbuff.length());
+	response.contentLenght = response.body.length();
+	codes(OK, response.codeMessage);
 }
 
 void	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
 	
 	parsRequest request;
 	response response;
+	std::string cgiReply;
+	int statusChild;
+	
 	request = parseRequest(parsBuff, servers, port, host);
 	if (request.code != OK){
 		//error generator
@@ -108,7 +133,8 @@ void	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &
 	std::string hostPort = host + ":" + port;
 	//check if i have cgi match with method and if I need execve cgi reference is vector of str
 	if (ifCallCGI(request, servers, hostPort)){ //POST or if coinfig have CGI, then any method
-		response.cgiReply = spawnProcess(request, port, host);
+		cgiReply = spawnProcess(request, port, host, &statusChild);
+		//I need to catch child code here and work with it
 	}
 
 	

@@ -92,7 +92,7 @@ void	makeNonBlocking(int fd){
 	}
 }
 
-std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket){
+std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket, int *statusChild){
 	
 	std::string reply;
 	int pipeFdIn[2];
@@ -134,8 +134,8 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		write(pipeFdIn[1], request.body.c_str(), request.body.length());
 		close(pipeFdIn[0]);
 		
-		int status;
-		waitpid(childPid, &status, 0); // HERE ADD status check
+//		int status;
+		waitpid(childPid, statusChild, 0); // HERE ADD status check
 		close(pipeFdOut[1]);
 		size_t res = 1;
 		while (res > 0){

@@ -21,11 +21,9 @@ typedef struct {
 	std::string codeMessage;
 	std::string errorPageByCode;
 	
+	//finale after construction
 	std::string body;
 	std::string header;
-	
-	std::string cgiReply;
-	std::string headerAfterCgi;
 } response;
 
 std::string	formResponseString(response response, std::string& filename);
