@@ -29,7 +29,7 @@ typedef struct {
 	std::string queryString;
 	
 	
-	codeStatus status;
+	codeStatus code;
 	//need to think about the rest if recv return an ugly edge of buffer
 }	parsRequest;
 

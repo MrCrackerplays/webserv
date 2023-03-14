@@ -135,7 +135,7 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		close(pipeFdIn[0]);
 		
 		int status;
-		waitpid(childPid, &status, 0);
+		waitpid(childPid, &status, 0); // HERE ADD status check
 		close(pipeFdOut[1]);
 		size_t res = 1;
 		while (res > 0){

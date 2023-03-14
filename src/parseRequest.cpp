@@ -119,20 +119,18 @@ parsRequest parseRequest(std::string parsBuff, std::map<std::string, std::vector
 	std::string request(parsBuff);
 	std::istringstream requestStream(request);
 	
-	pars.status = OK;
+	pars.code = OK;
 	pars.contentLenght = request.length();
 	
 	requestStream >> pars.methodString;
 	pars.method = getMethod(pars.methodString);
 	requestStream >> pars.urlPath >> pars.httpVers;
 	if (pars.method == ERR || pars.urlPath.empty() || pars.httpVers.empty()){
-		pars.status = BADRQST;
-		//body should be set to error file ;
+		pars.code = BADRQST;
 		return pars;
 	}
 	if (pars.httpVers != "HTTP/1.1" && pars.httpVers != "HTTP/1.0") {
-		pars.status = BADRQST;
-			//body should be set to error file ;
+		pars.code = BADRQST;
 		return pars;
 	}
 	pars.queryString = getQueryParams(pars.urlPath, pars.query);

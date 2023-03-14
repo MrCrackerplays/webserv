@@ -53,24 +53,20 @@ void	five(int codeStatus, std::string &codeMessage){
 	}
 }
 
-void	codes(int codeStatus, std::string &codeMessage, std::string& body){
+void	codes(int codeStatus, std::string &codeMessage){
 
 	switch (codeStatus / 100) {
 		case 2:
 			codeMessage = "200 OK";
-			//body depends on method
 			break;
 		case 3:
 			three(codeStatus, codeMessage);
-			//body determined? redirection
 			break;
 		case 4:
 			four(codeStatus, codeMessage);
-			//body determined
 			break;
 		case 5:
 			five(codeStatus, codeMessage);
-			//body determined? internal error
 			break;
 
 	}
