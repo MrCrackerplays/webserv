@@ -11,16 +11,28 @@
 #include "codes.hpp"
 #include "spawnProcess.hpp"
 
-void methodGet(parsRequest& request){
+std::string methodGet(parsRequest& request){
+
+	std::string body;
+	if (isDirectory(request.physicalPathCgi) == false && isFile(request.physicalPathCgi) == false){
+		request.code = NOTFOUND;
+	} else if (ifFileExecutable(request.physicalPathCgi) == false){
+		request.code = FORBIDDEN;
+	}
+	//eventually if everything is OK with the file:
+	return body = request.physicalPathCgi;
+}
+
+void methodDelete(parsRequest& request){
 
 	if (isDirectory(request.physicalPathCgi) == false && isFile(request.physicalPathCgi) == false){
 		request.code = NOTFOUND;
 	} else if (ifFileExecutable(request.physicalPathCgi) == false){
 		request.code = FORBIDDEN;
 	}
-
 	//eventually if everything is OK with the file:
-	request.body = request.physicalPathCgi;
+	//HOW to delete file
+	
 }
 
 Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string& hostNameHeader){
@@ -43,20 +55,21 @@ Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::st
 
 //https://www.geeksforgeeks.org/http-headers-content-type/
 std::string getContentType(std::string filename){
-	std::string contentType;
-	size_t pos = filename.find(".");
-	if (pos != std::string::npos){
-		return ("text/" + filename.substr(pos + 1, filename.length())); //if not default there are many options/end of the file. check if I need that(in link)
-	} else {
-		return "text/plain"; //default
-	}
+	
+//	std::string contentType;
+//	size_t pos = filename.rfind("."); //find LAST dot
+//	if (pos != std::string::npos){
+//		return ("text/" + filename.substr(pos + 1, filename.length())); //if not default there are many options/end of the file. check if I need that(in link)
+//	} else {
+//		return "text/plain"; //default
+//	}
 //or always text/plain?
+	return "text/plain"; //default
 }
 
-response responseStruct(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string body, parsRequest& request){
+response responseStructConstruct(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string body, parsRequest& request){
 	
 	response res;
-	
 	if (request.code != OK){
 		res.body = "";
 		//any default error page?
@@ -86,6 +99,9 @@ bool	ifCallCGI(parsRequest& request, std::map<std::string, std::vector<Server> >
 	//if the cgi I want to see closest location methods list and compare
 	Location location = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath);
 	std::vector<std::string> methods = location.getMethods();
+	
+	//i compare the extention in getCGI in location std::find in vector
+	
 	if (request.method == POST){
 		return true;
 	} else if (request.method == GET) {
@@ -121,7 +137,7 @@ void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 void	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
 	
 	parsRequest request;
-	response response;
+	
 	std::string cgiReply;
 	int statusChild;
 	
@@ -129,20 +145,21 @@ void	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &
 	if (request.code != OK){
 		//error generator
 	}
-	
 	std::string hostPort = host + ":" + port;
 	//check if i have cgi match with method and if I need execve cgi reference is vector of str
 	if (ifCallCGI(request, servers, hostPort)){ //POST or if coinfig have CGI, then any method
-		cgiReply = spawnProcess(request, port, host, &statusChild);
-		//I need to catch child code here and work with it
+		cgiReply = spawnProcess(request, port, host, statusChild);
+		if (statusChild < 0){
+			//error in child
+			//generate error response
+		}
 	}
-
-	
 	//if not CGI, methods :
-	
-	
+	if (request.method == GET){
+		std::string body = methodGet(request);
+		response response = responseStructConstruct(servers, hostPort, body, request);
+	}
 	//end of the process
 	//formResponseString(parsRes.method, parsRes.status, parsRes.urlPath);
-	
 }
 

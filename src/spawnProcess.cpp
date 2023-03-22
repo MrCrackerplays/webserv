@@ -13,11 +13,15 @@
 #include <fcntl.h>
 //https://www.rfc-editor.org/rfc/rfc3875
 
+//possible? 
+//Null termination: Each string in the array is not null-terminated. The c_str() method of a std::string object returns a pointer to a null-terminated array of characters, but the function casts this pointer to a char* without copying the null terminator. This could lead to problems if the execve() function tries to read beyond the end of a string. To fix this, the function should allocate a new char array for each string, copy the contents of the std::string into the array (including the null terminator), and then store the pointer to the array in the envp array.
+
 char **envpGenerate(parsRequest request, std::string portNumberSocket, std::string hostNameSocket){
 	
 	char **envp;
 	
-	envp = (char **)malloc(sizeof(char *) * 17);
+//	envp = (char **)malloc(sizeof(char *) * 18);
+	envp = new char*[18];
 	if (envp == NULL)
 		return NULL;
 	
@@ -74,9 +78,9 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	envp[16] = (char *)str16.c_str();
 	envp[17] = NULL;
 	
-	for (int i = 0; i < 17; i++) {
-		std::cout << envp[i] << std::endl;
-	}
+//	for (int i = 0; i < 18; i++) {
+//		std::cout << envp[i] << std::endl;
+//	}
 	
 	return envp;
 }
@@ -92,56 +96,94 @@ void	makeNonBlocking(int fd){
 	}
 }
 
-std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket, int *statusChild){
+std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket, int &statusChild){
 	
 	std::string reply;
+	pid_t childPid;
 	int pipeFdIn[2];
 	int pipeFdOut[2];
-	pid_t childPid;
 	char *args[2] = {(char *)request.physicalPathCgi.c_str(), NULL};
-	char *envp[] = {NULL}; //temp untill envp is tested
-	//char **envp = envpGenerate(request, portNumSocket, hostNameSocket);
-	char buff[1024];
+	char **envp = envpGenerate(request, portNumSocket, hostNameSocket); /////	char *envp[] = {NULL}; //temp untill envp is tested
+	if (envp == NULL){
+		throw std::runtime_error("spawnProcess : malloc");
+	}
 	
-	
+	//initianing 2 pipes and making all ends of both pipes non-blocking
 	if (pipe(pipeFdIn) == -1 || pipe(pipeFdOut) == -1){
 		throw std::runtime_error("spawnProcess : pipe");
 	}
-	
 	makeNonBlocking(pipeFdIn[0]);
 	makeNonBlocking(pipeFdIn[1]);
 	makeNonBlocking(pipeFdOut[0]);
 	makeNonBlocking(pipeFdOut[1]);
 	
+	//spawn a child process
 	childPid = fork();
-	if (childPid < 0){
+	if (childPid < 0){ //fork failed
+		close(pipeFdIn[0]);
+		close(pipeFdIn[1]);
+		close(pipeFdOut[0]);
+		close(pipeFdOut[1]);
 		throw std::runtime_error("spawnProcess : pipe");
 	}
-	else if (childPid == 0){ //we are in child process
-		//child
-		close(pipeFdIn[1]);
-		dup2(pipeFdIn[0], STDIN_FILENO);
-		close(pipeFdIn[0]);
+	else if (childPid == 0){ //in child process
 		
+		dup2(pipeFdIn[0], STDIN_FILENO);
 		dup2(pipeFdOut[1], STDOUT_FILENO);
-		close(pipeFdOut[1]);
+		close(pipeFdIn[0]);
+		close(pipeFdIn[1]);
 		close(pipeFdOut[0]);
+		close(pipeFdOut[1]);
 		execve(args[0], args, envp);
+		delete [] envp;
 		throw std::runtime_error("spawnProcess : execve");
 	}
-	else { //parent
+	else { //in parent process
 		
-		write(pipeFdIn[1], request.body.c_str(), request.body.length());
+		//write in child block
+		const char* data = request.body.c_str();
+		size_t len = request.body.length();
+		while (len > 0) {
+			ssize_t n = write(pipeFdIn[1], data, len);
+			if (n < 0) {
+				
+				close(pipeFdIn[0]);
+				close(pipeFdIn[1]);
+				close(pipeFdOut[0]);
+				close(pipeFdOut[1]);
+				delete [] envp;
+				throw std::runtime_error("spawnProcess: write");
+			}
+			data += n;
+			len -= n;
+		}
+		close(pipeFdIn[1]);
 		close(pipeFdIn[0]);
 		
-//		int status;
-		waitpid(childPid, statusChild, 0); // HERE ADD status check
+		//waiting for child to proceed
+		int status;
+		waitpid(childPid, &status, 0);
+		if (WIFEXITED(status)){
+			statusChild = WEXITSTATUS(status);
+		} else {
+			statusChild = -1;
+			close(pipeFdOut[1]);
+			close(pipeFdOut[0]);
+			delete [] envp;
+			return reply; //reply or throw?
+		}
 		close(pipeFdOut[1]);
+
+		//read from child block
 		size_t res = 1;
+		char buff[1024];
 		while (res > 0){
 			res = read(pipeFdOut[0], buff, 1024);
-			if (res < 0)
+			if (res < 0){
+				close(pipeFdOut[0]);
+				delete [] envp;
 				throw std::runtime_error("spawnProcess : read");
+			}
 			else if (res == 0){
 				reply.append(buff);
 				break;
@@ -150,8 +192,9 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 			}
 			memset(buff, 0, 1024);
 		}
-		std::cerr << "END, buff: " << reply << std::endl;
+		close(pipeFdOut[0]);
 	}
+	delete [] envp;
 	return reply;
 }
 

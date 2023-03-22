@@ -127,6 +127,7 @@ parsRequest parseRequest(std::string parsBuff, std::map<std::string, std::vector
 	requestStream >> pars.urlPath >> pars.httpVers;
 	if (pars.method == ERR || pars.urlPath.empty() || pars.httpVers.empty()){
 		pars.code = BADRQST;
+		//check if methods + cgi are aligned here
 		return pars;
 	}
 	if (pars.httpVers != "HTTP/1.1" && pars.httpVers != "HTTP/1.0") {
