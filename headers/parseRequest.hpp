@@ -30,10 +30,9 @@ typedef struct {
 	
 	
 	codeStatus code;
-	//need to think about the rest if recv return an ugly edge of buffer
+	bool callCGI;
 }	parsRequest;
 
-//void parseRequest(std::string parsBuff);
 parsRequest parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host);
 std::string getHeaderByKey(std::map <std::string, std::vector<std::string> >& headers, const std::string& key);
 

@@ -10,28 +10,43 @@
 #include "parseRequest.hpp"
 #include "codes.hpp"
 #include "spawnProcess.hpp"
+#include <cstdio>
+#include <map>
 
-std::string methodGet(parsRequest& request){
 
-	std::string body;
+//existance, read and executable checks
+//streaming binary file content in body
+void	methodGet(parsRequest& request, std::string& body){
+
 	if (isDirectory(request.physicalPathCgi) == false && isFile(request.physicalPathCgi) == false){
 		request.code = NOTFOUND;
-	} else if (ifFileExecutable(request.physicalPathCgi) == false){
+	} else if (ifFileExecutable(request.physicalPathCgi) == false) {
+		request.code = FORBIDDEN;
+	} else if (ifFileReadable(request.physicalPathCgi) == false) {
 		request.code = FORBIDDEN;
 	}
-	//eventually if everything is OK with the file:
-	return body = request.physicalPathCgi;
+	//if everything is OK with the file:
+	std::ifstream file(request.physicalPathCgi, std::ios::binary);
+	if (!file.is_open()) {
+		throw std::runtime_error("methods : open");
+	}
+	std::string responseBody((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	body = responseBody;
 }
 
+//existance, write checks
+//removing file with physical path provided
 void methodDelete(parsRequest& request){
 
 	if (isDirectory(request.physicalPathCgi) == false && isFile(request.physicalPathCgi) == false){
 		request.code = NOTFOUND;
-	} else if (ifFileExecutable(request.physicalPathCgi) == false){
+	} else if (ifFileWritable(request.physicalPathCgi) == false){
 		request.code = FORBIDDEN;
 	}
-	//eventually if everything is OK with the file:
-	//HOW to delete file
+	//if everything is OK with the file:
+	if (std::remove(request.physicalPathCgi.c_str()) != 0){
+		throw std::runtime_error("methods : remove");
+	}
 	
 }
 
@@ -54,16 +69,27 @@ Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::st
 }
 
 //https://www.geeksforgeeks.org/http-headers-content-type/
-std::string getContentType(std::string filename){
+std::string getContentType(std::string& filename){
 	
-//	std::string contentType;
-//	size_t pos = filename.rfind("."); //find LAST dot
-//	if (pos != std::string::npos){
-//		return ("text/" + filename.substr(pos + 1, filename.length())); //if not default there are many options/end of the file. check if I need that(in link)
-//	} else {
-//		return "text/plain"; //default
-//	}
-//or always text/plain?
+	std::map<std::string, std::string> extensionsMap;
+	extensionsMap.insert(std::make_pair("html", "text/html"));
+	extensionsMap.insert(std::make_pair("htm", "text/html"));
+	extensionsMap.insert(std::make_pair("txt", "text/plain"));
+	extensionsMap.insert(std::make_pair("jpg", "image/jpeg"));
+	extensionsMap.insert(std::make_pair("jpeg", "image/jpeg"));
+	extensionsMap.insert(std::make_pair("png", "image/png"));
+	extensionsMap.insert(std::make_pair("gif", "image/gif"));
+	extensionsMap.insert(std::make_pair("pdf", "application/pdf"));
+
+	std::string contentType;
+	size_t pos = filename.rfind(".");
+	if (pos != std::string::npos){
+		std::string extension = filename.substr(pos + 1);
+		std::map<std::string, std::string>::iterator it = extensionsMap.find(extension);
+		if (it != extensionsMap.end()){
+			return it->second;
+		}
+	}
 	return "text/plain"; //default
 }
 
@@ -79,10 +105,7 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 	} else {
 		res.errorPageByCode = "";
 		res.body = body;
-		res.contentType = getContentType(res.body);
-		//or
-		//res.contentType = getContentType(request.physicalPathCgi);
-		//??
+		res.contentType = getContentType(request.physicalPathCgi);
 		res.contentLenght = res.body.length();
 	}
 	
@@ -92,27 +115,24 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 	return res;
 }
 
-bool	ifCallCGI(parsRequest& request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
-	
-	
-	//after I get cgi from request i can compare if this one will work for us
-	//if the cgi I want to see closest location methods list and compare
-	Location location = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath);
-	std::vector<std::string> methods = location.getMethods();
-	
-	//i compare the extention in getCGI in location std::find in vector
-	
-	if (request.method == POST){
-		return true;
-	} else if (request.method == GET) {
-		//and if cgi is in config - check with Patrick how to compare it
-		return true;
-	} else if (request.method == DELETE) {
-		//and if cgi is in config - check with Patrick how to compare it
-		return true;
-	}
-	return false;
-}
+//bool	ifCallCGI(parsRequest& request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
+//
+//	///after I get cgi from request i can compare if this one will work for us
+//	///if the cgi I want to see closest location methods list and compare
+//	Location location = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath);
+//	std::vector<std::string> methods = location.getMethods();
+//	///i compare the extention in getCGI in location std::find in vector
+//	if (request.method == POST){
+//		return true;
+//	} else if (request.method == GET) {
+//		///and if cgi is in config - check with Patrick how to compare it
+//		return true;
+//	} else if (request.method == DELETE) {
+//		///and if cgi is in config - check with Patrick how to compare it
+//		return true;
+//	}
+//	return false;
+//}
 
 void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 	
@@ -126,7 +146,7 @@ void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 	if (start != end){
 		response.contentType = headerAfterCgi.substr(start + contentHeader.length(), end);
 	} else {
-			response.contentType = "";
+		response.contentType = "";
 	}
 	//body
 	response.body = CGIbuff.substr(pos+4, CGIbuff.length());
@@ -146,20 +166,28 @@ void	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &
 		//error generator
 	}
 	std::string hostPort = host + ":" + port;
-	//check if i have cgi match with method and if I need execve cgi reference is vector of str
-	if (ifCallCGI(request, servers, hostPort)){ //POST or if coinfig have CGI, then any method
+	
+	if (request.callCGI == true){
 		cgiReply = spawnProcess(request, port, host, statusChild);
 		if (statusChild < 0){
 			//error in child
 			//generate error response
 		}
 	}
+	
+	
+	
 	//if not CGI, methods :
 	if (request.method == GET){
-		std::string body = methodGet(request);
+		std::string body;
+		methodGet(request, body);
 		response response = responseStructConstruct(servers, hostPort, body, request);
+	} else if (request.method == DELETE){
+		
+		
 	}
+	
 	//end of the process
-	//formResponseString(parsRes.method, parsRes.status, parsRes.urlPath);
+	//formResponseString(parsRes.method, parsRes.status, parsRes.urlPath); //unfinished
 }
 

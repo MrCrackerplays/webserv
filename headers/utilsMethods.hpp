@@ -28,5 +28,6 @@ bool isFile(std::string& path);
 bool ifFileExsist(std::string& path);
 bool ifFileReadable(std::string& path);
 bool ifFileExecutable(std::string& path);
+bool ifFileWritable(std::string& path);
 
 #endif /* utilsMethods_hpp */

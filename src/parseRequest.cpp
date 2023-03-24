@@ -50,7 +50,6 @@ void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<
 
 std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, std::vector<std::string> >& headers){
 	
-	
 	std::string hostNameHeader;
 	std::string line;
 	while (std::getline(requestStream, line) && line != "\r"){
@@ -113,6 +112,31 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& se
 	return physicalPathCgi;
 }
 
+//bool	ifCallCGI(parsRequest& request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
+//
+//	///after I get cgi from request i can compare if this one will work for us
+//	///if the cgi I want to see closest location methods list and compare
+//	Location location = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath);
+//	std::vector<std::string> methods = location.getMethods();
+//	///i compare the extention in getCGI in location std::find in vector
+//	if (request.method == POST){
+//		return true;
+//	} else if (request.method == GET) {
+//		///and if cgi is in config - check with Patrick how to compare it
+//		return true;
+//	} else if (request.method == DELETE) {
+//		///and if cgi is in config - check with Patrick how to compare it
+//		return true;
+//	}
+//	return false;
+//}
+bool checkMethodInServer(){
+	
+	//	if (ifCallCGI(request, servers, hostPort)){ //POST or if coinfig have CGI, then any method
+	//check if i have cgi match with method and if I need execve cgi reference is vector of str
+	return true;
+}
+
 parsRequest parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
 	
 	parsRequest pars;
@@ -123,7 +147,7 @@ parsRequest parseRequest(std::string parsBuff, std::map<std::string, std::vector
 	pars.contentLenght = request.length();
 	
 	requestStream >> pars.methodString;
-	pars.method = getMethod(pars.methodString);
+	pars.method = getMethod(pars.methodString); ///check if methods + cgi are aligned here
 	requestStream >> pars.urlPath >> pars.httpVers;
 	if (pars.method == ERR || pars.urlPath.empty() || pars.httpVers.empty()){
 		pars.code = BADRQST;
@@ -140,6 +164,27 @@ parsRequest parseRequest(std::string parsBuff, std::map<std::string, std::vector
 	pars.physicalPathCgi = getFileFromAnyServer(servers, hostPort, pars.hostNameHeader, pars.urlPath);
 	return pars;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //example
 //GET /favicon.ico HTTP/1.1

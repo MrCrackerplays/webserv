@@ -10,7 +10,7 @@
 
 Socket::~Socket(){
 	//UNFINISHED
-	//want to reuse here
+	//want to reuse here?
 }
 
 void	Socket::initiateVect(){

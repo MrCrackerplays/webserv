@@ -74,3 +74,10 @@ bool ifFileExecutable(std::string& path){
 		return true;
 	return false;
 }
+
+bool ifFileWritable(std::string& path){
+	
+	if (access(path.c_str(), W_OK) == 0)
+		return true;
+	return false;
+}
