@@ -50,24 +50,6 @@ void methodDelete(parsRequest& request){
 	
 }
 
-Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string& hostNameHeader){
-	
-	std::vector<Server> serversVect = servers[hostPort];
-	std::vector<Server>::iterator it;
-	if (hostNameHeader.length()){
-		for (it = serversVect.begin(); it < serversVect.end(); it++) {
-			Server & local = *it;
-			for (std::vector<const std::string>::iterator it2 = local.getNames().begin(); it2 < local.getNames().end(); it2++){
-				std::string str = *it2;
-				if (str == hostNameHeader){
-					return local;
-				}
-			}
-		}
-	}
-	return *it;
-}
-
 //https://www.geeksforgeeks.org/http-headers-content-type/
 std::string getContentType(std::string& filename){
 	

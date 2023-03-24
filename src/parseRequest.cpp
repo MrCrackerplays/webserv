@@ -24,10 +24,10 @@ std::string	getQueryParams(std::string &path, std::map<std::string, std::vector<
 		std::istringstream queryStream(extractedQueryParams);
 		std::string parameter;
 		
-		while(std::getline(queryStream, parameter, '&')){
+		while(std::getline(queryStream, parameter, '&')) {
 			queryString += parameter; ///create queryString for envp further
 			std::string::size_type equalsPos = parameter.find('=');
-			if (equalsPos != std::string::npos){ //instead of npos
+			if (equalsPos != std::string::npos) { //instead of npos
 				std::string key = parameter.substr(0, equalsPos);
 				std::string value = parameter.substr(equalsPos + 1);
 				requestQuery[key].push_back(value);
@@ -39,7 +39,6 @@ std::string	getQueryParams(std::string &path, std::map<std::string, std::vector<
 
 void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<std::string, std::vector<std::string> >& headers){
 	
-	//auto it = headers.find(headerName);
 	std::map<std::string, std::vector<std::string> >::iterator it = headers.find(headerName);
 		if (it != headers.end()) {
 			it->second.push_back(headerBody);
@@ -52,14 +51,14 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 	
 	std::string hostNameHeader;
 	std::string line;
-	while (std::getline(requestStream, line) && line != "\r"){
+	while (std::getline(requestStream, line) && line != "\r") {
 		
 		size_t pos = line.find(": ");
-		if (pos != std::string::npos){
+		if (pos != std::string::npos) {
 			
 			std::string headerName = line.substr(0, pos);
 			std::string headerBody = line.substr(pos + 2);
-			if (headerName == "Host"){
+			if (headerName == "Host") {
 				hostNameHeader = headerBody;
 			} else {
 				hostNameHeader = "";
@@ -70,11 +69,11 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 	return hostNameHeader;
 }
 
-method	getMethod(std::string& method){
+method	getMethodFromRequest(std::string& method){
 	
-	if (method.empty()){
+	if (method.empty()) {
 		return ERR;
-	}else if (method.compare("GET") == 0){
+	}else if (method.compare("GET") == 0) {
 		return GET;
 	} else if (method.compare("POST") == 0) {
 		return POST;
@@ -90,12 +89,12 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& se
 	std::string physicalPathCgi;
 	std::vector<Server> serversVect = servers[hostPort];
 	std::vector<Server>::iterator it;
-	if (hostNameHeader.length()){
+	if (hostNameHeader.length()) {
 		for (it = serversVect.begin(); it < serversVect.end(); it++) {
 			Server & local = *it;
-			for (std::vector<const std::string>::iterator it2 = local.getNames().begin(); it2 < local.getNames().end(); it2++){
+			for (std::vector<const std::string>::iterator it2 = local.getNames().begin(); it2 < local.getNames().end(); it2++) {
 				std::string str = *it2;
-				if (str == hostNameHeader){
+				if (str == hostNameHeader) {
 					const Location & closestLocation = local.getClosestLocation(url);
 					std::string root = closestLocation.getRoot();
 					std::string path = closestLocation.getPath();
@@ -112,57 +111,74 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& se
 	return physicalPathCgi;
 }
 
-//bool	ifCallCGI(parsRequest& request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
-//
-//	///after I get cgi from request i can compare if this one will work for us
-//	///if the cgi I want to see closest location methods list and compare
-//	Location location = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath);
-//	std::vector<std::string> methods = location.getMethods();
-//	///i compare the extention in getCGI in location std::find in vector
-//	if (request.method == POST){
-//		return true;
-//	} else if (request.method == GET) {
-//		///and if cgi is in config - check with Patrick how to compare it
-//		return true;
-//	} else if (request.method == DELETE) {
-//		///and if cgi is in config - check with Patrick how to compare it
-//		return true;
-//	}
-//	return false;
-//}
-bool checkMethodInServer(){
+Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string& hostNameHeader){
+	
+	std::vector<Server> serversVect = servers[hostPort];
+	std::vector<Server>::iterator it;
+	if (hostNameHeader.length()) {
+		for (it = serversVect.begin(); it < serversVect.end(); it++) {
+			Server & local = *it;
+			for (std::vector<const std::string>::iterator it2 = local.getNames().begin(); it2 < local.getNames().end(); it2++) {
+				std::string str = *it2;
+				if (str == hostNameHeader){
+					return local;
+				}
+			}
+		}
+	}
+	return *it;
+}
+
+void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string& hostNameHeader, std::string& urlPath){
 	
 	//	if (ifCallCGI(request, servers, hostPort)){ //POST or if coinfig have CGI, then any method
 	//check if i have cgi match with method and if I need execve cgi reference is vector of str
-	return true;
+	
+	Location location = getServer(servers, hostPort, hostNameHeader).getClosestLocation(urlPath);
+	request.ErrorPages = location.getErrorPages();
+	
+	std::vector<std::string> methods = location.getMethods();
+	std::vector<std::string> cgis = location.getCGIs();
+	
+	
+	if (std::find(methods.begin(), methods.end(), request.methodString) == methods.end()){
+		request.code = BADRQST;
+		request.callCGI = false;
+	} else {
+		
+		//if method == myMethod and there is CGI
+		request.callCGI = true;
+	}
+	//ask Patrick what about CGIs, how exactly I need to check, what are CGIs and if there can be error I need to catch
+	
 }
 
 parsRequest parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
 	
-	parsRequest pars;
-	std::string request(parsBuff);
-	std::istringstream requestStream(request);
+	parsRequest request;
+	std::string requestBuff(parsBuff);
+	std::istringstream requestStream(requestBuff);
 	
-	pars.code = OK;
-	pars.contentLenght = request.length();
+	request.code = OK;
+	request.contentLenght = requestBuff.length();
 	
-	requestStream >> pars.methodString;
-	pars.method = getMethod(pars.methodString); ///check if methods + cgi are aligned here
-	requestStream >> pars.urlPath >> pars.httpVers;
-	if (pars.method == ERR || pars.urlPath.empty() || pars.httpVers.empty()){
-		pars.code = BADRQST;
+	requestStream >> request.methodString;
+	request.method = getMethodFromRequest(request.methodString); ///check if methods + cgi are aligned here
+	requestStream >> request.urlPath >> request.httpVers;
+	if (request.method == ERR || request.urlPath.empty() || request.httpVers.empty()){
+		request.code = BADRQST;
 		//check if methods + cgi are aligned here
-		return pars;
+		return request;
 	}
-	if (pars.httpVers != "HTTP/1.1" && pars.httpVers != "HTTP/1.0") {
-		pars.code = BADRQST;
-		return pars;
+	if (request.httpVers != "HTTP/1.1" && request.httpVers != "HTTP/1.0") {
+		request.code = BADRQST;
+		return request;
 	}
-	pars.queryString = getQueryParams(pars.urlPath, pars.query);
-	pars.hostNameHeader = getHeaders(requestStream, pars.headers);
+	request.queryString = getQueryParams(request.urlPath, request.query);
+	request.hostNameHeader = getHeaders(requestStream, request.headers);
 	std::string hostPort = host + ":" + port;
-	pars.physicalPathCgi = getFileFromAnyServer(servers, hostPort, pars.hostNameHeader, pars.urlPath);
-	return pars;
+	request.physicalPathCgi = getFileFromAnyServer(servers, hostPort, request.hostNameHeader, request.urlPath);
+	return request;
 }
 
 
