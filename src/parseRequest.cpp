@@ -129,14 +129,15 @@ Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::st
 	return *it;
 }
 
-void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string& hostNameHeader, std::string& urlPath){
+void	getErrorPagesFromLocation(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
 	
-	//	if (ifCallCGI(request, servers, hostPort)){ //POST or if coinfig have CGI, then any method
-	//check if i have cgi match with method and if I need execve cgi reference is vector of str
-	
-	Location location = getServer(servers, hostPort, hostNameHeader).getClosestLocation(urlPath);
+	Location location = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath);
 	request.ErrorPages = location.getErrorPages();
+}
+
+void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
 	
+	Location location = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath);
 	std::vector<std::string> methods = location.getMethods();
 	std::vector<std::string> cgis = location.getCGIs();
 	
@@ -146,38 +147,52 @@ void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<
 		request.callCGI = false;
 	} else {
 		
-		//if method == myMethod and there is CGI
+		//if method == myMethod and there >>>> is CGI <<<<<
 		request.callCGI = true;
 	}
 	//ask Patrick what about CGIs, how exactly I need to check, what are CGIs and if there can be error I need to catch
 	
 }
 
-parsRequest parseRequest(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
+bool	isBadRequest(parsRequest& request){
+	
+	if (request.method == ERR || request.urlPath.empty() || request.httpVers.empty()) {
+		request.code = BADRQST;
+		return true;
+		
+	} else if (request.httpVers != "HTTP/1.1" && request.httpVers != "HTTP/1.0") {
+		request.code = BADRQST;
+		return true;
+	}
+	return false;
+}
+
+parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
 	
 	parsRequest request;
-	std::string requestBuff(parsBuff);
+	std::string hostPort = host + ":" + port;
 	std::istringstream requestStream(requestBuff);
 	
 	request.code = OK;
-	request.contentLenght = requestBuff.length();
-	
 	requestStream >> request.methodString;
 	request.method = getMethodFromRequest(request.methodString); ///check if methods + cgi are aligned here
 	requestStream >> request.urlPath >> request.httpVers;
-	if (request.method == ERR || request.urlPath.empty() || request.httpVers.empty()){
-		request.code = BADRQST;
+	
+
+	if (isBadRequest(request)){
+		request.hostNameHeader = getHeaders(requestStream, request.headers);
+		getErrorPagesFromLocation(request, servers, hostPort); //test case url is empty, should go in first server
+		return request;
+	} else {
+		
+		request.queryString = getQueryParams(request.urlPath, request.query);
+		request.hostNameHeader = getHeaders(requestStream, request.headers);
+		
+		request.physicalPathCgi = getFileFromAnyServer(servers, hostPort, request.hostNameHeader, request.urlPath);
+		getErrorPagesFromLocation(request, servers, hostPort);
 		//check if methods + cgi are aligned here
-		return request;
 	}
-	if (request.httpVers != "HTTP/1.1" && request.httpVers != "HTTP/1.0") {
-		request.code = BADRQST;
-		return request;
-	}
-	request.queryString = getQueryParams(request.urlPath, request.query);
-	request.hostNameHeader = getHeaders(requestStream, request.headers);
-	std::string hostPort = host + ":" + port;
-	request.physicalPathCgi = getFileFromAnyServer(servers, hostPort, request.hostNameHeader, request.urlPath);
+	
 	return request;
 }
 

@@ -22,6 +22,7 @@ typedef enum {
 	
 }	method;
 
+std::string getContentType(std::string& filename);
 std::string getHeaderByKey(std::map<std::string, std::vector<std::string> >& headers, const std::string& key);
 bool isDirectory(std::string& path);
 bool isFile(std::string& path);

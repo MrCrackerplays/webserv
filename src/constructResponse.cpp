@@ -7,48 +7,30 @@
 
 #include "constructResponse.hpp"
 
-std::string constructResponseHeader(unsigned long contentLength, int codeStatus, std::string& codeMessage) {
+void constructResponseHeader(response& response) {
 
-	std::string responseHeader = "HTTP/1.1 " + codeMessage + "\r\n"; ///in later codes version the codeStatus is already in a code message string
-	responseHeader += "Content-Type: text/html\r\n";// make HTML variable so we change the type
-	responseHeader += "Content-Length: " + std::to_string(contentLength) + "\r\n";
-	responseHeader += "\r\n";
-	return responseHeader;
+	response.header = "HTTP/1.1 " + response.codeMessage + "\r\n";
+	response.header  += "Content-Type: " + response.contentType + "\r\n";
+	response.header += "Content-Length: " + std::to_string(response.contentLenght) + "\r\n";
+	response.header  += "\r\n";
 }
 
-std::string constructResponseBody(std::string& filename) {
-	
-	std::ifstream file(filename);
-	std::string responseBody((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-	return responseBody;
-}
+std::string	formResponseString(response response, std::string& filename){
 
-std::string	formResponseString(response res, std::string& filename){
+	constructResponseHeader(response);
 	
-	std::string response;
-	std::string body;
-	std::string head;
-	std::string codeMessage;
-	int codeStatus;
-	method type; //temp placement
-	
-	switch (res.method) {
-		case ERR: //error in request
-			return 0;
-		
-		case GET:
-			body = constructResponseBody(filename);
-			head = constructResponseHeader(body.length(), codeStatus, codeMessage);
-			return head + body;
-		
-		case POST:
-			body = constructResponseBody(filename);
-			head = constructResponseHeader(body.length(), codeStatus, codeMessage);
-			return head + body;
-		
-		case DELETE:
-			return response = constructResponseHeader(0, codeStatus, codeMessage);
+	switch (response.method) {
+		case ERR:
+			return response.header + response.errorPageByCode;
 			
+		case GET:
+			return response.header + response.body;
+			
+		case DELETE:
+			return response.header;
+			
+		case POST:
+			return response.header + response.body; //UNFINISHED
 	}
 	return 0;
 }

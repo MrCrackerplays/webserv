@@ -50,71 +50,27 @@ void methodDelete(parsRequest& request){
 	
 }
 
-//https://www.geeksforgeeks.org/http-headers-content-type/
-std::string getContentType(std::string& filename){
-	
-	std::map<std::string, std::string> extensionsMap;
-	extensionsMap.insert(std::make_pair("html", "text/html"));
-	extensionsMap.insert(std::make_pair("htm", "text/html"));
-	extensionsMap.insert(std::make_pair("txt", "text/plain"));
-	extensionsMap.insert(std::make_pair("jpg", "image/jpeg"));
-	extensionsMap.insert(std::make_pair("jpeg", "image/jpeg"));
-	extensionsMap.insert(std::make_pair("png", "image/png"));
-	extensionsMap.insert(std::make_pair("gif", "image/gif"));
-	extensionsMap.insert(std::make_pair("pdf", "application/pdf"));
-
-	std::string contentType;
-	size_t pos = filename.rfind(".");
-	if (pos != std::string::npos){
-		std::string extension = filename.substr(pos + 1);
-		std::map<std::string, std::string>::iterator it = extensionsMap.find(extension);
-		if (it != extensionsMap.end()){
-			return it->second;
-		}
-	}
-	return "text/plain"; //default
-}
-
 response responseStructConstruct(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string body, parsRequest& request){
 	
-	response res;
+	response response;
 	if (request.code != OK){
-		res.body = "";
-		//any default error page?
-		res.errorPageByCode = getServer(servers, hostPort, request.hostNameHeader).getErrorPage(std::to_string(request.code), request.urlPath);
-		res.contentLenght = res.errorPageByCode.length();
-		res.contentType = getContentType(res.errorPageByCode);
+		response.body = "";
+		response.errorPageByCode = getServer(servers, hostPort, request.hostNameHeader).getErrorPage(std::to_string(request.code), request.urlPath); //any default error page?
+		response.body = response.errorPageByCode;
+		response.contentLenght = response.errorPageByCode.length();
+		response.contentType = getContentType(response.errorPageByCode);
 	} else {
-		res.errorPageByCode = "";
-		res.body = body;
-		res.contentType = getContentType(request.physicalPathCgi);
-		res.contentLenght = res.body.length();
+		response.errorPageByCode = "";
+		response.body = body;
+		response.contentType = getContentType(request.physicalPathCgi);
+		response.contentLenght = response.body.length();
 	}
 	
-	res.method = request.method;
-	codes(request.code, res.codeMessage);
+	response.method = request.method;
+	codes(request.code, response.codeMessage);
 	
-	return res;
+	return response;
 }
-
-//bool	ifCallCGI(parsRequest& request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
-//
-//	///after I get cgi from request i can compare if this one will work for us
-//	///if the cgi I want to see closest location methods list and compare
-//	Location location = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath);
-//	std::vector<std::string> methods = location.getMethods();
-//	///i compare the extention in getCGI in location std::find in vector
-//	if (request.method == POST){
-//		return true;
-//	} else if (request.method == GET) {
-//		///and if cgi is in config - check with Patrick how to compare it
-//		return true;
-//	} else if (request.method == DELETE) {
-//		///and if cgi is in config - check with Patrick how to compare it
-//		return true;
-//	}
-//	return false;
-//}
 
 void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 	
@@ -128,7 +84,7 @@ void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 	if (start != end){
 		response.contentType = headerAfterCgi.substr(start + contentHeader.length(), end);
 	} else {
-		response.contentType = "";
+		response.contentType = "text/plain";
 	}
 	//body
 	response.body = CGIbuff.substr(pos+4, CGIbuff.length());
@@ -139,6 +95,7 @@ void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 void	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
 	
 	parsRequest request;
+	response response;
 	
 	std::string cgiReply;
 	int statusChild;
@@ -155,18 +112,13 @@ void	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &
 			//error in child
 			//generate error response
 		}
-	}
-	
-	
-	
-	//if not CGI, methods :
-	if (request.method == GET){
+	} else if (request.method == GET){
 		std::string body;
 		methodGet(request, body);
-		response response = responseStructConstruct(servers, hostPort, body, request);
+		response = responseStructConstruct(servers, hostPort, body, request);
 	} else if (request.method == DELETE){
-		
-		
+		methodDelete(request);
+		response = responseStructConstruct(servers, hostPort, "", request);
 	}
 	
 	//end of the process
