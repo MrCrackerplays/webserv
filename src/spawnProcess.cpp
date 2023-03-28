@@ -53,7 +53,7 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	envp[7] = (char *)str7.c_str();
 	//FIX
 	
-	std::string str8 = "CONTENT_LENGTH=" + std::to_string(request.contentLenght);
+	std::string str8 = "CONTENT_LENGTH=" + std::to_string(request.requestBodyLen);
 	envp[8] = (char *)str8.c_str();
 	pos = request.urlPath.find('/');
 	if (pos == std::string::npos){
@@ -125,6 +125,7 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		close(pipeFdOut[0]);
 		close(pipeFdOut[1]);
 		throw std::runtime_error("spawnProcess : pipe");
+		exit(1);
 	}
 	else if (childPid == 0){ //in child process
 		
@@ -141,8 +142,8 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 	else { //in parent process
 		
 		//write in child block
-		const char* data = request.body.c_str();
-		size_t len = request.body.length();
+		const char* data = request.requestBody.c_str();
+		size_t len = request.requestBody.length();
 		while (len > 0) {
 			ssize_t n = write(pipeFdIn[1], data, len);
 			if (n < 0) {

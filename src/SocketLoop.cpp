@@ -135,12 +135,6 @@ void	Socket::sendData(int client_socket){
 	std::cout << "body : bite sent: " <<bitesend2 << " response lenght: " << response_body.length() <<std::endl;
 }
 
-
-
-
-
-
-
 void	Socket::setupSocket(){
 
 	setToNonBlocking();

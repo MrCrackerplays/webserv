@@ -25,6 +25,8 @@ typedef struct {
 	method method;
 	std::string urlPath;
 	std::string httpVers;
+	std::string requestBody;
+	size_t requestBodyLen;
 	
 	//from location:
 	std::string physicalPathCgi;

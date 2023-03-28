@@ -13,7 +13,6 @@
 #include <cstdio>
 #include <map>
 
-
 //existance, read and executable checks
 //streaming binary file content in body
 void	methodGet(parsRequest& request, std::string& body){

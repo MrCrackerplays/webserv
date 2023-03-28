@@ -23,7 +23,6 @@ std::string	getQueryParams(std::string &path, std::map<std::string, std::vector<
 		path.erase(pos);
 		std::istringstream queryStream(extractedQueryParams);
 		std::string parameter;
-		
 		while(std::getline(queryStream, parameter, '&')) {
 			queryString += parameter; ///create queryString for envp further
 			std::string::size_type equalsPos = parameter.find('=');
@@ -178,7 +177,6 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 	request.method = getMethodFromRequest(request.methodString); ///check if methods + cgi are aligned here
 	requestStream >> request.urlPath >> request.httpVers;
 	
-
 	if (isBadRequest(request)){
 		request.hostNameHeader = getHeaders(requestStream, request.headers);
 		getErrorPagesFromLocation(request, servers, hostPort); //test case url is empty, should go in first server
@@ -187,10 +185,12 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 		
 		request.queryString = getQueryParams(request.urlPath, request.query);
 		request.hostNameHeader = getHeaders(requestStream, request.headers);
-		
+
+		requestStream >> request.requestBody; //check if \r gets there
 		request.physicalPathCgi = getFileFromAnyServer(servers, hostPort, request.hostNameHeader, request.urlPath);
 		getErrorPagesFromLocation(request, servers, hostPort);
 		//check if methods + cgi are aligned here
+		findMethodInServer(request, servers, hostPort);
 	}
 	
 	return request;
