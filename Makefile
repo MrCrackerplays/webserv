@@ -8,8 +8,10 @@ ifdef DEBUG
 CFLAGS := -g $(CFLAGS)
 endif
 
-CLASSES := Server Location Socket Sockadrs
-OBJECTS := main.o config.o server_block_util.o location_block_util.o autoindex.o SocketLoop.o
+CLASSES := Server Location Socket
+# removed Sockaddrs
+OBJECTS := main.o config.o server_block_util.o location_block_util.o autoindex.o SocketUtils.o
+# changed SocketLoop.o to SocketUtils.o
 HEADER_FILES := config.hpp autoindex.hpp parseRequest.hpp
 INCLUDE := headers
 
