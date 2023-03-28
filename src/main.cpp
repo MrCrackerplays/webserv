@@ -6,8 +6,6 @@
 
 
 int	main(int argc, char **argv) {
-//	smallTest("", "8011");
-//	return 0;
 	
 	std::string	config_file = "configs/default.conf";
 	if (argc > 2) {
@@ -16,6 +14,11 @@ int	main(int argc, char **argv) {
 	}
 	if (argc == 2)
 		config_file = argv[1];
+	
+	//test yuliia // comment if not needed :
+	config_file = "/Users/yuliia/Codam/webserv/configs/default.conf";
+	
+	
 	std::map<std::string, std::vector<Server> > servers;
 	std::map<std::string, Socket> sockets;
 	try {
@@ -34,7 +37,7 @@ int	main(int argc, char **argv) {
 		std::map<std::string, Socket>::iterator it2;
 		for (it2 = sockets.begin(); it2 != sockets.end(); it2++) {
 			std::cout << "Starting socket [" << it2->first << "]" << std::endl;
-			it2->second.setupSocket();
+			it2->second.pollLoop(servers);
 		}
 	} catch(const std::exception& e) {
 		std::cerr << e.what() << std::endl;

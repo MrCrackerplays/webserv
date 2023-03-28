@@ -9,39 +9,33 @@
 #define parseRequest_hpp
 
 #include "utilsMethods.hpp"
+#include "Server.hpp"
 #include "codes.hpp"
-
-typedef enum {
-	
-	GET = 0,
-	POST = 1,
-	DELETE = 2,
-	NOTSPECIFERR = 3
-	
-}	method;
 
 typedef struct {
 	
-	method method;
-	std::string physicalPathCgi;
-	size_t contentLenght;
-	std::string methodString;
-	std::string urlPath;
-	std::string httpVers;
+	codeStatus code;
 	
-	std::string body;
-	
+	//from request:
 	std::map <std::string, std::vector<std::string> > query;
+	std::string queryString;
 	std::map <std::string, std::vector<std::string> > headers;
 	std::string hostNameHeader;
-	std::string queryString;
+	std::string methodString;
+	method method;
+	std::string urlPath;
+	std::string httpVers;
+	std::string requestBody;
+	size_t requestBodyLen;
 	
-	
-	codeStatus status;
-	//need to think about the rest if recv return an ugly edge of buffer
+	//from location:
+	std::string physicalPathCgi;
+	std::map<std::string, std::string>	ErrorPages;
+	bool callCGI;
 }	parsRequest;
 
-void parseRequest(std::string parsBuff);
+parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host);
 std::string getHeaderByKey(std::map <std::string, std::vector<std::string> >& headers, const std::string& key);
+Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string& hostNameHeader);
 
 #endif /* parseRequest_hpp */

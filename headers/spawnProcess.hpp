@@ -11,6 +11,6 @@
 #include "parseRequest.hpp"
 
 
-std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket);
+std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket, int &statusChild);
 
 #endif /* spawnProcess_hpp */

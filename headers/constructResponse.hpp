@@ -8,21 +8,24 @@
 #ifndef constructResponse_hpp
 #define constructResponse_hpp
 
-#include "parseRequest.hpp"
+#include "utilsMethods.hpp"
 #include <string>
 #include <fstream>
 #include <iostream>
 #include <sys/socket.h>
 
-//typedef struct {
-//	
-//	std::string header;
-//	std::string body;
-//	std::string codeMessage;
-//	codeStatus codeStatus;
-//	
-//} response;
+typedef struct {
+	method method;
+	size_t contentLenght;
+	std::string contentType;
+	std::string codeMessage;
+	std::string errorPageByCode;
+	
+	//finale after construction
+	std::string body;
+	std::string header;
+} response;
 
-std::string	formResponseString(method type, int codeStatus, std::string& filename);
+std::string	formResponseString(response response, std::string& filename);
 
 #endif /* constructResponse_hpp */

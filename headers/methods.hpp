@@ -8,6 +8,12 @@
 #ifndef methods_hpp
 #define methods_hpp
 
-#include <stdio.h>
+#include "Server.hpp"
+#include <sstream>
+#include <map>
+#include <vector>
+#include <string>
+
+void methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host);
 
 #endif /* methods_hpp */

@@ -31,6 +31,6 @@ typedef enum {
 
 }	codeStatus;
 
-void	codes(int codeStatus, std::string &codeMessage, std::string& body);
+void	codes(int codeStatus, std::string &codeMessage);
 
 #endif /* codes_hpp */

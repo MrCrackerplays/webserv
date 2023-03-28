@@ -10,6 +10,32 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+
+//https://www.geeksforgeeks.org/http-headers-content-type/
+std::string getContentType(std::string& filename){
+	
+	std::map<std::string, std::string> extensionsMap;
+	extensionsMap.insert(std::make_pair("html", "text/html"));
+	extensionsMap.insert(std::make_pair("htm", "text/html"));
+	extensionsMap.insert(std::make_pair("txt", "text/plain"));
+	extensionsMap.insert(std::make_pair("jpg", "image/jpeg"));
+	extensionsMap.insert(std::make_pair("jpeg", "image/jpeg"));
+	extensionsMap.insert(std::make_pair("png", "image/png"));
+	extensionsMap.insert(std::make_pair("gif", "image/gif"));
+	extensionsMap.insert(std::make_pair("pdf", "application/pdf"));
+
+	std::string contentType;
+	size_t pos = filename.rfind(".");
+	if (pos != std::string::npos){
+		std::string extension = filename.substr(pos + 1);
+		std::map<std::string, std::string>::iterator it = extensionsMap.find(extension);
+		if (it != extensionsMap.end()){
+			return it->second;
+		}
+	}
+	return "text/plain"; //default
+}
+
 std::string getHeaderByKey(std::map<std::string, std::vector<std::string> >& headers, const std::string& key){
 	
 	std::map<std::string, std::vector<std::string> >::iterator mapIt;
@@ -71,6 +97,13 @@ bool ifFileReadable(std::string& path){
 bool ifFileExecutable(std::string& path){
 	
 	if (access(path.c_str(), X_OK) == 0)
+		return true;
+	return false;
+}
+
+bool ifFileWritable(std::string& path){
+	
+	if (access(path.c_str(), W_OK) == 0)
 		return true;
 	return false;
 }

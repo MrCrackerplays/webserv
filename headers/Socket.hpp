@@ -10,7 +10,8 @@
 
 #define EVENTS_NUM 5
 
-#include "Sockadrs.hpp"
+//#include "Sockadrs.hpp"
+#include "Server.hpp"
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -18,31 +19,38 @@
 #include <poll.h>
 #include <sys/select.h>
 #include <vector>
+#include <fstream>
+#include "parseRequest.hpp"
+#include <stdexcept>
+#include <stdio.h>
+#include <iostream>
+#include <string>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
 //https://pubs.opengroup.org/onlinepubs/009604499/functions/socket.html
 
-class Socket : public Sockadrs{
+class Socket{
 	
 protected:
+	
+	//adding servers
+	std::map<std::string, std::vector<Server> > _servers;
+	
+	//transfering addinfo into socket
+	struct addrinfo *_addrinfo;
+	std::string _hostName;
+	std::string _portNumber;
+	
+	//old
 	int _listenFd;
 	std::vector<pollfd> _vFds;
 	std::vector<std::string> _buffer;
 	std::string _buff;
 	size_t _recvBites;
-	
-	void	setToNonBlocking();
-	void	bindToPort();
-	void	setToListen();
-	void	addInEventQueu(int client_socket);
-	void	initiateVect();
-	void	pollLoop();
-	void	sendData(int client_socket);
-	void	receiveData();
-	void	initiateStruct();
-	void	handleEvents();
-	void	incomingConnection();
-	
-	//new approach
+
+	void	sendData(int client_socket); //will be heavily adjusted 
 	void	acceptNewConnect(int i);
 	void	recvConnection(int i);
 	
@@ -51,10 +59,12 @@ public:
 	Socket(char * hostName, char * portNumber);
 	~Socket();
 	int		getSocketFd();
-	void	setupSocket();
-	
-	//void	setListenSocket();
-	//pollfd *		getVFd();
+	void	pollLoop(std::map<std::string, std::vector<Server> > servers);
 };
+
+void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);
+void	setToNonBlocking(int listenFd);
+void	bindToPort(int listenFd, addrinfo *addrinfo);
+void	setToListen(int listenFd);
 
 #endif /* Socket_hpp */
