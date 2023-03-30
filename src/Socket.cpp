@@ -57,7 +57,6 @@ void	Socket::acceptNewConnect(int i){
 	//std::cout << "end acceptNewConnect" << std::endl;
 }
 
-
 int	findContentLenght(std::string buffer){
 	
 	size_t pos = buffer.find("Content-Lenght: ");
@@ -71,33 +70,26 @@ int	findContentLenght(std::string buffer){
 	return false;
 }
 
-bool	isRequestEnd(std::string buffer){
-	
-	size_t pos = buffer.find("\r\n\r\n");
-	if (pos != std::string::npos){
-		return true;
-	}
-	return false;
-}
-
 bool	fullRequestReceived(std::string buffer, size_t recvBites){
 	
-	if (isRequestEnd(buffer)){
-		return true;
-	} else if (findContentLenght(buffer) == recvBites){
-		return true;
+	size_t headrSize = buffer.find("\r\n\r\n");
+	if (headrSize != std::string::npos){
+		headrSize += 4;
+		if (findContentLenght(buffer) == recvBites - headrSize){
+			return true;
+		}
 	}
 	return false;
 }
 
-//need to check here how bigger request then my buffer 1024 behaves
 void	Socket::recvConnection(int i){
 	
 	int res = 0;
-	char buff[10];
+	size_t headerSize;
+	char buff[1024];
 	std::string buffer;
 	
-	res = (int)recv(_vFds[i].fd, buff, 10, 0);
+	res = (int)recv(_vFds[i].fd, buff, 1024, 0);
 	if (res < 0){
 		close(_vFds[i].fd);
 		throw std::runtime_error("SockedLoop : revc");
@@ -110,7 +102,12 @@ void	Socket::recvConnection(int i){
 	_buff += buff;
 	if (fullRequestReceived(_buff, _recvBites)){
 		std::cout << "buffer after recv" << std::endl << std::endl << ":" << std::endl << buff << std::endl;
+		
+		//test now :
 		std::string reply = methods(_buff, _servers, _portNumber, _hostName);
+		
+		
+		//UNFINISHED
 //		int bitesend = (int)send(_vFds[i].fd, reply.c_str(), reply.length(), 0);
 //		if (bitesend < 0){
 //			throw std::runtime_error("Socket : send");
