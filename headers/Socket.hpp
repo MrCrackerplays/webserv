@@ -46,7 +46,7 @@ protected:
 	//old
 	int _listenFd;
 	std::vector<pollfd> _vFds;
-	std::vector<std::string> _buffer;
+	//std::vector<std::string> _buffer; - suggested that std::string will be enough, but testing needed
 	std::string _buff;
 	size_t _recvBites;
 

@@ -125,19 +125,20 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		close(pipeFdOut[0]);
 		close(pipeFdOut[1]);
 		throw std::runtime_error("spawnProcess : pipe");
-		exit(1);
 	}
 	else if (childPid == 0){ //in child process
 		
-		dup2(pipeFdIn[0], STDIN_FILENO);
-		dup2(pipeFdOut[1], STDOUT_FILENO);
+		if (dup2(pipeFdIn[0], STDIN_FILENO) < 0)
+			throw std::runtime_error("spawnProcess : dup2");
+		if (dup2(pipeFdOut[1], STDOUT_FILENO) < 0)
+			throw std::runtime_error("spawnProcess : dup2");
 		close(pipeFdIn[0]);
 		close(pipeFdIn[1]);
 		close(pipeFdOut[0]);
 		close(pipeFdOut[1]);
 		execve(args[0], args, envp);
 		delete [] envp;
-		throw std::runtime_error("spawnProcess : execve");
+		_exit(EXIT_FAILURE); //HOW do I end child process in case of execve failure without exit?
 	}
 	else { //in parent process
 		
@@ -163,7 +164,8 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		
 		//waiting for child to proceed
 		int status;
-		waitpid(childPid, &status, 0);
+		if (waitpid(childPid, &status, 0) < 0)
+			throw std::runtime_error("spawnProcess: waitpid");
 		if (WIFEXITED(status)){
 			statusChild = WEXITSTATUS(status);
 		} else {
@@ -171,7 +173,8 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 			close(pipeFdOut[1]);
 			close(pipeFdOut[0]);
 			delete [] envp;
-			return reply; //reply or throw?
+			throw std::runtime_error("spawnProcess : execve");
+			//return reply; //reply or throw?
 		}
 		close(pipeFdOut[1]);
 

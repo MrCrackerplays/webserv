@@ -15,7 +15,7 @@ void constructResponseHeader(response& response) {
 	response.header  += "\r\n";
 }
 
-std::string	formResponseString(response response, std::string& filename){
+std::string	formResponseString(response response){
 
 	constructResponseHeader(response);
 	

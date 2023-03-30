@@ -79,6 +79,7 @@ method	getMethodFromRequest(std::string& method){
 	} else if (method.compare("DELETE") == 0) {
 		return DELETE;
 	}
+	//add 501
 	return ERR;
 }
 
@@ -142,7 +143,7 @@ void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<
 	
 	
 	if (std::find(methods.begin(), methods.end(), request.methodString) == methods.end()){
-		request.code = BADRQST;
+		request.code = 404;
 		request.callCGI = false;
 	} else {
 		
@@ -156,11 +157,11 @@ void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<
 bool	isBadRequest(parsRequest& request){
 	
 	if (request.method == ERR || request.urlPath.empty() || request.httpVers.empty()) {
-		request.code = BADRQST;
+		request.code = 404;
 		return true;
 		
 	} else if (request.httpVers != "HTTP/1.1" && request.httpVers != "HTTP/1.0") {
-		request.code = BADRQST;
+		request.code = 404;
 		return true;
 	}
 	return false;
@@ -172,7 +173,7 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 	std::string hostPort = host + ":" + port;
 	std::istringstream requestStream(requestBuff);
 	
-	request.code = OK;
+	request.code = 200;
 	requestStream >> request.methodString;
 	request.method = getMethodFromRequest(request.methodString); ///check if methods + cgi are aligned here
 	requestStream >> request.urlPath >> request.httpVers;
@@ -192,7 +193,6 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 		//check if methods + cgi are aligned here
 		findMethodInServer(request, servers, hostPort);
 	}
-	
 	return request;
 }
 

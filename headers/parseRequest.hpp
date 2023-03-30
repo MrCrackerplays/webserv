@@ -14,7 +14,8 @@
 
 typedef struct {
 	
-	codeStatus code;
+	//codeStatus code;
+	int code;
 	
 	//from request:
 	std::map <std::string, std::vector<std::string> > query;

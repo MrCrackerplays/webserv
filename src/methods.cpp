@@ -16,13 +16,14 @@
 //existance, read and executable checks
 //streaming binary file content in body
 void	methodGet(parsRequest& request, std::string& body){
-
+//file can be in server root
+	//extention can redirect location
 	if (isDirectory(request.physicalPathCgi) == false && isFile(request.physicalPathCgi) == false){
-		request.code = NOTFOUND;
+		request.code = 404;
 	} else if (ifFileExecutable(request.physicalPathCgi) == false) {
-		request.code = FORBIDDEN;
+		request.code = 401;
 	} else if (ifFileReadable(request.physicalPathCgi) == false) {
-		request.code = FORBIDDEN;
+		request.code = 401;
 	}
 	//if everything is OK with the file:
 	std::ifstream file(request.physicalPathCgi, std::ios::binary);
@@ -38,9 +39,9 @@ void	methodGet(parsRequest& request, std::string& body){
 void methodDelete(parsRequest& request){
 
 	if (isDirectory(request.physicalPathCgi) == false && isFile(request.physicalPathCgi) == false){
-		request.code = NOTFOUND;
+		request.code = 404;
 	} else if (ifFileWritable(request.physicalPathCgi) == false){
-		request.code = FORBIDDEN;
+		request.code = 401;
 	}
 	//if everything is OK with the file:
 	if (std::remove(request.physicalPathCgi.c_str()) != 0){
@@ -52,7 +53,7 @@ void methodDelete(parsRequest& request){
 response responseStructConstruct(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string body, parsRequest& request){
 	
 	response response;
-	if (request.code != OK){
+	if (request.code != 200){
 		response.body = "";
 		response.errorPageByCode = getServer(servers, hostPort, request.hostNameHeader).getErrorPage(std::to_string(request.code), request.urlPath); //any default error page?
 		response.body = response.errorPageByCode;
@@ -88,29 +89,59 @@ void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 	//body
 	response.body = CGIbuff.substr(pos+4, CGIbuff.length());
 	response.contentLenght = response.body.length();
-	codes(OK, response.codeMessage);
+	codes(200, response.codeMessage);
 }
 
-void	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
+//UNFINISHED
+void	parseErrorResponseCGI(std::string& CGIbuff, response& response){
+	
+	std::string contentHeader = "Content-Type:";
+	size_t pos = CGIbuff.find("\r\n\r\n"); //end of header
+	
+	//header
+	std::string headerAfterCgi = CGIbuff.substr(0, pos);
+	size_t start = headerAfterCgi.find(contentHeader);
+	size_t end = headerAfterCgi.find("\r\n");
+	if (start != end){
+		response.contentType = headerAfterCgi.substr(start + contentHeader.length(), end);
+	} else {
+		response.contentType = "text/plain";
+	}
+	//body
+	response.body = CGIbuff.substr(pos+4, CGIbuff.length());
+	response.contentLenght = response.body.length();
+	codes(200, response.codeMessage);
+}
+
+std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
 	
 	parsRequest request;
 	response response;
 	
 	std::string cgiReply;
+	std::string replyString;
 	int statusChild;
 	
 	request = parseRequest(parsBuff, servers, port, host);
-	if (request.code != OK){
+	if (request.code != 200){
 		//error generator
 	}
 	std::string hostPort = host + ":" + port;
 	
 	if (request.callCGI == true){
-		cgiReply = spawnProcess(request, port, host, statusChild);
+		try {
+			cgiReply = spawnProcess(request, port, host, statusChild);
+		} catch (std::exception &e) {
+			std::cerr << "Caught exception: " << e.what() << std::endl;
+		}
 		if (statusChild < 0){
 			//error in child
-			//generate error response
+			//generate HTTP error response
+			std::cerr << "error in child proper error is still needed lol" <<std::endl;
+		} else {
+			parseCorrectResponseCGI(cgiReply, response);
 		}
+		
 	} else if (request.method == GET){
 		std::string body;
 		methodGet(request, body);
@@ -121,6 +152,9 @@ void	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &
 	}
 	
 	//end of the process
-	//formResponseString(parsRes.method, parsRes.status, parsRes.urlPath); //unfinished
+		//unfinished?
+	replyString = formResponseString(response);
+	
+	return replyString;
 }
 
