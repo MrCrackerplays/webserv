@@ -57,63 +57,68 @@ void	Socket::acceptNewConnect(int i){
 	//std::cout << "end acceptNewConnect" << std::endl;
 }
 
+
+int	findContentLenght(std::string buffer){
+	
+	size_t pos = buffer.find("Content-Lenght: ");
+	if (pos != std::string::npos){
+		pos += std::strlen("Content-Lenght: ");
+		size_t endpos = buffer.find("\r\n", pos);
+		if (endpos != std::string::npos){
+			return std::stoi(buffer.substr(pos, endpos - pos));
+		}
+	}
+	return false;
+}
+
+bool	isRequestEnd(std::string buffer){
+	
+	size_t pos = buffer.find("\r\n\r\n");
+	if (pos != std::string::npos){
+		return true;
+	}
+	return false;
+}
+
+bool	fullRequestReceived(std::string buffer, size_t recvBites){
+	
+	if (isRequestEnd(buffer)){
+		return true;
+	} else if (findContentLenght(buffer) == recvBites){
+		return true;
+	}
+	return false;
+}
+
 //need to check here how bigger request then my buffer 1024 behaves
 void	Socket::recvConnection(int i){
+	
 	int res = 0;
-	char buff[1024];
+	char buff[10];
 	std::string buffer;
-	do {
-		res = (int)recv(_vFds[i].fd, buff, 1024, 0);
-		std::cout << "res of recv " << res << "   for fd " << _vFds[i].fd << std::endl;
-		if (res < 0){
-			//cannot check errno FIX
-			//check for end of body /r/n/r/n + check for header lenght
-			if (errno != EWOULDBLOCK){
-				perror("recv");
-				close(_vFds[i].fd);
-				throw std::runtime_error("SockedLoop : revc");
-			}
-			break;
-		}
-		_recvBites += res; //not in case -res though
-		_buff += buff;
-		//Parsing part need to be added as well as send function needs to be adjusted
+	
+	res = (int)recv(_vFds[i].fd, buff, 10, 0);
+	if (res < 0){
+		close(_vFds[i].fd);
+		throw std::runtime_error("SockedLoop : revc");
+	}
+	if (res == 0){
+		std::cout << "connection was closed by client   " << "for fd " << _vFds[i].fd << std::endl;
+		close(_vFds[i].fd);
+	}
+	_recvBites += res;
+	_buff += buff;
+	if (fullRequestReceived(_buff, _recvBites)){
+		std::cout << "buffer after recv" << std::endl << std::endl << ":" << std::endl << buff << std::endl;
+		std::string reply = methods(_buff, _servers, _portNumber, _hostName);
+//		int bitesend = (int)send(_vFds[i].fd, reply.c_str(), reply.length(), 0);
+//		if (bitesend < 0){
+//			throw std::runtime_error("Socket : send");
+//		}
+		sendData(_vFds[i].fd); //test function
+		close(_vFds[i].fd);
 		
-		//sendData(_vFds[i].fd);
-		
-		if (res == 0){ ///connection was closed by client
-			std::cout << "connection was closed by client   " << "for fd " << _vFds[i].fd << std::endl;
-			close(_vFds[i].fd);
-			break;
-		} else { //parse and response
-			std::cout << "buffer after recv" << std::endl << std::endl << ":" << std::endl << buff << std::endl;
-			
-			//THIS should happen when the body is fully read
-			std::string reply;
-			reply = methods(_buff, _servers, _portNumber, _hostName);
-			int bitesend1 = (int)send(_vFds[i].fd, reply.c_str(), reply.length(), 0);
-			if (bitesend1 < 0){
-				throw std::runtime_error("Socket : send");
-			}
-			
-			//sendData(_vFds[i].fd);
-			close(_vFds[i].fd);
-			break;
-		}
-	} while (true); //or while res >= 0?
-	
-	
-	
-	std::cout << "buffer after recv" << std::endl << std::endl << ":" << std::endl << buff << std::endl;
-//
-//
-//	std::string reply;
-//	reply = methods(_buff, _servers, _portNumber, _hostName);
-//	int bitesend1 = (int)send(_vFds[i].fd, reply.c_str(), reply.length(), 0);
-//	if (bitesend1 < 0){
-//		throw std::runtime_error("Socket : send");
-//	}
-//	close(_vFds[i].fd);
+	}
 }
 
 void Socket::pollLoop(std::map<std::string, std::vector<Server> > servers){
@@ -180,49 +185,3 @@ void	Socket::sendData(int client_socket){
 int		Socket::getSocketFd(){
 	return _listenFd;
 }
-
-
-
-//old version
-////need to check here how bigger request then my buffer 1024 behaves
-//void	Socket::recvConnection(int i){
-//	int res = 0;
-//	char buff[1024];
-//	std::string buffer;
-//	do {
-//		res = (int)recv(_vFds[i].fd, buff, 1024, 0);
-//		//res = (int)recv(_vFds[i].fd, (void *)buffer.c_str(), buffer.length(), 0);
-//		std::cout << "res of recv " << res << "   for fd " << _vFds[i].fd << std::endl;
-//		if (res < 0){
-//			if (errno != EWOULDBLOCK){
-//				perror("recv");
-//				close(_vFds[i].fd);
-//				throw std::runtime_error("SockedLoop : revc");
-//			}
-//			break;
-//		}
-//		_recvBites += res; //not in case -res though
-//		//_buffer.push_back(buffer); //vector option
-//		_buff += buffer; //std::string option
-//
-//		//test print
-//		printf("\n **************************test START \n %s \n test FINISH**************************\n", buffer.c_str());
-//		//Parsing part need to be added as well as send function needs to be adjusted
-//
-//
-//
-//		if (res == 0){ //connection was closed by client
-//			std::cout << "connection was closed by client   " << "for fd " << _vFds[i].fd << std::endl;
-//			close(_vFds[i].fd);
-//			break;
-//		} else {
-//			std::cout << "buffer after recv" << std::endl << std::endl << ":" << std::endl << buff << std::endl;
-//			//here can be different actions
-//			//std::cout << "senddata call   " << "for fd " << _vFds[i].fd << std::endl;
-//			sendData(_vFds[i].fd);
-//			close(_vFds[i].fd);
-//			break;
-//		}
-//	} while (true); //or while res >= 0?
-//	//std::cout << "end recNewConnect" << std::endl;
-//}

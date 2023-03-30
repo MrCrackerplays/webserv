@@ -6,6 +6,76 @@
   
 */
 
+Examples request:
+//https://www.rfc-editor.org/rfc/rfc3986#section-3.2.3
+
+GET /hello.txt HTTP/1.1
+User-Agent: curl/7.64.1
+Host: www.example.com
+Accept-Language: en, mi
+
+
+URI-reference = <URI-reference, see [URI], Section 4.1>
+absolute-URI  = <absolute-URI, see [URI], Section 4.3>
+relative-part = <relative-part, see [URI], Section 4.2>
+authority     = <authority, see [URI], Section 3.2>
+uri-host      = <host, see [URI], Section 3.2.2>
+port          = <port, see [URI], Section 3.2.3>
+path-abempty  = <path-abempty, see [URI], Section 3.3>
+segment       = <segment, see [URI], Section 3.3>
+query         = <query, see [URI], Section 3.4>
+
+absolute-path = 1*( "/" segment )
+partial-URI   = relative-part [ "?" query ]
+
+http-URI = "http" "://" authority path-abempty [ "?" query ]
+
+
+URI         = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
+
+	 hier-part   = "//" authority path-abempty
+				 / path-absolute
+				 / path-rootless
+				 / path-empty
+
+The scheme and path components are required, though the path may be
+  empty (no characters).  When authority is present, the path must
+  either be empty or begin with a slash ("/") character.  When
+  authority is not present, the path cannot begin with two slash
+  characters ("//").  These restrictions result in five different ABNF
+  rules for a path (Section 3.3), only one of which will match any
+  given URI reference.
+
+  The following are two example URIs and their component parts:
+
+		foo://example.com:8042/over/there?name=ferret#nose
+		\_/   \______________/\_________/ \_________/ \__/
+		 |           |            |            |        |
+	  scheme     authority       path        query   fragment
+		 |   _____________________|__
+		/ \ /                        \
+		urn:example:animal:ferret:nose
+
+
+The authority component is preceded by a double slash ("//") and is
+  terminated by the next slash ("/"), question mark ("?"), or number
+  sign ("#") character, or by the end of the URI.
+
+The query component is indicated by the first question
+   mark ("?") character and terminated by a number sign ("#") character
+   or by the end of the URI.
+
+A
+   fragment identifier component is indicated by the presence of a
+   number sign ("#") character and terminated by the end of the URI.
+
+	  fragment    = *( pchar / "/" / "?" )
+
+
+
+
+================================================================================
+
 "hardcoded"
 SERVER_SOFTWARE=webserv/1.0
 GATEWAY_INTERFACE=CGI/1.1
