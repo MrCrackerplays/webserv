@@ -82,13 +82,13 @@ void	codes(int codeStatus, std::string &codeMessage){
 				codeMessage = "2xx OK";
 				break;
 			case 3:
-				codeMessage = "3xx OK";
+				codeMessage = "3xx Redirection";
 				break;
 			case 4:
-				codeMessage = "4xx OK";
+				codeMessage = "4xx Client Error";
 				break;
 			case 5:
-				codeMessage = "5xx OK";
+				codeMessage = "5xx Server Error";
 				break;
 
 		}

@@ -18,6 +18,7 @@ typedef enum {
 	GET = 0,
 	POST = 1,
 	DELETE = 2,
+	NOTSUPPORTED = 3,
 	ERR = -1
 	
 }	method;

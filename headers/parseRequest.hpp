@@ -35,7 +35,7 @@ typedef struct {
 	bool callCGI;
 }	parsRequest;
 
-parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host);
+parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort);
 std::string getHeaderByKey(std::map <std::string, std::vector<std::string> >& headers, const std::string& key);
 Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string& hostNameHeader);
 

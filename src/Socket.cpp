@@ -85,7 +85,6 @@ bool	fullRequestReceived(std::string buffer, size_t recvBites){
 void	Socket::recvConnection(int i){
 	
 	int res = 0;
-	size_t headerSize;
 	char buff[1024];
 	std::string buffer;
 	

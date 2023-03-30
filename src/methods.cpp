@@ -16,7 +16,8 @@
 //existance, read and executable checks
 //streaming binary file content in body
 void	methodGet(parsRequest& request, std::string& body){
-//file can be in server root
+//CHECK if we are handling that (dont thinks so)
+	//file can be in server root
 	//extention can redirect location
 	if (isDirectory(request.physicalPathCgi) == false && isFile(request.physicalPathCgi) == false){
 		request.code = 404;
@@ -55,7 +56,7 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 	response response;
 	if (request.code != 200){
 		response.body = "";
-		response.errorPageByCode = getServer(servers, hostPort, request.hostNameHeader).getErrorPage(std::to_string(request.code), request.urlPath); //any default error page?
+		response.errorPageByCode = getServer(servers, hostPort, request.hostNameHeader).getErrorPage(std::to_string(request.code), request.urlPath); // default error page?
 		response.body = response.errorPageByCode;
 		response.contentLenght = response.errorPageByCode.length();
 		response.contentType = getContentType(response.errorPageByCode);
@@ -68,7 +69,6 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 	
 	response.method = request.method;
 	codes(request.code, response.codeMessage);
-	
 	return response;
 }
 
@@ -94,23 +94,8 @@ void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 
 //UNFINISHED
 void	parseErrorResponseCGI(std::string& CGIbuff, response& response){
+	//will there be a buffer to receive? or I just construct response? error code?
 	
-	std::string contentHeader = "Content-Type:";
-	size_t pos = CGIbuff.find("\r\n\r\n"); //end of header
-	
-	//header
-	std::string headerAfterCgi = CGIbuff.substr(0, pos);
-	size_t start = headerAfterCgi.find(contentHeader);
-	size_t end = headerAfterCgi.find("\r\n");
-	if (start != end){
-		response.contentType = headerAfterCgi.substr(start + contentHeader.length(), end);
-	} else {
-		response.contentType = "text/plain";
-	}
-	//body
-	response.body = CGIbuff.substr(pos+4, CGIbuff.length());
-	response.contentLenght = response.body.length();
-	codes(200, response.codeMessage);
 }
 
 std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
@@ -121,35 +106,37 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	std::string cgiReply;
 	std::string replyString;
 	int statusChild;
-	
-	request = parseRequest(parsBuff, servers, port, host);
-	if (request.code != 200){
-		//error generator
-	}
 	std::string hostPort = host + ":" + port;
 	
-	if (request.callCGI == true){
-		try {
-			cgiReply = spawnProcess(request, port, host, statusChild);
-		} catch (std::exception &e) {
-			std::cerr << "Caught exception: " << e.what() << std::endl;
-		}
-		if (statusChild < 0){
-			//error in child
-			//generate HTTP error response
-			std::cerr << "error in child proper error is still needed lol" <<std::endl;
-		} else {
-			parseCorrectResponseCGI(cgiReply, response);
-		}
-		
-	} else if (request.method == GET){
-		std::string body;
-		methodGet(request, body);
-		response = responseStructConstruct(servers, hostPort, body, request);
-	} else if (request.method == DELETE){
-		methodDelete(request);
+	request = parseRequest(parsBuff, servers, hostPort);
+	if (request.code != 200){
 		response = responseStructConstruct(servers, hostPort, "", request);
+	} else {
+		
+		if (request.callCGI == true){
+			try {
+				cgiReply = spawnProcess(request, port, host, statusChild);
+			} catch (std::exception &e) {
+				std::cerr << "Caught exception: " << e.what() << std::endl;
+			}
+			if (statusChild < 0){
+				//error in child
+				//generate HTTP error response
+				std::cerr << "error in child proper error is still needed lol" <<std::endl;
+			} else {
+				parseCorrectResponseCGI(cgiReply, response);
+			}
+			
+		} else if (request.method == GET){
+			std::string body;
+			methodGet(request, body);
+			response = responseStructConstruct(servers, hostPort, body, request);
+		} else if (request.method == DELETE){
+			methodDelete(request);
+			response = responseStructConstruct(servers, hostPort, "", request);
+		}
 	}
+	
 	
 	//end of the process
 		//unfinished?

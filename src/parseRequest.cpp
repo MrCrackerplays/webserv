@@ -48,19 +48,23 @@ void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<
 
 std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, std::vector<std::string> >& headers){
 	
+	
 	std::string hostNameHeader;
 	std::string line;
-	while (std::getline(requestStream, line) && line != "\r") {
+	
+//	std::getline(requestStream, line);
+//	std::cout << line << std::endl;
+	
+	
+	while (std::getline(requestStream, line) && line != "\r\n\r\n") {
 		
 		size_t pos = line.find(": ");
 		if (pos != std::string::npos) {
-			
+			std::cout << line << std::endl;
 			std::string headerName = line.substr(0, pos);
 			std::string headerBody = line.substr(pos + 2);
 			if (headerName == "Host") {
 				hostNameHeader = headerBody;
-			} else {
-				hostNameHeader = "";
 			}
 			packHeaderInMap(headerName, headerBody, headers);
 		}
@@ -69,7 +73,7 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 }
 
 method	getMethodFromRequest(std::string& method){
-	
+	//if we dont handle method thats another error code non badrequest
 	if (method.empty()) {
 		return ERR;
 	}else if (method.compare("GET") == 0) {
@@ -79,8 +83,7 @@ method	getMethodFromRequest(std::string& method){
 	} else if (method.compare("DELETE") == 0) {
 		return DELETE;
 	}
-	//add 501
-	return ERR;
+	return NOTSUPPORTED;
 }
 
 #include "Server.hpp"
@@ -110,6 +113,8 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& se
 	physicalPathCgi = root + url.substr(path.length());
 	return physicalPathCgi;
 }
+
+
 
 Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string& hostNameHeader){
 	
@@ -143,7 +148,7 @@ void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<
 	
 	
 	if (std::find(methods.begin(), methods.end(), request.methodString) == methods.end()){
-		request.code = 404;
+		request.code = 405; // Method Not Allowed
 		request.callCGI = false;
 	} else {
 		
@@ -154,29 +159,37 @@ void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<
 	
 }
 
+//check code list in codes.cpp
 bool	isBadRequest(parsRequest& request){
 	
-	if (request.method == ERR || request.urlPath.empty() || request.httpVers.empty()) {
-		request.code = 404;
+	if (request.method == NOTSUPPORTED) {
+		request.code = 501;//Not Implemented
+		return true;
+	} else if (request.method == ERR) {
+		request.code = 405;//Method Not Allowed
+		return true;
+	} else if (request.urlPath.empty() || request.httpVers.empty()) {
+		request.code = 400;//check what code
 		return true;
 		
 	} else if (request.httpVers != "HTTP/1.1" && request.httpVers != "HTTP/1.0") {
-		request.code = 404;
+		request.code = 505;//HTTP Version Not Supported
 		return true;
 	}
 	return false;
 }
 
-parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
+parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
 	
 	parsRequest request;
-	std::string hostPort = host + ":" + port;
 	std::istringstream requestStream(requestBuff);
 	
-	request.code = 200;
+	request.code = 200;//OK
 	requestStream >> request.methodString;
+	std::cout << request.methodString << std::endl;
 	request.method = getMethodFromRequest(request.methodString); ///check if methods + cgi are aligned here
 	requestStream >> request.urlPath >> request.httpVers;
+	std::cout << request.urlPath << " and " << request.httpVers << std::endl;
 	
 	if (isBadRequest(request)){
 		request.hostNameHeader = getHeaders(requestStream, request.headers);
@@ -190,6 +203,7 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 		requestStream >> request.requestBody; //check if \r gets there
 		request.physicalPathCgi = getFileFromAnyServer(servers, hostPort, request.hostNameHeader, request.urlPath);
 		getErrorPagesFromLocation(request, servers, hostPort);
+		
 		//check if methods + cgi are aligned here
 		findMethodInServer(request, servers, hostPort);
 	}
