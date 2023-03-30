@@ -16,7 +16,7 @@ int	main(int argc, char **argv) {
 		config_file = argv[1];
 	
 	//test yuliia // comment if not needed :
-	config_file = "/Users/yuliia/Codam/webserv/configs/default.conf";
+	config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
 	
 	
 	std::map<std::string, std::vector<Server> > servers;
