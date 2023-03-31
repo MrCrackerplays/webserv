@@ -100,7 +100,7 @@ void	Socket::recvConnection(int i){
 	_recvBites += res;
 	_buff += buff;
 	if (fullRequestReceived(_buff, _recvBites)){
-		std::cout << "buffer after recv" << std::endl << std::endl << ":" << std::endl << buff << std::endl;
+		//std::cout << "buffer after recv" << std::endl << std::endl << ":" << std::endl << buff << std::endl;
 		
 		//test now :
 		std::string reply = methods(_buff, _servers, _portNumber, _hostName);

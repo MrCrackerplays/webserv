@@ -56,7 +56,7 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 		
 		size_t pos = line.find(": ");
 		if (pos != std::string::npos) {
-			std::cout << line << std::endl;
+			//std::cout << line << std::endl;
 			std::string headerName = line.substr(0, pos);
 			std::string headerBody = line.substr(pos + 2);
 			if (headerName == "Host") {
@@ -65,6 +65,7 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 			packHeaderInMap(headerName, headerBody, headers);
 		}
 	}
+	//remove /r
 	return hostNameHeader;
 }
 
@@ -93,6 +94,7 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& se
 			Server & local = *it;
 			for (std::vector<const std::string>::iterator it2 = local.getNames().begin(); it2 < local.getNames().end(); it2++) {
 				std::string str = *it2;
+				std::cout <<str<<std::endl;
 				if (str == hostNameHeader) {
 					const Location & closestLocation = local.getClosestLocation(url);
 					std::string root = closestLocation.getRoot();
@@ -113,10 +115,10 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& se
 
 Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string& hostNameHeader){
 	
-	std::vector<Server> serversVect = servers[hostPort];
-	std::vector<Server>::iterator it;
+	std::vector<Server> &serversVect = servers[hostPort];
+	
 	if (hostNameHeader.length()) {
-		for (it = serversVect.begin(); it < serversVect.end(); it++) {
+		for (std::vector<Server>::iterator it = serversVect.begin(); it < serversVect.end(); it++) {
 			Server & local = *it;
 			for (std::vector<const std::string>::iterator it2 = local.getNames().begin(); it2 < local.getNames().end(); it2++) {
 				std::string str = *it2;
@@ -126,15 +128,17 @@ Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::st
 			}
 		}
 	}
-	return *it;
+	return serversVect.front();
 }
 
-void	getErrorPagesFromLocation(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
-	
-	Location location = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath);
-	request.ErrorPages = location.getErrorPages();
-	//check for 300 if redirected
-}
+//void	getErrorPagesFromLocation(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
+//
+//	Server server = getServer(servers, hostPort, request.hostNameHeader);
+//	Location location = server.getClosestLocation(request.urlPath);
+//	request.ErrorPages = location.getErrorPages();
+//	//no need in pages from
+//
+//}
 
 void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
 	
@@ -147,15 +151,15 @@ void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<
 		request.code = 405; // Method Not Allowed
 		request.callCGI = false;
 	} else {
+		request.callCGI = false;
 		std::string	file = request.physicalPathCgi.substr(request.physicalPathCgi.rfind('/'));
-		std::string	extension = file.substr(file.rfind('.'));
-		if (std::find(cgis.begin(), cgis.end(), extension) == cgis.end())
-			request.callCGI = false;
-		else //if method == myMethod and there >>>> is CGI <<<<<
-			request.callCGI = true;
+		size_t pos = file.rfind('.');
+		if (pos != std::string::npos){
+			std::string	extension = file.substr(pos);
+			if (std::find(cgis.begin(), cgis.end(), extension) != cgis.end())
+				request.callCGI = true;
+		}
 	}
-	//ask Patrick what about CGIs, how exactly I need to check, what are CGIs and if there can be error I need to catch
-	
 }
 
 //check code list in codes.cpp
@@ -189,8 +193,8 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 	requestStream >> request.urlPath >> request.httpVers;
 	
 	if (isBadRequest(request)){
-		request.hostNameHeader = getHeaders(requestStream, request.headers);
-		getErrorPagesFromLocation(request, servers, hostPort); //test case url is empty, should go in first server
+		//request.hostNameHeader = getHeaders(requestStream, request.headers);
+		//getErrorPagesFromLocation(request, servers, hostPort); //test case url is empty, should go in first server
 		return request;
 	} else {
 		
@@ -206,7 +210,7 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 
 		requestStream >> request.requestBody; //check if \r gets there
 		request.physicalPathCgi = getFileFromAnyServer(servers, hostPort, request.hostNameHeader, request.urlPath);
-		getErrorPagesFromLocation(request, servers, hostPort);
+		//getErrorPagesFromLocation(request, servers, hostPort);
 		
 		//check if methods + cgi are aligned here
 		findMethodInServer(request, servers, hostPort);

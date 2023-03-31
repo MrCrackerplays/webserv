@@ -79,7 +79,7 @@ const Location &	Server::getClosestLocation(std::string path) const {
 	if (found != this->_paths.end())
 		return (found->second);
 	while (path.length() > 0) {
-		std::string newpath = path.substr(0, path.rfind("/"));
+		std::string newpath = path.substr(0, path.rfind("/") + 1);
 		if (newpath == path)
 			throw std::exception();
 		path = newpath;
