@@ -147,9 +147,12 @@ void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<
 		request.code = 405; // Method Not Allowed
 		request.callCGI = false;
 	} else {
-		
-		//if method == myMethod and there >>>> is CGI <<<<<
-		request.callCGI = true;
+		std::string	file = request.physicalPathCgi.substr(request.physicalPathCgi.rfind('/'));
+		std::string	extension = file.substr(file.rfind('.'));
+		if (std::find(cgis.begin(), cgis.end(), extension) == cgis.end())
+			request.callCGI = false;
+		else //if method == myMethod and there >>>> is CGI <<<<<
+			request.callCGI = true;
 	}
 	//ask Patrick what about CGIs, how exactly I need to check, what are CGIs and if there can be error I need to catch
 	
