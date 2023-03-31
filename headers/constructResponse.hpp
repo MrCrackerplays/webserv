@@ -26,6 +26,6 @@ typedef struct {
 	std::string header;
 } response;
 
-std::string	formResponseString(response response, std::string& filename);
+std::string	formResponseString(response response);
 
 #endif /* constructResponse_hpp */

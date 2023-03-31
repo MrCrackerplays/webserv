@@ -10,10 +10,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-
 //https://www.geeksforgeeks.org/http-headers-content-type/
 std::string getContentType(std::string& filename){
-	
+	//can be upper case
 	std::map<std::string, std::string> extensionsMap;
 	extensionsMap.insert(std::make_pair("html", "text/html"));
 	extensionsMap.insert(std::make_pair("htm", "text/html"));
@@ -27,7 +26,7 @@ std::string getContentType(std::string& filename){
 	std::string contentType;
 	size_t pos = filename.rfind(".");
 	if (pos != std::string::npos){
-		std::string extension = filename.substr(pos + 1);
+		std::string extension = filename.substr(pos + 1); //compare with lower case
 		std::map<std::string, std::string>::iterator it = extensionsMap.find(extension);
 		if (it != extensionsMap.end()){
 			return it->second;

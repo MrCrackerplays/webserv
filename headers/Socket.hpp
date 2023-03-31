@@ -45,10 +45,13 @@ protected:
 	
 	//old
 	int _listenFd;
+
 	std::vector<pollfd> _vFds;
-	std::vector<std::string> _buffer;
 	std::string _buff;
 	size_t _recvBites;
+	
+	//need to requestContentLen in order to check my recv without errno
+	size_t requestContentLen;
 
 	void	sendData(int client_socket); //will be heavily adjusted 
 	void	acceptNewConnect(int i);

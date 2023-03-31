@@ -48,19 +48,19 @@ void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<
 
 std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, std::vector<std::string> >& headers){
 	
+	
 	std::string hostNameHeader;
 	std::string line;
-	while (std::getline(requestStream, line) && line != "\r") {
+	
+	while (std::getline(requestStream, line) && line != "\r\n\r\n") {
 		
 		size_t pos = line.find(": ");
 		if (pos != std::string::npos) {
-			
+			std::cout << line << std::endl;
 			std::string headerName = line.substr(0, pos);
 			std::string headerBody = line.substr(pos + 2);
 			if (headerName == "Host") {
 				hostNameHeader = headerBody;
-			} else {
-				hostNameHeader = "";
 			}
 			packHeaderInMap(headerName, headerBody, headers);
 		}
@@ -69,7 +69,7 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 }
 
 method	getMethodFromRequest(std::string& method){
-	
+	//if we dont handle method thats another error code non badrequest
 	if (method.empty()) {
 		return ERR;
 	}else if (method.compare("GET") == 0) {
@@ -79,7 +79,7 @@ method	getMethodFromRequest(std::string& method){
 	} else if (method.compare("DELETE") == 0) {
 		return DELETE;
 	}
-	return ERR;
+	return NOTSUPPORTED;
 }
 
 #include "Server.hpp"
@@ -108,6 +108,7 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& se
 	std::string path = closestLocation.getPath();
 	physicalPathCgi = root + url.substr(path.length());
 	return physicalPathCgi;
+	
 }
 
 Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string& hostNameHeader){
@@ -132,6 +133,7 @@ void	getErrorPagesFromLocation(parsRequest &request, std::map<std::string, std::
 	
 	Location location = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath);
 	request.ErrorPages = location.getErrorPages();
+	//check for 300 if redirected
 }
 
 void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
@@ -142,7 +144,7 @@ void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<
 	
 	
 	if (std::find(methods.begin(), methods.end(), request.methodString) == methods.end()){
-		request.code = BADRQST;
+		request.code = 405; // Method Not Allowed
 		request.callCGI = false;
 	} else {
 		
@@ -153,26 +155,32 @@ void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<
 	
 }
 
+//check code list in codes.cpp
 bool	isBadRequest(parsRequest& request){
 	
-	if (request.method == ERR || request.urlPath.empty() || request.httpVers.empty()) {
-		request.code = BADRQST;
+	if (request.method == NOTSUPPORTED) {
+		request.code = 501;//Not Implemented
+		return true;
+	} else if (request.method == ERR) {
+		request.code = 405;//Method Not Allowed
+		return true;
+	} else if (request.urlPath.empty() || request.httpVers.empty()) {
+		request.code = 400;//check what code
 		return true;
 		
 	} else if (request.httpVers != "HTTP/1.1" && request.httpVers != "HTTP/1.0") {
-		request.code = BADRQST;
+		request.code = 505;//HTTP Version Not Supported
 		return true;
 	}
 	return false;
 }
 
-parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
+parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
 	
 	parsRequest request;
-	std::string hostPort = host + ":" + port;
 	std::istringstream requestStream(requestBuff);
 	
-	request.code = OK;
+	request.code = 200;//OK
 	requestStream >> request.methodString;
 	request.method = getMethodFromRequest(request.methodString); ///check if methods + cgi are aligned here
 	requestStream >> request.urlPath >> request.httpVers;
@@ -183,16 +191,23 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 		return request;
 	} else {
 		
+		
+		//check for redirection if it is - I dont need to parse further
+		//std::pair<std::string, std::string> redirect = std::pair<std::string, std::string>("", ""),
+		//->first is code -> second new location
+		//https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections#principle
+		
+		
 		request.queryString = getQueryParams(request.urlPath, request.query);
 		request.hostNameHeader = getHeaders(requestStream, request.headers);
 
 		requestStream >> request.requestBody; //check if \r gets there
 		request.physicalPathCgi = getFileFromAnyServer(servers, hostPort, request.hostNameHeader, request.urlPath);
 		getErrorPagesFromLocation(request, servers, hostPort);
+		
 		//check if methods + cgi are aligned here
 		findMethodInServer(request, servers, hostPort);
 	}
-	
 	return request;
 }
 
