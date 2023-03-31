@@ -52,10 +52,6 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 	std::string hostNameHeader;
 	std::string line;
 	
-//	std::getline(requestStream, line);
-//	std::cout << line << std::endl;
-	
-	
 	while (std::getline(requestStream, line) && line != "\r\n\r\n") {
 		
 		size_t pos = line.find(": ");
@@ -113,8 +109,6 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& se
 	physicalPathCgi = root + url.substr(path.length());
 	return physicalPathCgi;
 }
-
-
 
 Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string& hostNameHeader){
 	

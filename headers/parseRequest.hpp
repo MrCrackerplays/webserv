@@ -14,7 +14,6 @@
 
 typedef struct {
 	
-	//codeStatus code;
 	int code;
 	
 	//from request:

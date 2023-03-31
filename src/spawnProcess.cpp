@@ -20,7 +20,6 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	
 	char **envp;
 	
-//	envp = (char **)malloc(sizeof(char *) * 18);
 	envp = new char*[18];
 	if (envp == NULL)
 		return NULL;
@@ -86,14 +85,15 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 }
 
 
-void	makeNonBlocking(int fd){
+bool	makeNonBlocking(int fd){
 	int flagsForFd = fcntl(fd, F_GETFL, 0);
 	if (flagsForFd < 0){
-		throw std::runtime_error("Socket : fcntl");
+		return false;
 	}
 	if (fcntl(fd, F_SETFL, flagsForFd | O_NONBLOCK) < 0){
-		throw std::runtime_error("Socket : fcntl");
+		return false;
 	}
+	return true;
 }
 
 std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket, int &statusChild){
@@ -103,19 +103,21 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 	int pipeFdIn[2];
 	int pipeFdOut[2];
 	char *args[2] = {(char *)request.physicalPathCgi.c_str(), NULL};
-	char **envp = envpGenerate(request, portNumSocket, hostNameSocket); /////	char *envp[] = {NULL}; //temp untill envp is tested
+	char **envp = envpGenerate(request, portNumSocket, hostNameSocket);
 	if (envp == NULL){
 		throw std::runtime_error("spawnProcess : malloc");
 	}
 	
 	//initianing 2 pipes and making all ends of both pipes non-blocking
 	if (pipe(pipeFdIn) == -1 || pipe(pipeFdOut) == -1){
+		delete [] envp;
 		throw std::runtime_error("spawnProcess : pipe");
 	}
-	makeNonBlocking(pipeFdIn[0]);
-	makeNonBlocking(pipeFdIn[1]);
-	makeNonBlocking(pipeFdOut[0]);
-	makeNonBlocking(pipeFdOut[1]);
+	
+	if (!makeNonBlocking(pipeFdIn[0]) || !makeNonBlocking(pipeFdIn[1]) || !makeNonBlocking(pipeFdOut[0]) || !makeNonBlocking(pipeFdOut[1])){
+		delete [] envp;
+		throw std::runtime_error("Socket : fcntl");
+	}
 	
 	//spawn a child process
 	childPid = fork();
@@ -124,21 +126,26 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		close(pipeFdIn[1]);
 		close(pipeFdOut[0]);
 		close(pipeFdOut[1]);
-		throw std::runtime_error("spawnProcess : pipe");
+		delete [] envp;
+		throw std::runtime_error("Socket : fork");
 	}
 	else if (childPid == 0){ //in child process
 		
-		if (dup2(pipeFdIn[0], STDIN_FILENO) < 0)
-			throw std::runtime_error("spawnProcess : dup2");
-		if (dup2(pipeFdOut[1], STDOUT_FILENO) < 0)
-			throw std::runtime_error("spawnProcess : dup2");
+		if (dup2(pipeFdIn[0], STDIN_FILENO) < 0){
+			delete [] envp;
+			exit(1);
+		}
+		if (dup2(pipeFdOut[1], STDOUT_FILENO) < 0){
+			delete [] envp;
+			exit(1);
+		}
 		close(pipeFdIn[0]);
 		close(pipeFdIn[1]);
 		close(pipeFdOut[0]);
 		close(pipeFdOut[1]);
 		execve(args[0], args, envp);
 		delete [] envp;
-		_exit(EXIT_FAILURE); //HOW do I end child process in case of execve failure without exit?
+		exit(1); //HOW do I end child process in case of execve failure without exit?
 	}
 	else { //in parent process
 		
@@ -164,8 +171,11 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		
 		//waiting for child to proceed
 		int status;
-		if (waitpid(childPid, &status, 0) < 0)
+		if (waitpid(childPid, &status, 0) < 0){
+			delete [] envp;
 			throw std::runtime_error("spawnProcess: waitpid");
+		}
+			
 		if (WIFEXITED(status)){
 			statusChild = WEXITSTATUS(status);
 		} else {

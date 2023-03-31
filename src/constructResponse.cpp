@@ -22,7 +22,9 @@ std::string	formResponseString(response response){
 	switch (response.method) {
 		case ERR:
 			return response.header + response.errorPageByCode;
-			
+		case NOTSUPPORTED:
+			return response.header + response.errorPageByCode;
+		
 		case GET:
 			return response.header + response.body;
 			

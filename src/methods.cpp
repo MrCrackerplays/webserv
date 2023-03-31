@@ -118,11 +118,14 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 				cgiReply = spawnProcess(request, port, host, statusChild);
 			} catch (std::exception &e) {
 				std::cerr << "Caught exception: " << e.what() << std::endl;
+				request.code = 500;
+				parseErrorResponseCGI(cgiReply, response);
+				
 			}
 			if (statusChild < 0){
-				//error in child
-				//generate HTTP error response
 				std::cerr << "error in child proper error is still needed lol" <<std::endl;
+				request.code = 500; //or vary?
+				parseErrorResponseCGI(cgiReply, response);
 			} else {
 				parseCorrectResponseCGI(cgiReply, response);
 			}
