@@ -105,7 +105,7 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 	char *args[2] = {(char *)request.physicalPathCgi.c_str(), NULL};
 	char **envp = envpGenerate(request, portNumSocket, hostNameSocket);
 	if (envp == NULL){
-		throw std::runtime_error("spawnProcess : malloc");
+		throw std::runtime_error("spawnProcess : new");
 	}
 	
 	//initianing 2 pipes and making all ends of both pipes non-blocking

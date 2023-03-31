@@ -18,7 +18,6 @@
 void	methodGet(parsRequest& request, std::string& body){
 //CHECK if we are handling that (dont thinks so)
 	//file can be in server root
-	//extention can redirect location
 	if (isDirectory(request.physicalPathCgi) == false && isFile(request.physicalPathCgi) == false){
 		request.code = 404;
 	} else if (ifFileExecutable(request.physicalPathCgi) == false) {
@@ -124,7 +123,7 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 			}
 			if (statusChild < 0){
 				std::cerr << "error in child proper error is still needed lol" <<std::endl;
-				request.code = 500; //or vary?
+				request.code = 500;
 				parseErrorResponseCGI(cgiReply, response);
 			} else {
 				parseCorrectResponseCGI(cgiReply, response);

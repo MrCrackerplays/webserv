@@ -9,6 +9,7 @@
 
 void constructResponseHeader(response& response) {
 
+	//with redirect no cont len or type, but another parts
 	response.header = "HTTP/1.1 " + response.codeMessage + "\r\n";
 	response.header  += "Content-Type: " + response.contentType + "\r\n";
 	response.header += "Content-Length: " + std::to_string(response.contentLenght) + "\r\n";

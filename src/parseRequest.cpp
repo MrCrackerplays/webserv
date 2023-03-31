@@ -108,6 +108,7 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& se
 	std::string path = closestLocation.getPath();
 	physicalPathCgi = root + url.substr(path.length());
 	return physicalPathCgi;
+	
 }
 
 Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string& hostNameHeader){
@@ -132,6 +133,7 @@ void	getErrorPagesFromLocation(parsRequest &request, std::map<std::string, std::
 	
 	Location location = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath);
 	request.ErrorPages = location.getErrorPages();
+	//check for 300 if redirected
 }
 
 void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
@@ -180,16 +182,21 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 	
 	request.code = 200;//OK
 	requestStream >> request.methodString;
-	std::cout << request.methodString << std::endl;
 	request.method = getMethodFromRequest(request.methodString); ///check if methods + cgi are aligned here
 	requestStream >> request.urlPath >> request.httpVers;
-	std::cout << request.urlPath << " and " << request.httpVers << std::endl;
 	
 	if (isBadRequest(request)){
 		request.hostNameHeader = getHeaders(requestStream, request.headers);
 		getErrorPagesFromLocation(request, servers, hostPort); //test case url is empty, should go in first server
 		return request;
 	} else {
+		
+		
+		//check for redirection if it is - I dont need to parse further
+		//std::pair<std::string, std::string> redirect = std::pair<std::string, std::string>("", ""),
+		//->first is code -> second new location
+		//https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections#principle
+		
 		
 		request.queryString = getQueryParams(request.urlPath, request.query);
 		request.hostNameHeader = getHeaders(requestStream, request.headers);
