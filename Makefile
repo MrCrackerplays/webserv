@@ -8,11 +8,12 @@ ifdef DEBUG
 CFLAGS := -g $(CFLAGS)
 endif
 
-CLASSES := Server Location Socket
-# removed Sockaddrs
-OBJECTS := main.o config.o server_block_util.o location_block_util.o autoindex.o SocketUtils.o
-# changed SocketLoop.o to SocketUtils.o
-HEADER_FILES := config.hpp autoindex.hpp parseRequest.hpp
+CLASSES := Location Server Socket
+OBJECTS := autoindex.o codes.o config.o constructResponse.o location_block_util.o \
+			main.o methods.o parseRequest.o server_block_util.o SocketUtils.o \
+			spawnProcess.o utilsMethods.o
+HEADER_FILES := autoindex.hpp codes.hpp config.hpp constructResponse.hpp \
+			methods.hpp parseRequest.hpp spawnProcess.hpp utilsMethods.hpp
 INCLUDE := headers
 
 OBJECTS := $(OBJECTS) $(addsuffix .o,$(CLASSES))
