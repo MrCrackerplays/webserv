@@ -55,15 +55,18 @@ protected:
 	
 	
 public:
+	Socket(char * hostName, char * portNumber);
+	~Socket();
+	
 	void	checkEvents();
 	void	acceptNewConnect(int i);
 	void	recvConnection(int i);
-	Socket(char * hostName, char * portNumber);
-	~Socket();
+
+	
+	//getters
 	int		getSocketFd();
 	addrinfo *getAddrInfo();
 	std::vector<pollfd> &getPollFdVector();
-	//void	pollLoop(std::map<std::string, std::vector<Server> > servers);
 };
 
 void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);

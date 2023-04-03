@@ -23,15 +23,20 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 				std::cerr << e.what() << std::endl;
 		}
 	}
-	
+
 	while (true) {
+		for (std::vector<Socket>::iterator it = vectSockets.begin(); it != vectSockets.end(); it++) {
+			Socket currentSocket = *it;
+			if (poll(&currentSocket.getPollFdVector()[0], (unsigned int)currentSocket.getPollFdVector().size(), 0) < 0){
+				throw std::runtime_error("Socket : poll");
+			} else {
+				currentSocket.checkEvents();
+				
+			}
+		}
 		
-		std::vector<Socket>::iterator it;
-		Socket currentSocket = *it;
-		std::vector<pollfd> vFds = currentSocket.getPollFdVector();
-//		if (poll(&vFds[0], (unsigned int)vFds.size(), 0) < 0){
-//			throw std::runtime_error("Socket : poll");
-//		}
+		
+	
 		
 		
 		

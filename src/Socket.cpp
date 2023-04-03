@@ -146,22 +146,25 @@ void	Socket::checkEvents(){
 		if (_vFds[i].fd == 0)
 			continue;
 		if ((_vFds[i].revents & POLLIN) == POLLIN){
-			if (_vFds[i].fd == _listenFd){///Listening socket is readable -> need to accept all incoming connections
+			
+			//listening socket event
+			if (_vFds[i].fd == _listenFd){
+				
 				try {
 					acceptNewConnect(i);
-					} catch (std::exception &e) {
+				} catch (std::exception &e) {
 							std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
-							}
-												}
-		else { ///connection is not on listening socket, need to be readable -> receive all data
+				}
+			//client's from listening socket event
+			} else {
 				try {
 					recvConnection(i);
-					} catch (std::exception &e) {
+				} catch (std::exception &e) {
 							std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
-							}
-						}
-					}
 				}
+			}
+		}
+	}
 }
 
 
