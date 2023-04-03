@@ -9,6 +9,18 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <cstdio>
+#include <fstream>
+
+void	readFileBinary(std::string path, std::string &body){
+	
+	std::ifstream file(path, std::ios::binary);
+	if (!file.is_open()) {
+		throw std::runtime_error("methods : open");
+	}
+	std::string responseBody((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	body = responseBody;
+}
 
 //https://www.geeksforgeeks.org/http-headers-content-type/
 std::string getContentType(std::string& filename){

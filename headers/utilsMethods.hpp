@@ -23,6 +23,7 @@ typedef enum {
 	
 }	method;
 
+void	readFileBinary(std::string path, std::string &body);
 std::string getContentType(std::string& filename);
 std::string getHeaderByKey(std::map<std::string, std::vector<std::string> >& headers, const std::string& key);
 bool isDirectory(std::string& path);

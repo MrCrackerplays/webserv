@@ -32,6 +32,8 @@ typedef struct {
 	std::string physicalPathCgi;
 	std::map<std::string, std::string>	ErrorPages;
 	bool callCGI;
+	bool redirect;
+	std::string newlocation;
 }	parsRequest;
 
 parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort);

@@ -75,7 +75,7 @@ bool	fullRequestReceived(std::string buffer, size_t recvBites){
 	size_t headrSize = buffer.find("\r\n\r\n");
 	if (headrSize != std::string::npos){
 		headrSize += 4;
-		if (findContentLenght(buffer) == recvBites - headrSize){
+		if ((unsigned int)findContentLenght(buffer) == recvBites - headrSize){
 			return true;
 		}
 	}
@@ -100,18 +100,18 @@ void	Socket::recvConnection(int i){
 	_recvBites += res;
 	_buff += buff;
 	if (fullRequestReceived(_buff, _recvBites)){
-		std::cout << "buffer after recv" << std::endl << std::endl << ":" << std::endl << buff << std::endl;
+		//std::cout << "buffer after recv" << std::endl << std::endl << ":" << std::endl << buff << std::endl;
 		
 		//test now :
 		std::string reply = methods(_buff, _servers, _portNumber, _hostName);
 		
 		
 		//UNFINISHED
-//		int bitesend = (int)send(_vFds[i].fd, reply.c_str(), reply.length(), 0);
-//		if (bitesend < 0){
-//			throw std::runtime_error("Socket : send");
-//		}
-		sendData(_vFds[i].fd); //test function
+		int bitesend = (int)send(_vFds[i].fd, reply.c_str(), reply.length(), 0);
+		if (bitesend < 0){
+			throw std::runtime_error("Socket : send");
+		}
+		//sendData(_vFds[i].fd); //test function
 		close(_vFds[i].fd);
 		
 	}
@@ -120,10 +120,14 @@ void	Socket::recvConnection(int i){
 void Socket::pollLoop(std::map<std::string, std::vector<Server> > servers){
 	
 	_servers = servers;
-	setToNonBlocking(_listenFd);
-	bindToPort(_listenFd, _addrinfo);
-	setToListen(_listenFd);
-	initiateVectPoll(_listenFd, _vFds);
+	try {
+		setToNonBlocking(_listenFd);
+		bindToPort(_listenFd, _addrinfo);
+		setToListen(_listenFd);
+		initiateVectPoll(_listenFd, _vFds);
+	} catch (std::exception &e) {
+		std::cerr << e.what() << std::endl;
+	}
 	while (true) {
 
 		if (poll(&_vFds[0], (unsigned int)_vFds.size(), 0) < 0){
