@@ -46,7 +46,7 @@ Socket::Socket(char * hostName, char * portNumber){
 
 Socket::~Socket(){
 	//UNFINISHED
-	freeaddrinfo(_addrinfo); //pointer being freed after allocating with new - check needed
+	//freeaddrinfo(_addrinfo); //pointer being freed after allocating with new - check needed
 }
 
 //work with listening socket
