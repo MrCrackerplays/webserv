@@ -15,17 +15,15 @@
 
 //existance, read and executable checks
 //streaming binary file content in body
-
-
 void	methodGet(parsRequest& request, std::string& body){
-//CHECK if we are handling that (dont thinks so)
-	//file can be in server root
+	
+	//request.physicalPathCgi = "/Users/yuliia/Codam/webserv/root/upload_test.html";
 	if (isDirectory(request.physicalPathCgi) == false && isFile(request.physicalPathCgi) == false){
 		request.code = 404;
 		return;
-	} else if (ifFileExecutable(request.physicalPathCgi) == false) {
-		request.code = 401;
-		return;
+//	} else if (ifFileExecutable(request.physicalPathCgi) == false) {
+//		request.code = 401;
+//		return;
 	} else if (ifFileReadable(request.physicalPathCgi) == false) {
 		request.code = 401;
 		return;
@@ -45,12 +43,15 @@ void methodDelete(parsRequest& request){
 	if (std::remove(request.physicalPathCgi.c_str()) != 0){
 		throw std::runtime_error("methods : remove");
 	}
-	
 }
 
 response responseStructConstruct(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string body, parsRequest& request){
 	
 	response response;
+	if (request.code % 100 == 3){ //redirection
+		redirectionResponse(request.code, request.newlocation, response);
+		return response;
+	}
 	if (request.code != 200){
 		response.body = "";
 		response.errorPageByCode = getServer(servers, hostPort, request.hostNameHeader).getErrorPage(std::to_string(request.code), request.urlPath);
@@ -74,26 +75,6 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 	return response;
 }
 
-void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
-	
-	std::string contentHeader = "Content-Type:";
-	size_t pos = CGIbuff.find("\r\n\r\n"); //end of header
-	
-	//header
-	std::string headerAfterCgi = CGIbuff.substr(0, pos);
-	size_t start = headerAfterCgi.find(contentHeader);
-	size_t end = headerAfterCgi.find("\r\n");
-	if (start != end){
-		response.contentType = headerAfterCgi.substr(start + contentHeader.length(), end);
-	} else {
-		response.contentType = "text/plain";
-	}
-	//body
-	response.body = CGIbuff.substr(pos+4, CGIbuff.length());
-	response.contentLenght = response.body.length();
-	codes(200, response.codeMessage);
-}
-
 
 //in case error pages are going bad do we need to have default one to present?
 std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
@@ -111,6 +92,7 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 		response = responseStructConstruct(servers, hostPort, "", request);
 	} else {
 		
+		//CGI
 		if (request.callCGI == true){
 			try {
 				cgiReply = spawnProcess(request, port, host, statusChild);
@@ -128,6 +110,7 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 				parseCorrectResponseCGI(cgiReply, response);
 			}
 			
+		// GET
 		} else if (request.method == GET){
 			std::string body;
 			try {
@@ -137,6 +120,7 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 				request.code = 500;
 			}
 			response = responseStructConstruct(servers, hostPort, body, request);
+		//DELETE
 		} else if (request.method == DELETE){
 			try {
 				methodDelete(request);
@@ -148,11 +132,12 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 		}
 	}
 	
-	
-	//end of the process
-		//unfinished?
-	replyString = formResponseString(response);
-	
+	//reply
+	if (request.code % 100 == 3){
+		replyString = response.header;
+	} else {
+		replyString = formResponseString(response);
+	}
 	return replyString;
 }
 

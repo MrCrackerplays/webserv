@@ -24,8 +24,12 @@ typedef struct {
 	//finale after construction
 	std::string body;
 	std::string header;
+	bool redirect;
+	std::string newLocation;
 } response;
 
 std::string	formResponseString(response response);
+void	parseCorrectResponseCGI(std::string& CGIbuff, response& response);
+void	redirectionResponse(int code, std::string newlocation, response &response);
 
 #endif /* constructResponse_hpp */
