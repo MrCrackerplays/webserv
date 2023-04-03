@@ -50,20 +50,20 @@ protected:
 	std::string _buff;
 	size_t _recvBites;
 	
-	//need to requestContentLen in order to check my recv without errno
-	size_t requestContentLen;
-
-	void	sendData(int client_socket); //will be heavily adjusted 
-	void	acceptNewConnect(int i);
-	void	recvConnection(int i);
+	
+	size_t requestContentLen; //need to requestContentLen in order to check my recv without errno
 	
 	
 public:
-	Socket(std::map<std::string, std::vector<Server> > servers);
+	void	checkEvents();
+	void	acceptNewConnect(int i);
+	void	recvConnection(int i);
 	Socket(char * hostName, char * portNumber);
 	~Socket();
 	int		getSocketFd();
-	void	pollLoop(std::map<std::string, std::vector<Server> > servers);
+	addrinfo *getAddrInfo();
+	std::vector<pollfd> &getPollFdVector();
+	//void	pollLoop(std::map<std::string, std::vector<Server> > servers);
 };
 
 void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);

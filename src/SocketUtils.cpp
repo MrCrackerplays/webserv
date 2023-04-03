@@ -12,9 +12,6 @@ void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds){
 	pollfd deflt;
 	deflt.fd = 0;
 	deflt.events = 0;
-//	for (int i = 0; i < EVENTS_NUM; i++){
-//		_vFds.push_back(deflt);
-//	}
 	vFds.push_back(deflt);
 	vFds[0].fd = listenFd;
 	vFds[0].events = POLLIN;
