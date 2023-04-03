@@ -59,6 +59,7 @@ protected:
 	
 	
 public:
+	Socket(std::map<std::string, std::vector<Server> > servers);
 	Socket(char * hostName, char * portNumber);
 	~Socket();
 	int		getSocketFd();

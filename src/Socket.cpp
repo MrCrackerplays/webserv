@@ -8,6 +8,23 @@
 #include "Socket.hpp"
 #include "methods.hpp"
 
+Socket::Socket(std::map<std::string, std::vector<Server> > servers) : _servers(servers) {
+	
+	std::map<std::string, std::vector<Server> >::iterator it;
+	for (it = servers.begin(); it != servers.end(); it++)
+	{
+		std::cout << it->second[0].getHost() << ":" << it->second[0].getPort() << std::endl;
+		
+		
+		sockets.insert(std::pair<std::string, Socket>(it->first,
+			Socket(
+				(char*)it->second[0].getHost().c_str(),
+				(char*)it->second[0].getPort().c_str()
+				)
+			));
+	}
+}
+
 Socket::Socket(char * hostName, char * portNumber){
 	
 	int status;
@@ -38,7 +55,6 @@ Socket::~Socket(){
 void	Socket::acceptNewConnect(int i){
 	int newFd = 0;
 	pollfd newPollfd;
-	//std::cout << "start acceptNewConnect" << std::endl;
 	do {
 		newFd = accept(_listenFd, NULL, NULL);
 		if (newFd < 0){ //not needed maybe, errno can be and issue
@@ -54,7 +70,6 @@ void	Socket::acceptNewConnect(int i){
 		newPollfd.events = POLLIN;
 		_vFds.push_back(newPollfd);
 	} while (newFd != -1);
-	//std::cout << "end acceptNewConnect" << std::endl;
 }
 
 int	findContentLenght(std::string buffer){
@@ -87,15 +102,20 @@ void	Socket::recvConnection(int i){
 	int res = 0;
 	char buff[1024];
 	std::string buffer;
+	std::cout << _vFds[i].fd << std::endl;
 	
 	res = (int)recv(_vFds[i].fd, buff, 1024, 0);
+
 	if (res < 0){
 		close(_vFds[i].fd);
-		throw std::runtime_error("SockedLoop : revc");
+
+		std::cerr << "recv failed on i = " << i << "FD: " << _vFds[i].fd << strerror(errno) << std::endl;
+		throw std::runtime_error("SockedLoop : recv");
 	}
 	if (res == 0){
 		std::cout << "connection was closed by client   " << "for fd " << _vFds[i].fd << std::endl;
 		close(_vFds[i].fd);
+		_vFds.erase(_vFds.begin() + i);
 	}
 	_recvBites += res;
 	_buff += buff;
@@ -105,15 +125,19 @@ void	Socket::recvConnection(int i){
 		//test now :
 		std::string reply = methods(_buff, _servers, _portNumber, _hostName);
 		
-		
 		//UNFINISHED
 		int bitesend = (int)send(_vFds[i].fd, reply.c_str(), reply.length(), 0);
 		if (bitesend < 0){
 			throw std::runtime_error("Socket : send");
 		}
 		//sendData(_vFds[i].fd); //test function
+
+		std::cout << "reply was sent" << std::endl;
 		close(_vFds[i].fd);
-		
+		// close(_vFds[i + 1].fd);
+		_vFds.erase(_vFds.begin() + i);
+		_recvBites = 0;
+		_buff.clear();
 	}
 }
 
@@ -135,17 +159,27 @@ void Socket::pollLoop(std::map<std::string, std::vector<Server> > servers){
 		} else {
 			
 			for (int i = 0; i < (int)_vFds.size(); i++){
-				
+			//	std::cout << "VFD SIZE: " << _vFds.size() << std::endl;
 				//std::cout << (int)_vFds.size() << std::endl;
 				if (_vFds[i].fd == 0)
 					continue;
 				if ((_vFds[i].revents & POLLIN) == POLLIN){
 					//std::cout << "unexpected result, revent should be POLLIN" << std::endl;
 					if (_vFds[i].fd == _listenFd){///Listening socket is readable -> need to accept all incoming connections
-						acceptNewConnect(i); //work with listening socket
-					}
+						try {
+							acceptNewConnect(i);
+						} catch (std::exception &e) {
+							//std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
+						}
+											}
 					else { ///connection is not on listening socket, need to be readable -> receive all data
-						recvConnection(i);
+						try {
+							recvConnection(i);
+						} catch (std::exception &e) {
+							//std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
+						}
+						
+						
 					}
 				}
 			}

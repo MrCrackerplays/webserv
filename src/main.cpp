@@ -18,7 +18,6 @@ int	main(int argc, char **argv) {
 	//test yuliia // comment if not needed :
 	config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
 	
-	
 	std::map<std::string, std::vector<Server> > servers;
 	std::map<std::string, Socket> sockets;
 	try {
