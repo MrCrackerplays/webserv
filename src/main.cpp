@@ -34,50 +34,7 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 				
 			}
 		}
-		
-		
-	
-		
-		
-		
 	}
-	
-	
-	
-//	while (true) {
-//
-//		if (poll(&_vFds[0], (unsigned int)_vFds.size(), 0) < 0){
-//			throw std::runtime_error("Socket : poll");
-//		} else {
-//
-//			for (int i = 0; i < (int)_vFds.size(); i++){
-//			//	std::cout << "VFD SIZE: " << _vFds.size() << std::endl;
-//				//std::cout << (int)_vFds.size() << std::endl;
-//				if (_vFds[i].fd == 0)
-//					continue;
-//				if ((_vFds[i].revents & POLLIN) == POLLIN){
-//					//std::cout << "unexpected result, revent should be POLLIN" << std::endl;
-//					if (_vFds[i].fd == _listenFd){///Listening socket is readable -> need to accept all incoming connections
-//						try {
-//							acceptNewConnect(i);
-//						} catch (std::exception &e) {
-//							//std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
-//						}
-//											}
-//					else { ///connection is not on listening socket, need to be readable -> receive all data
-//						try {
-//							recvConnection(i);
-//						} catch (std::exception &e) {
-//							//std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
-//						}
-//
-//
-//					}
-//				}
-//			}
-//
-//		}
-//	}//end of while loop
 	
 }
 
