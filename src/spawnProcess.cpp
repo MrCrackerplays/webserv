@@ -33,8 +33,8 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	if (pos == std::string::npos){
 		pos = 0;
 	}
-	std::string hostName = request.urlPath.substr(0, pos);
-	std::string str2 = "SERVER_NAME=" + hostName;
+	//std::string hostName = request.urlPath.substr(0, pos);
+	std::string str2 = "SERVER_NAME=" + hostNameSocket;
 	envp[2] = (char *)str2.c_str();
 	std::string str3 = "SERVER_PROTOCOL=" + request.httpVers;
 	envp[3] = (char *)str3.c_str();

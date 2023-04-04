@@ -3,7 +3,7 @@ include .env
 NAME := webserv
 CC := c++
 
-CFLAGS ?= -Wall -Werror -Wextra -std=c++98 -Wshadow -Wno-shadow
+CFLAGS ?= -Wall # -Werror -Wextra -std=c++98 -Wshadow -Wno-shadow
 ifdef DEBUG
 CFLAGS := -g $(CFLAGS)
 endif

@@ -8,6 +8,18 @@
 #include "Socket.hpp"
 #include "methods.hpp"
 
+int		Socket::getSocketFd(){
+	return _listenFd;
+}
+
+addrinfo *	Socket::getAddrInfo(){
+	return _addrinfo;
+}
+
+std::vector<pollfd> &Socket::getPollFdVector(){
+	return _vFds;
+}
+
 Socket::Socket(char * hostName, char * portNumber){
 	
 	int status;
@@ -17,6 +29,9 @@ Socket::Socket(char * hostName, char * portNumber){
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
+	
+	_addrinfo = new addrinfo;
+	
 	status = getaddrinfo(hostName, portNumber, &hints, &_addrinfo);
 	if (status < 0){
 		throw std::runtime_error("Port : getaddrinfo");
@@ -31,14 +46,13 @@ Socket::Socket(char * hostName, char * portNumber){
 
 Socket::~Socket(){
 	//UNFINISHED
-	//freeaddrinfo(_addrinfo); pointer being freed was not allocated - check needed
+	//freeaddrinfo(_addrinfo); //pointer being freed after allocating with new - check needed
 }
 
 //work with listening socket
 void	Socket::acceptNewConnect(int i){
 	int newFd = 0;
 	pollfd newPollfd;
-	//std::cout << "start acceptNewConnect" << std::endl;
 	do {
 		newFd = accept(_listenFd, NULL, NULL);
 		if (newFd < 0){ //not needed maybe, errno can be and issue
@@ -54,7 +68,6 @@ void	Socket::acceptNewConnect(int i){
 		newPollfd.events = POLLIN;
 		_vFds.push_back(newPollfd);
 	} while (newFd != -1);
-	//std::cout << "end acceptNewConnect" << std::endl;
 }
 
 int	findContentLenght(std::string buffer){
@@ -87,15 +100,20 @@ void	Socket::recvConnection(int i){
 	int res = 0;
 	char buff[1024];
 	std::string buffer;
+	std::cout << _vFds[i].fd << std::endl;
 	
 	res = (int)recv(_vFds[i].fd, buff, 1024, 0);
+
 	if (res < 0){
 		close(_vFds[i].fd);
-		throw std::runtime_error("SockedLoop : revc");
+
+		std::cerr << "recv failed on i = " << i << "FD: " << _vFds[i].fd << strerror(errno) << std::endl;
+		throw std::runtime_error("SockedLoop : recv");
 	}
 	if (res == 0){
 		std::cout << "connection was closed by client   " << "for fd " << _vFds[i].fd << std::endl;
 		close(_vFds[i].fd);
+		_vFds.erase(_vFds.begin() + i);
 	}
 	_recvBites += res;
 	_buff += buff;
@@ -105,83 +123,157 @@ void	Socket::recvConnection(int i){
 		//test now :
 		std::string reply = methods(_buff, _servers, _portNumber, _hostName);
 		
-		
 		//UNFINISHED
 		int bitesend = (int)send(_vFds[i].fd, reply.c_str(), reply.length(), 0);
 		if (bitesend < 0){
 			throw std::runtime_error("Socket : send");
 		}
 		//sendData(_vFds[i].fd); //test function
+
+		std::cout << "reply was sent" << std::endl;
 		close(_vFds[i].fd);
-		
+		// close(_vFds[i + 1].fd);
+		_vFds.erase(_vFds.begin() + i);
+		_recvBites = 0;
+		_buff.clear();
 	}
 }
 
-void Socket::pollLoop(std::map<std::string, std::vector<Server> > servers){
+void	Socket::checkEvents(){
 	
-	_servers = servers;
-	try {
-		setToNonBlocking(_listenFd);
-		bindToPort(_listenFd, _addrinfo);
-		setToListen(_listenFd);
-		initiateVectPoll(_listenFd, _vFds);
-	} catch (std::exception &e) {
-		std::cerr << e.what() << std::endl;
-	}
-	while (true) {
-
-		if (poll(&_vFds[0], (unsigned int)_vFds.size(), 0) < 0){
-			throw std::runtime_error("Socket : poll");
-		} else {
+	for (int i = 0; i < (int)_vFds.size(); i++){
+		
+		if (_vFds[i].fd == 0)
+			continue;
+		if ((_vFds[i].revents & POLLIN) == POLLIN){
 			
-			for (int i = 0; i < (int)_vFds.size(); i++){
+			//listening socket event
+			if (_vFds[i].fd == _listenFd){
 				
-				//std::cout << (int)_vFds.size() << std::endl;
-				if (_vFds[i].fd == 0)
-					continue;
-				if ((_vFds[i].revents & POLLIN) == POLLIN){
-					//std::cout << "unexpected result, revent should be POLLIN" << std::endl;
-					if (_vFds[i].fd == _listenFd){///Listening socket is readable -> need to accept all incoming connections
-						acceptNewConnect(i); //work with listening socket
-					}
-					else { ///connection is not on listening socket, need to be readable -> receive all data
-						recvConnection(i);
-					}
+				try {
+					acceptNewConnect(i);
+				} catch (std::exception &e) {
+							std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
+				}
+			//client's from listening socket event
+			} else {
+				try {
+					recvConnection(i);
+				} catch (std::exception &e) {
+							std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
 				}
 			}
-
 		}
-	}//end of while loop
-
-}
-
-void	Socket::sendData(int client_socket){
-	
-	std::string response_header = "HTTP/1.0 200 OK\r\n"
-						   "Content-Type: text/html\r\n"
-						   "Content-Length: 348\r\n" // !! need to be extra careful with numbers content-lenght
-	"\r\n";
-	
-	std::string filename = "/Users/yuliia/Codam/webserv/info_practice.html"; //HARDCODED file path
-	std::ifstream file(filename);
-	std::string response_body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-	std::cout << response_body << std::endl;
-
-	//header
-	int bitesend1 = (int)send(client_socket, response_header.c_str(), response_header.length(), 0);
-	if (bitesend1 < 0){
-		throw std::runtime_error("Socket : send");
 	}
-	std::cout << "header : bite sent: " <<bitesend1 << " response lenght: " << response_header.length() <<std::endl;
-	
-	//body from file
-	int bitesend2 = (int)send(client_socket, response_body.c_str(), response_body.length(), 0);
-	if (bitesend2 < 0){
-		throw std::runtime_error("Socket : send");
-	}
-	std::cout << "body : bite sent: " <<bitesend2 << " response lenght: " << response_body.length() <<std::endl;
 }
 
-int		Socket::getSocketFd(){
-	return _listenFd;
-}
+
+
+
+//void Socket::pollLoop(std::map<std::string, std::vector<Server> > servers){
+//
+//	_servers = servers;
+//	try {
+//		setToNonBlocking(_listenFd);
+//		bindToPort(_listenFd, _addrinfo);
+//		setToListen(_listenFd);
+//		initiateVectPoll(_listenFd, _vFds);
+//	} catch (std::exception &e) {
+//		std::cerr << e.what() << std::endl;
+//	}
+//	while (true) {
+//
+//		if (poll(&_vFds[0], (unsigned int)_vFds.size(), 0) < 0){
+//			throw std::runtime_error("Socket : poll");
+//		} else {
+//
+//			for (int i = 0; i < (int)_vFds.size(); i++){
+//			//	std::cout << "VFD SIZE: " << _vFds.size() << std::endl;
+//				//std::cout << (int)_vFds.size() << std::endl;
+//				if (_vFds[i].fd == 0)
+//					continue;
+//				if ((_vFds[i].revents & POLLIN) == POLLIN){
+//					//std::cout << "unexpected result, revent should be POLLIN" << std::endl;
+//					if (_vFds[i].fd == _listenFd){///Listening socket is readable -> need to accept all incoming connections
+//						try {
+//							acceptNewConnect(i);
+//						} catch (std::exception &e) {
+//							//std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
+//						}
+//											}
+//					else { ///connection is not on listening socket, need to be readable -> receive all data
+//						try {
+//							recvConnection(i);
+//						} catch (std::exception &e) {
+//							//std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
+//						}
+//
+//
+//					}
+//				}
+//			}
+//
+//		}
+//	}//end of while loop
+//
+//}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//void	Socket::sendData(int client_socket){
+//
+//	std::string response_header = "HTTP/1.0 200 OK\r\n"
+//						   "Content-Type: text/html\r\n"
+//						   "Content-Length: 348\r\n" // !! need to be extra careful with numbers content-lenght
+//	"\r\n";
+//
+//	std::string filename = "/Users/yuliia/Codam/webserv/info_practice.html"; //HARDCODED file path
+//	std::ifstream file(filename);
+//	std::string response_body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+//	std::cout << response_body << std::endl;
+//
+//	//header
+//	int bitesend1 = (int)send(client_socket, response_header.c_str(), response_header.length(), 0);
+//	if (bitesend1 < 0){
+//		throw std::runtime_error("Socket : send");
+//	}
+//	std::cout << "header : bite sent: " <<bitesend1 << " response lenght: " << response_header.length() <<std::endl;
+//
+//	//body from file
+//	int bitesend2 = (int)send(client_socket, response_body.c_str(), response_body.length(), 0);
+//	if (bitesend2 < 0){
+//		throw std::runtime_error("Socket : send");
+//	}
+//	std::cout << "body : bite sent: " <<bitesend2 << " response lenght: " << response_body.length() <<std::endl;
+//}
