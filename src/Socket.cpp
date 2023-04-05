@@ -108,7 +108,22 @@ int	findContentLenght(std::string buffer){
 	return false;
 }
 
-bool	fullRequestReceived(std::string buffer, size_t recvBites){
+bool	fullRequestReceived(std::string buffer, size_t recvBites, std::vector<std::string> buffVect){
+	
+//	std::string buff;
+//
+//	for (std::vector<std::string>::iterator it = buffVect.begin(); it < buffVect.end(); it++){
+//
+//		std::cout << *it << " ->>> into buff str" << std::endl;
+//		buff += *it;
+//	}
+//	size_t headrSize = buff.find("\r\n\r\n");
+//	if (headrSize != std::string::npos){
+//		headrSize += 4;
+//		if ((unsigned int)findContentLenght(buff) == recvBites - headrSize){
+//			return true;
+//		}
+//	}
 	
 	size_t headrSize = buffer.find("\r\n\r\n");
 	if (headrSize != std::string::npos){
@@ -122,14 +137,14 @@ bool	fullRequestReceived(std::string buffer, size_t recvBites){
 
 void	Socket::recvConnection(int i){
 	
-	std::cout << "recvConnection, i: " << i << std::endl;
+	//std::cout << "recvConnection, i: " << i << std::endl;
 	
 	int res = 0;
-	char buff[1025];
+	char buff[1024];
 	std::string buffer;
 	std::cout << _vFds[i].fd << std::endl;
 	
-	res = (int)recv(_vFds[i].fd, buff, 1024, 0);
+	res = (int)recv(_vFds[i].fd, buff, 1023, 0);
 	if (res == -1){// res == -1 is niot neseserely an error
 		return;
 	} else if (res < 0){
@@ -143,26 +158,30 @@ void	Socket::recvConnection(int i){
 		_vFds.erase(_vFds.begin() + i);
 	} else {
 		//add on to buffer
-		buff[1024] = '\0';
-		std::cout << "----- piece of buffer: " << buff << std::endl;
+		buff[res] = '\0';
+		//std::cout << "----- piece of buffer: " << buff << std::endl;
 		_recvBites += res;
 		_buffVect.push_back(buff);
 	//	_buff += buff;
-	//	_buff.append(buff, res);
-		if (fullRequestReceived(_buff, _recvBites)){
+		_buff.append(buff, res);
+		
+		
+		
+		if (fullRequestReceived(_buff, _recvBites, _buffVect)){
 			std::cout << "------------------------------" << std::endl;
 			std::cout << "buffer after request received: " << std::endl;
-			printVectStr(_buffVect);
+			//printVectStr(_buffVect);
+			std::cout << _buff << std::endl;
 			std::cout << buff << std::endl;
 			std::cout << "------------------------------" << std::endl;
 			
 			
 			//vector::string into string
-			for (std::vector<std::string>::iterator it = _buffVect.begin(); it < _buffVect.end(); it++){
-				
-				std::cout << *it << " ->>> into buff str" << std::endl;
-				_buff += *it;
-			}
+//			for (std::vector<std::string>::iterator it = _buffVect.begin(); it < _buffVect.end(); it++){
+//
+//				std::cout << *it << " ->>> into buff str" << std::endl;
+//				_buff += *it;
+//			}
 			
 			
 			//parsing part
@@ -170,13 +189,17 @@ void	Socket::recvConnection(int i){
 			
 			//send part ->> need to be relocated in the event loop
 			//UNFINISHED
+			//sendData(_vFds[i].fd); //test function
+			
 			int bitesend = (int)send(_vFds[i].fd, reply.c_str(), reply.length(), 0);
 			if (bitesend < 0){
 				throw std::runtime_error("Socket : send");
 			}
-			//sendData(_vFds[i].fd); //test function
+		
+		
+			
 
-			std::cout << "reply was sent" << std::endl;
+			//std::cout << "reply was sent" << std::endl;
 			close(_vFds[i].fd);
 			// close(_vFds[i + 1].fd);
 			_vFds.erase(_vFds.begin() + i);
@@ -187,7 +210,7 @@ void	Socket::recvConnection(int i){
 	}
 
 	
-	std::cout << "end of recvConnection, i: " << i << std::endl;
+	//std::cout << "end of recvConnection, i: " << i << std::endl;
 }
 
 
@@ -223,6 +246,34 @@ void	Socket::checkEvents(){
 			}
 		}
 	}
+}
+
+
+void	Socket::sendData(int client_socket){
+
+	std::string response_header = "HTTP/1.0 200 OK\r\n"
+						   "Content-Type: text/html\r\n"
+						   "Content-Length: 348\r\n" // !! need to be extra careful with numbers content-lenght
+	"\r\n";
+
+	std::string filename = "/Users/yuliia/Codam/webserv/info_practice.html"; //HARDCODED file path
+	std::ifstream file(filename);
+	std::string response_body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+	std::cout << response_body << std::endl;
+
+	//header
+	int bitesend1 = (int)send(client_socket, response_header.c_str(), response_header.length(), 0);
+	if (bitesend1 < 0){
+		throw std::runtime_error("Socket : send");
+	}
+	std::cout << "header : bite sent: " <<bitesend1 << " response lenght: " << response_header.length() <<std::endl;
+
+	//body from file
+	int bitesend2 = (int)send(client_socket, response_body.c_str(), response_body.length(), 0);
+	if (bitesend2 < 0){
+		throw std::runtime_error("Socket : send");
+	}
+	std::cout << "body : bite sent: " <<bitesend2 << " response lenght: " << response_body.length() <<std::endl;
 }
 
 
@@ -307,31 +358,3 @@ void	Socket::checkEvents(){
 
 
 
-
-
-//void	Socket::sendData(int client_socket){
-//
-//	std::string response_header = "HTTP/1.0 200 OK\r\n"
-//						   "Content-Type: text/html\r\n"
-//						   "Content-Length: 348\r\n" // !! need to be extra careful with numbers content-lenght
-//	"\r\n";
-//
-//	std::string filename = "/Users/yuliia/Codam/webserv/info_practice.html"; //HARDCODED file path
-//	std::ifstream file(filename);
-//	std::string response_body((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-//	std::cout << response_body << std::endl;
-//
-//	//header
-//	int bitesend1 = (int)send(client_socket, response_header.c_str(), response_header.length(), 0);
-//	if (bitesend1 < 0){
-//		throw std::runtime_error("Socket : send");
-//	}
-//	std::cout << "header : bite sent: " <<bitesend1 << " response lenght: " << response_header.length() <<std::endl;
-//
-//	//body from file
-//	int bitesend2 = (int)send(client_socket, response_body.c_str(), response_body.length(), 0);
-//	if (bitesend2 < 0){
-//		throw std::runtime_error("Socket : send");
-//	}
-//	std::cout << "body : bite sent: " <<bitesend2 << " response lenght: " << response_body.length() <<std::endl;
-//}

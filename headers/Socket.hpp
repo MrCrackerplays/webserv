@@ -63,6 +63,8 @@ public:
 	void	acceptNewConnect(int i);
 	void	recvConnection(int i);
 
+	//test purposes
+	void	sendData(int client_socket);
 	
 	//getters
 	int		getSocketFd();
