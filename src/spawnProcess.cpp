@@ -191,18 +191,21 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		//read from child block
 		size_t res = 1;
 		char buff[1024];
+		memset(buff, 0, 1024);
 		while (res > 0){
-			res = read(pipeFdOut[0], buff, 1024);
+			res = read(pipeFdOut[0], buff, 1023);
 			if (res < 0){
 				close(pipeFdOut[0]);
 				delete [] envp;
 				throw std::runtime_error("spawnProcess : read");
 			}
 			else if (res == 0){
-				reply.append(buff);
+				buff[res] = '\0';
+				reply.append(buff, res);
 				break;
 			} else {
-				reply.append(buff);
+				buff[res] = '\0';
+				reply.append(buff, res);
 			}
 			memset(buff, 0, 1024);
 		}

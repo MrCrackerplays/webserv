@@ -168,12 +168,12 @@ void	Socket::recvConnection(int i){
 		
 		
 		if (fullRequestReceived(_buff, _recvBites, _buffVect)){
-			std::cout << "------------------------------" << std::endl;
-			std::cout << "buffer after request received: " << std::endl;
-			//printVectStr(_buffVect);
-			std::cout << _buff << std::endl;
-			std::cout << buff << std::endl;
-			std::cout << "------------------------------" << std::endl;
+//			std::cout << "------------------------------" << std::endl;
+//			std::cout << "buffer after request received: " << std::endl;
+//			//printVectStr(_buffVect);
+//			std::cout << _buff << std::endl;
+//			std::cout << buff << std::endl;
+//			std::cout << "------------------------------" << std::endl;
 			
 			
 			//vector::string into string
