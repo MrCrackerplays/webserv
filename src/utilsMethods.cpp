@@ -55,10 +55,13 @@ std::string getHeaderByKey(std::map<std::string, std::vector<std::string> >& hea
 	std::string result;
 
 	mapIt = headers.find(key);
-	neededVector = mapIt->second;
-	for (vectorIt = neededVector.begin(); vectorIt != neededVector.end(); vectorIt++) {
-		std::string dereferencedString = *vectorIt;
-		result += dereferencedString;
+	if (mapIt != headers.end()){
+		
+		neededVector = mapIt->second;
+		for (vectorIt = neededVector.begin(); vectorIt != neededVector.end(); vectorIt++) {
+			std::string dereferencedString = *vectorIt;
+			result += dereferencedString;
+		}
 	}
 	return result;
 	

@@ -25,8 +25,6 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 	}
 
 	while (true) {
-		
-		
 		for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
 			if (poll(&it->getPollFdVector()[0], (unsigned int)it->getPollFdVector().size(), 0) < 0){
 				throw std::runtime_error("Socket : poll");
