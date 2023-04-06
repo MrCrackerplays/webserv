@@ -9,6 +9,7 @@
 #define Socket_hpp
 
 #define EVENTS_NUM 5
+#define MAX_REQUEST_SIZE 8192
 
 //#include "Sockadrs.hpp"
 #include "Server.hpp"
