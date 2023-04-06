@@ -5,9 +5,7 @@
 #include <fstream>
 #include <poll.h>
 
-
 void	setupSocket(std::map<std::string, std::vector<Server> > &servers, Socket &socket){
-	
 	setToNonBlocking(socket.getSocketFd());
 	bindToPort(socket.getSocketFd(), socket.getAddrInfo());
 	setToListen(socket.getSocketFd());
@@ -22,7 +20,7 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 		try {
 			setupSocket(servers, *it);
 		} catch (std::exception &e) {
-				std::cerr << e.what() << std::endl;
+			std::cerr << e.what() << std::endl;
 		}
 	}
 
@@ -34,11 +32,10 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 				throw std::runtime_error("Socket : poll");
 			} else {
 				it->checkEvents();
-				
+			
 			}
 		}
 	}
-	
 }
 
 
@@ -51,30 +48,20 @@ int	main(int argc, char **argv) {
 	}
 	if (argc == 2)
 		config_file = argv[1];
-	
+
 	//test yuliia // comment if not needed :
 	//config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
 	//config_file = "/Users/yuliia/Codam/webserv/configs/iframes.conf";
 	
 	std::map<std::string, std::vector<Server> > servers;
-	std::map<std::string, Socket> sockets;
 	std::vector<Socket> vectSockets;
 	try {
 		initialize_servers(servers, config_file);
 		std::map<std::string, std::vector<Server> >::iterator it;
-		for (it = servers.begin(); it != servers.end(); it++)
-		{
-			//std::cout << it->second[0].getHost() << ":" << it->second[0].getPort() << std::endl;
-//			sockets.insert(std::pair<std::string, Socket>(it->first,
-			vectSockets.push_back(Socket((char*)it->second[0].getHost().c_str(), (char*)it->second[0].getPort().c_str())) ;
-
+		for (it = servers.begin(); it != servers.end(); it++) {
+			vectSockets.push_back(Socket((char*)it->second[0].getHost().c_str(), (char*)it->second[0].getPort().c_str()));
 		}
 		pollLoop(vectSockets, servers);
-		std::map<std::string, Socket>::iterator it2;
-		for (it2 = sockets.begin(); it2 != sockets.end(); it2++) {
-			std::cout << "Starting socket [" << it2->first << "]" << std::endl;
-			//it2->second.pollLoop(servers);
-		}
 	} catch(const std::exception& e) {
 		std::cerr << e.what() << std::endl;
 		return (1);
