@@ -81,20 +81,33 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	
 	parsRequest request;
 	response response;
+	std::string body;
 	
 	std::string cgiReply;
 	std::string replyString;
 	int statusChild;
 	std::string hostPort = host + ":" + port;
-	
+
 	std::cout << "------------------------------" << std::endl;
 	std::cout << "buffer after request received: " << std::endl;
 	std::cout << parsBuff << std::endl;
 	std::cout << "------------------------------" << std::endl;
 	
 	request = parseRequest(parsBuff, servers, hostPort);
+	if (request.autoindex == true){
+		if (request.code == 200){
+			response = responseStructConstruct(servers, hostPort, request.requestBody, request);
+		} else {
+			response = responseStructConstruct(servers, hostPort, "", request);
+		}
+		replyString = formResponseString(response);
+		return replyString;
+	}
+	
+//std::cout<< "PATH: " << request.physicalPathCgi << std::endl;
+	
 	if (request.code != 200){
-		std::cout << "check1------" << std::endl;
+		std::cout << "method check1------" << std::endl;
 		response = responseStructConstruct(servers, hostPort, "", request);
 	} else {
 		
@@ -103,27 +116,28 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 			try {
 				cgiReply = spawnProcess(request, port, host, statusChild);
 			} catch (std::exception &e) {
-				std::cout << "check2------" << std::endl;
+				std::cout << "method check2------" << std::endl;
 				std::cerr << "Caught exception: " << e.what() << std::endl;
 				request.code = 500;
 				response = responseStructConstruct(servers, hostPort, "", request);
 				replyString = formResponseString(response);
 				return replyString;
-				
 			}
+			
+			std::cout << "methods: status Child:" << statusChild << std::endl;
+			
 			if (statusChild < 0){
-				std::cout << "check3------" << std::endl;
+				std::cout << "method check3------" << std::endl;
 				std::cerr << "error in child proper error is still needed lol" <<std::endl;
 				request.code = 500;
 				response = responseStructConstruct(servers, hostPort, "", request);
 			} else {
-				std::cout << "check5------" << std::endl;
+				std::cout << "method check4------" << std::endl;
 				parseCorrectResponseCGI(cgiReply, response);
 			}
 			
 		// GET
 		} else if (request.method == GET){
-			std::string body;
 			try {
 				methodGet(request, body);
 			} catch (std::exception &e) {

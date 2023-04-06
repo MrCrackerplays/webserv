@@ -15,6 +15,7 @@
 typedef struct {
 	
 	int code;
+	bool autoindex;
 	
 	//from request:
 	std::map <std::string, std::vector<std::string> > query;

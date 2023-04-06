@@ -23,10 +23,8 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	envp = new char*[18];
 	if (envp == NULL)
 		return NULL;
-	
 	std::string str0 = "SERVER_SOFTWARE=webserv/1.0";
 	envp[0] = (char *)str0.c_str();
-	
 	std::string str1 = "GATEWAY_INTERFACE=CGI/1.1";
 	envp[1] = (char *)str1.c_str();
 	size_t pos = request.urlPath.find('/');
@@ -44,14 +42,9 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	envp[5] = (char *)str5.c_str();
 	std::string str6 = "QUERY_STRING=" + request.queryString;
 	envp[6] = (char *)str6.c_str();
-	
-	
-	//FIX - check if the cont type is correct name for header
-	std::string contType = getHeaderByKey(request.headers, "content-type");
-	std::string str7 = "CONTENT_TYPE=" + contType; //content-type in the header
+	std::string contType = getHeaderByKey(request.headers, "Content-Type");
+	std::string str7 = "CONTENT_TYPE=" + contType;
 	envp[7] = (char *)str7.c_str();
-	//FIX
-	
 	std::string str8 = "CONTENT_LENGTH=" + std::to_string(request.requestBodyLen);
 	envp[8] = (char *)str8.c_str();
 	pos = request.urlPath.find('/');
@@ -76,11 +69,7 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	std::string str16 = "REMOTE_IDENT=";
 	envp[16] = (char *)str16.c_str();
 	envp[17] = NULL;
-	
-//	for (int i = 0; i < 18; i++) {
-//		std::cout << envp[i] << std::endl;
-//	}
-	
+	//std::cout << "----envp done------" << std::endl;
 	return envp;
 }
 
@@ -102,60 +91,93 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 	pid_t childPid;
 	int pipeFdIn[2];
 	int pipeFdOut[2];
-	char *args[2] = {(char *)request.physicalPathCgi.c_str(), NULL};
+	std::cout << "-----start spawn process-----" << std::endl;
+	char *arguments[2];
+	arguments[0] = (char *)request.physicalPathCgi.c_str();
+	arguments[1] = NULL;
+	
+	//std::cerr << arguments[0] << std::endl << std::endl;
+//	if (arguments[1] == NULL){
+//		std::cerr << "null found" << std::endl;
+//	}
+	
+	std::cout << "-----envp generate-----" << std::endl;
 	char **envp = envpGenerate(request, portNumSocket, hostNameSocket);
 	if (envp == NULL){
+		std::cerr << "spawnProcess : new" << std::endl;
 		throw std::runtime_error("spawnProcess : new");
 	}
-	
+	std::cout << "-----after envp-----" << std::endl;
+
 	//initianing 2 pipes and making all ends of both pipes non-blocking
+	std::cout << "-----pipe init-----" << std::endl;
 	if (pipe(pipeFdIn) == -1 || pipe(pipeFdOut) == -1){
 		delete [] envp;
+		std::cerr << "spawnProcess : pipe" << std::endl;
 		throw std::runtime_error("spawnProcess : pipe");
 	}
-	
+	std::cout << "-----non blocking-----" << std::endl;
 	if (!makeNonBlocking(pipeFdIn[0]) || !makeNonBlocking(pipeFdIn[1]) || !makeNonBlocking(pipeFdOut[0]) || !makeNonBlocking(pipeFdOut[1])){
 		delete [] envp;
-		throw std::runtime_error("Socket : fcntl");
+		std::cerr << "spawnProcess : fcntl" << std::endl;
+		throw std::runtime_error("spawnProcess : fcntl");
 	}
+
+	
+	
+	
 	
 	//spawn a child process
 	childPid = fork();
+	std::cerr << "----fork process, pid: " << childPid << std::endl;
 	if (childPid < 0){ //fork failed
 		close(pipeFdIn[0]);
 		close(pipeFdIn[1]);
 		close(pipeFdOut[0]);
 		close(pipeFdOut[1]);
 		delete [] envp;
-		throw std::runtime_error("Socket : fork");
+		std::cerr << "spawnProcess : fork)" << std::endl;
+		throw std::runtime_error("spawnProcess : fork");
 	}
 	else if (childPid == 0){ //in child process
-		
+		std::cerr << "----in child----" << std::endl;
 		if (dup2(pipeFdIn[0], STDIN_FILENO) < 0){
 			delete [] envp;
+			std::cerr << "child dup2 1" << std::endl;
 			exit(1);
 		}
 		if (dup2(pipeFdOut[1], STDOUT_FILENO) < 0){
 			delete [] envp;
+			std::cerr << "child dup2 2" << std::endl;
 			exit(1);
 		}
+		std::cerr << "----in child: dup2 2 times done" << std::endl;
 		close(pipeFdIn[0]);
 		close(pipeFdIn[1]);
 		close(pipeFdOut[0]);
 		close(pipeFdOut[1]);
-		execve(args[0], args, envp);
+		std::cerr << "----in child: before execve with arg[0] == " << arguments[0] << std::endl;
+		//execve(arguments[0], arguments, envp);
+		execve((char *)request.physicalPathCgi.c_str(), NULL, envp);
 		delete [] envp;
+		std::cerr << "child execve failed" << std::endl;
 		exit(1); //HOW do I end child process in case of execve failure without exit?
 	}
 	else { //in parent process
+		
+		
+		
+		std::cerr << "----in parent : write in child block----" << std::endl;
+		
 		
 		//write in child block
 		const char* data = request.requestBody.c_str();
 		size_t len = request.requestBody.length();
 		while (len > 0) {
+			std::cout << "print data that I will write into child: " << data << std::endl;
 			ssize_t n = write(pipeFdIn[1], data, len);
 			if (n < 0) {
-				
+				std::cerr << "parent : write" << std::endl;
 				close(pipeFdIn[0]);
 				close(pipeFdIn[1]);
 				close(pipeFdOut[0]);
@@ -168,27 +190,39 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		}
 		close(pipeFdIn[1]);
 		close(pipeFdIn[0]);
+
 		
 		//waiting for child to proceed
+		std::cerr << "----in parent: waiting for child to proceed---- " << std::endl;
 		int status;
 		if (waitpid(childPid, &status, 0) < 0){
 			delete [] envp;
+			std::cerr << "parent: spawnProcess: waitpid" << std::endl;
 			throw std::runtime_error("spawnProcess: waitpid");
 		}
-			
+		std::cerr << "----in parent: checking child status--- " << std::endl;
 		if (WIFEXITED(status)){
 			statusChild = WEXITSTATUS(status);
+			if (statusChild == 1){
+				statusChild = -1;
+				close(pipeFdOut[1]);
+				close(pipeFdOut[0]);
+				delete [] envp;
+				std::cerr << "execve failed" << std::endl;
+				throw std::runtime_error("spawnProcess : execve");
+			}
 		} else {
 			statusChild = -1;
 			close(pipeFdOut[1]);
 			close(pipeFdOut[0]);
 			delete [] envp;
+			std::cerr << "parent: status child failure" << std::endl;
 			throw std::runtime_error("spawnProcess : execve");
-			//return reply; //reply or throw?
 		}
 		close(pipeFdOut[1]);
 
 		//read from child block
+		std::cerr << "----in parent: read from child block---- " << std::endl;
 		size_t res = 1;
 		char buff[1024];
 		memset(buff, 0, 1024);
@@ -197,17 +231,22 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 			if (res < 0){
 				close(pipeFdOut[0]);
 				delete [] envp;
+				std::cerr << "parent spawnProcess : read" << std::endl;
 				throw std::runtime_error("spawnProcess : read");
 			}
 			else if (res == 0){
 				buff[res] = '\0';
+				std::cerr << "res == 0, buffer: " << buff << std::endl;
 				reply.append(buff, res);
 				break;
 			} else {
 				buff[res] = '\0';
+				std::cerr << "res > 0, buffer: " << buff << std::endl;
 				reply.append(buff, res);
+				std::cerr << "res > 0, reply: " << reply << std::endl;
 			}
 			memset(buff, 0, 1024);
+			std::cerr << "memset buffer: " << buff << std::endl;
 		}
 		close(pipeFdOut[0]);
 	}

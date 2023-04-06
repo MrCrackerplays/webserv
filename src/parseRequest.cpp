@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <sstream>
+#include "autoindex.hpp"
 
 //https://cplusplus.com/reference/sstream/istringstream/
 
@@ -87,7 +88,7 @@ method	getMethodFromRequest(std::string& method){
 }
 
 #include "Server.hpp"
-std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& servers, std::string& hostPort, std::string& hostNameHeader, std::string& url){
+std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& servers, std::string& hostPort, std::string& hostNameHeader, std::string& url, bool &autoindex){
 	
 	std::string physicalPathCgi;
 	std::vector<Server> serversVect = servers[hostPort];
@@ -112,6 +113,18 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& se
 	std::string root = closestLocation.getRoot();
 	std::string path = closestLocation.getPath();
 	physicalPathCgi = root + url.substr(path.length());
+	// in case it finishes on '/' I need to add 1 more thing
+	if (physicalPathCgi[physicalPathCgi.length() - 1] == '/'){
+		
+		if (closestLocation.getDirectoryListing()){
+			//if there is autoindex on instead of get default file we need to generate our own
+			std::string autoindex = generate_autoindex(physicalPathCgi, path);
+			//this is the body of request -> content, it is not a name
+			//HANDLE
+			autoindex = true;
+		}
+		physicalPathCgi += closestLocation.getDefaultFile();
+	}
 	return physicalPathCgi;
 }
 
@@ -206,9 +219,17 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 		if (isRedirection(request, servers, hostPort)){
 			return request;
 		}
-		requestStream >> request.requestBody;
-		request.physicalPathCgi = getFileFromAnyServer(servers, hostPort, request.hostNameHeader, request.urlPath);
+		
+		request.physicalPathCgi = getFileFromAnyServer(servers, hostPort, request.hostNameHeader, request.urlPath, request.autoindex);
+		if (request.autoindex == true){
+			request.requestBody = request.physicalPathCgi;
+		} else {
+			requestStream >> request.requestBody;
+		}
 		findMethodInServer(request, servers, hostPort);
+		if (request.method != GET && request.autoindex == true){ //???? not sure
+			request.code = 405;
+		}
 	}
 	return request;
 }
