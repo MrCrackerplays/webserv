@@ -87,8 +87,14 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	int statusChild;
 	std::string hostPort = host + ":" + port;
 	
+	std::cout << "------------------------------" << std::endl;
+	std::cout << "buffer after request received: " << std::endl;
+	std::cout << parsBuff << std::endl;
+	std::cout << "------------------------------" << std::endl;
+	
 	request = parseRequest(parsBuff, servers, hostPort);
 	if (request.code != 200){
+		std::cout << "check1------" << std::endl;
 		response = responseStructConstruct(servers, hostPort, "", request);
 	} else {
 		
@@ -97,16 +103,21 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 			try {
 				cgiReply = spawnProcess(request, port, host, statusChild);
 			} catch (std::exception &e) {
+				std::cout << "check2------" << std::endl;
 				std::cerr << "Caught exception: " << e.what() << std::endl;
 				request.code = 500;
 				response = responseStructConstruct(servers, hostPort, "", request);
+				replyString = formResponseString(response);
+				return replyString;
 				
 			}
 			if (statusChild < 0){
+				std::cout << "check3------" << std::endl;
 				std::cerr << "error in child proper error is still needed lol" <<std::endl;
 				request.code = 500;
 				response = responseStructConstruct(servers, hostPort, "", request);
 			} else {
+				std::cout << "check5------" << std::endl;
 				parseCorrectResponseCGI(cgiReply, response);
 			}
 			
@@ -138,6 +149,7 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	} else {
 		replyString = formResponseString(response);
 	}
+	std::cout << "METOD FINISHED" << std::endl;
 	return replyString;
 }
 

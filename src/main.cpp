@@ -5,29 +5,34 @@
 #include <fstream>
 #include <poll.h>
 
-void	setupSocket(Socket &socket) {
+void	setupSocket(std::map<std::string, std::vector<Server> > &servers, Socket &socket){
 	setToNonBlocking(socket.getSocketFd());
 	bindToPort(socket.getSocketFd(), socket.getAddrInfo());
 	setToListen(socket.getSocketFd());
 	initiateVectPoll(socket.getSocketFd(), socket.getPollFdVector());
+	socket.setServers(servers);
 }
 
-void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vector<Server> > &servers) {
-	for (std::vector<Socket>::iterator it = vectSockets.begin(); it != vectSockets.end(); it++) {
+void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vector<Server> > &servers){
+	
+	std::vector<Socket>::iterator it;
+	for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
 		try {
-			setupSocket(*it);
+			setupSocket(servers, *it);
 		} catch (std::exception &e) {
 			std::cerr << e.what() << std::endl;
 		}
 	}
 
 	while (true) {
-		for (std::vector<Socket>::iterator it = vectSockets.begin(); it != vectSockets.end(); it++) {
-			Socket currentSocket = *it;
-			if (poll(&currentSocket.getPollFdVector()[0], (unsigned int)currentSocket.getPollFdVector().size(), 0) < 0) {
+		
+		
+		for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
+			if (poll(&it->getPollFdVector()[0], (unsigned int)it->getPollFdVector().size(), 0) < 0){
 				throw std::runtime_error("Socket : poll");
 			} else {
-				currentSocket.checkEvents();
+				it->checkEvents();
+			
 			}
 		}
 	}
@@ -45,8 +50,9 @@ int	main(int argc, char **argv) {
 		config_file = argv[1];
 
 	//test yuliia // comment if not needed :
-	config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
-
+	//config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
+	//config_file = "/Users/yuliia/Codam/webserv/configs/iframes.conf";
+	
 	std::map<std::string, std::vector<Server> > servers;
 	std::vector<Socket> vectSockets;
 	try {

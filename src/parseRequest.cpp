@@ -48,7 +48,6 @@ void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<
 
 std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, std::vector<std::string> >& headers){
 	
-	
 	std::string hostNameHeader;
 	std::string line;
 	

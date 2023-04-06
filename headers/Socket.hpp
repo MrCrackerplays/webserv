@@ -36,7 +36,7 @@ class Socket{
 protected:
 	
 	//adding servers
-	std::map<std::string, std::vector<Server> > _servers;
+	std::map<std::string, std::vector<Server> > *_servers;
 	
 	//transfering addinfo into socket
 	struct addrinfo *_addrinfo;
@@ -48,6 +48,7 @@ protected:
 
 	std::vector<pollfd> _vFds;
 	std::string _buff;
+	std::vector<std::string> _buffVect;
 	size_t _recvBites;
 	
 	
@@ -62,16 +63,23 @@ public:
 	void	acceptNewConnect(int i);
 	void	recvConnection(int i);
 
+	//test purposes
+	void	sendData(int client_socket);
 	
 	//getters
 	int		getSocketFd();
 	addrinfo *getAddrInfo();
 	std::vector<pollfd> &getPollFdVector();
+	
+	//setters
+	void	setServers(std::map<std::string, std::vector<Server> > &servers);
 };
 
 void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);
 void	setToNonBlocking(int listenFd);
 void	bindToPort(int listenFd, addrinfo *addrinfo);
 void	setToListen(int listenFd);
+
+
 
 #endif /* Socket_hpp */
