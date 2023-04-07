@@ -119,7 +119,9 @@ static std::string	handle_location(size_t & i, std::string & line, Server & serv
 			throw ConfigFormatException();
 		}
 	}
-	Location	l(path);
+	if (path[0] != '/')
+		path = "/" + path;
+	Location	l(path, "./root" + path);
 	serv.addLocation(path, l);
 	return (path);
 }
