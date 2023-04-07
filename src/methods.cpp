@@ -48,6 +48,10 @@ void methodDelete(parsRequest& request){
 response responseStructConstruct(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string body, parsRequest& request){
 	
 	response response;
+	std::string setCookie = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath).getSetCookie();
+	if (setCookie != ""){
+		response.setCookie = setCookie;
+	}
 	if (request.code % 100 == 3){ //redirection
 		redirectionResponse(request.code, request.newlocation, response);
 		return response;

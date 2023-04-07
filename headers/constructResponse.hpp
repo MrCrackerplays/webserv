@@ -26,6 +26,7 @@ typedef struct {
 	std::string header;
 	bool redirect;
 	std::string newLocation;
+	std::string setCookie;
 } response;
 
 std::string	formResponseString(response response);
