@@ -88,6 +88,11 @@ static void	handle_root(size_t & i, std::string & line, Location & loc) {
 		std::cerr << "too many arguments for root" << std::endl;
 		throw ConfigFormatException();
 	}
+	if (line[root_end - 1] != '/') {
+		std::cerr << "'" << line << "'" << std::endl;
+		std::cerr << "root must end with a '/'" << std::endl;
+		throw ConfigFormatException();
+	}
 	loc.setRoot(line.substr(root_start, root_end - root_start));
 }
 
