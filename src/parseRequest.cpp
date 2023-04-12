@@ -6,7 +6,7 @@
 //
 
 #include "parseRequest.hpp"
-
+#include "Server.hpp"
 #include <iostream>
 #include <sstream>
 #include "autoindex.hpp"
@@ -62,6 +62,10 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 			}
 			std::string headerName = line.substr(0, pos);
 			std::string headerBody = line.substr(pos + 2);
+			size_t	pos2 = headerBody.rfind(":");
+			if (pos2 != std::string::npos) {
+				headerBody = headerBody.substr(0, pos2);
+			}
 			if (headerName == "Host") {
 				hostNameHeader = headerBody;
 			}
@@ -87,7 +91,22 @@ method	getMethodFromRequest(std::string& method){
 	return NOTSUPPORTED;
 }
 
-#include "Server.hpp"
+void	physicalPathMagic(std::string& physicalPathCgi, bool& autoindex, std::string& path, const Location& closestLocation) {
+	// in case it finishes on '/' I need to add 1 more thing
+	if (physicalPathCgi[physicalPathCgi.length() - 1] == '/'){
+		
+		if (closestLocation.getDirectoryListing()){
+			//if there is autoindex on instead of get default file we need to generate our own
+			std::string autoindexstring = generate_autoindex(physicalPathCgi, path);
+			//this is the body of request -> content, it is not a name
+			//HANDLE
+			autoindex = true;
+		} else {
+			physicalPathCgi += closestLocation.getDefaultFile();
+		}
+	}
+}
+
 std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& servers, std::string& hostPort, std::string& hostNameHeader, std::string& url, bool &autoindex){
 	
 	std::string physicalPathCgi;
@@ -104,6 +123,7 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& se
 					std::string root = closestLocation.getRoot();
 					std::string path = closestLocation.getPath();
 					physicalPathCgi = root + url.substr(path.length());
+					physicalPathMagic(physicalPathCgi, autoindex, path, closestLocation);
 					return physicalPathCgi;
 				}
 			}
@@ -113,18 +133,7 @@ std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& se
 	std::string root = closestLocation.getRoot();
 	std::string path = closestLocation.getPath();
 	physicalPathCgi = root + url.substr(path.length());
-	// in case it finishes on '/' I need to add 1 more thing
-	if (physicalPathCgi[physicalPathCgi.length() - 1] == '/'){
-		
-		if (closestLocation.getDirectoryListing()){
-			//if there is autoindex on instead of get default file we need to generate our own
-			std::string autoindex = generate_autoindex(physicalPathCgi, path);
-			//this is the body of request -> content, it is not a name
-			//HANDLE
-			autoindex = true;
-		}
-		physicalPathCgi += closestLocation.getDefaultFile();
-	}
+	physicalPathMagic(physicalPathCgi, autoindex, path, closestLocation);
 	return physicalPathCgi;
 }
 
