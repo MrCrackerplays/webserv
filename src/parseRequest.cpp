@@ -97,7 +97,7 @@ void	physicalPathMagic(std::string& physicalPathCgi, bool& autoindex, std::strin
 		
 		if (closestLocation.getDirectoryListing()){
 			//if there is autoindex on instead of get default file we need to generate our own
-			std::string autoindexstring = generate_autoindex(physicalPathCgi, path);
+			physicalPathCgi = generate_autoindex(physicalPathCgi, path);
 			//this is the body of request -> content, it is not a name
 			//HANDLE
 			autoindex = true;
