@@ -12,6 +12,7 @@ enum	e_location_arguments {
 	LAR_methods,
 	LAR_cgi,
 	LAR_error_page,
+	LAR_save_location,
 	LAR_invalid
 };
 
@@ -37,6 +38,8 @@ static e_location_arguments	str_to_e_loc(std::string & str) {
 		return LAR_cgi;
 	if (str.rfind("error_page", 0) == 0)
 		return LAR_error_page;
+	if (str.rfind("save_location", 0) == 0)
+		return LAR_save_location;
 	return LAR_invalid;
 }
 
@@ -240,6 +243,31 @@ static void	handle_error_page(size_t & i, std::string & line, Location & loc) {
 	loc.addError(line.substr(code_start, code_end - code_start), line.substr(page_start, page_end - page_start));
 }
 
+static void	handle_save_location(size_t & i, std::string & line, Location & loc) {
+	skip_space(line, i);
+	size_t	save_location_start = i;
+	while (i < line.length() && !std::isspace(line[i]))
+		i++;
+	size_t	save_location_end = i;
+	if (save_location_start == save_location_end) {
+		std::cerr << "'" << line << "'" << std::endl;
+		std::cerr << "no value for save_location" << std::endl;
+		throw ConfigFormatException();
+	}
+	skip_space(line, i);
+	if (i != line.length()) {
+		std::cerr << "'" << line << "'" << std::endl;
+		std::cerr << "too many arguments for save_location" << std::endl;
+		throw ConfigFormatException();
+	}
+	if (line[save_location_end - 1] != '/') {
+		std::cerr << "'" << line << "'" << std::endl;
+		std::cerr << "save_location must end with a '/'" << std::endl;
+		throw ConfigFormatException();
+	}
+	loc.setSaveLocation(line.substr(save_location_start, save_location_end - save_location_start));
+}
+
 void	location_line(std::string & line, bool & in_location, Location & loc) {
 	size_t i = 0;
 	skip_space(line, i);
@@ -291,6 +319,9 @@ void	location_line(std::string & line, bool & in_location, Location & loc) {
 		break;
 	case LAR_error_page:
 		handle_error_page(i, line, loc);
+		break;
+	case LAR_save_location:
+		handle_save_location(i, line, loc);
 		break;
 
 	case LAR_invalid:
