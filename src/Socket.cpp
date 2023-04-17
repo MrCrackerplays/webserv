@@ -140,11 +140,11 @@ void	Socket::recvConnection(int i){
 	//std::cout << "recvConnection, i: " << i << std::endl;
 	
 	int res = 0;
-	char buff[1024];
+	char buff[MAX_REQUEST_SIZE];
 	std::string buffer;
 	std::cout << _vFds[i].fd << std::endl;
 	
-	res = (int)recv(_vFds[i].fd, buff, 1023, 0);
+	res = (int)recv(_vFds[i].fd, buff, MAX_REQUEST_SIZE - 1, 0);
 	if (res == -1){// res == -1 is niot neseserely an error
 		return;
 	} else if (res < 0){
@@ -166,8 +166,7 @@ void	Socket::recvConnection(int i){
 		_buff.append(buff, res);
 		
 		
-		
-		if (fullRequestReceived(_buff, _recvBites, _buffVect)){
+		if (fullRequestReceived(_buff, _recvBites, _buffVect) || res < MAX_REQUEST_SIZE){
 //			std::cout << "------------------------------" << std::endl;
 //			std::cout << "buffer after request received: " << std::endl;
 //			//printVectStr(_buffVect);
