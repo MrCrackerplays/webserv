@@ -4,6 +4,7 @@
 #include "Socket.hpp"
 #include <fstream>
 #include <poll.h>
+#include <csignal>
 
 void	setupSocket(std::map<std::string, std::vector<Server> > &servers, Socket &socket){
 	setToNonBlocking(socket.getSocketFd());
@@ -46,6 +47,9 @@ int	main(int argc, char **argv) {
 	}
 	if (argc == 2)
 		config_file = argv[1];
+
+	//ignore SIGPIPE which sometimes happens when client closes connection
+	std::signal(SIGPIPE, SIG_IGN);
 
 	//test yuliia // comment if not needed :
 	//config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
