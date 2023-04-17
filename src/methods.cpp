@@ -70,7 +70,11 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 	} else {
 		response.errorPageByCode = "";
 		response.body = body;
-		response.contentType = getContentType(request.physicalPathCgi);
+		if (request.autoindex) {
+			response.contentType = "text/html";
+		} else {
+			response.contentType = getContentType(request.physicalPathCgi);
+		}
 		response.contentLenght = response.body.length();
 	}
 	
