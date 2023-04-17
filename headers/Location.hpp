@@ -14,6 +14,7 @@ protected:
 	std::string		_require_cookie;
 	std::string		_default_file;
 	size_t			_client_body_limit;
+	std::string		_save_location;
 	std::pair<std::string, std::string>	_redirect;
 	std::vector<std::string>			_methods;
 	std::vector<std::string>			_cgis;
@@ -26,7 +27,8 @@ public:
 			std::string default_file = "",
 			std::string set_cookie = "",
 			std::string require_cookie = "",
-			size_t client_body_limit = 0);
+			size_t client_body_limit = 0,
+			std::string save_location = "");
 	Location(Location const & src);
 
 	~Location(void);
@@ -42,6 +44,7 @@ public:
 	std::string	getSetCookie(void) const { return (this->_set_cookie); };
 	std::string	getRequireCookie(void) const { return (this->_require_cookie); };
 	std::pair<std::string, std::string>	getRedirect(void) const { return (this->_redirect); };
+	std::string	getSaveLocation(void) const { return (this->_save_location); };
 
 	void	setPath(std::string path) { this->_path = path; };
 	void	setRoot(std::string root) { this->_root = root; };
@@ -51,6 +54,7 @@ public:
 	void	setSetCookie(std::string set_cookie) { this->_set_cookie = set_cookie; };
 	void	setRequireCookie(std::string require_cookie) { this->_require_cookie = require_cookie; };
 	void	setRedirect(std::pair<std::string, std::string> redirect) { this->_redirect = redirect; };
+	void	setSaveLocation(std::string save_location) { this->_save_location = save_location; };
 
 
 

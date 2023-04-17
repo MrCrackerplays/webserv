@@ -122,7 +122,7 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 		//CGI
 		if (request.callCGI == true){
 			try {
-				cgiReply = spawnProcess(request, port, host, statusChild);
+				cgiReply = spawnProcess(request, port, host, statusChild, std::string("SAVE_LOCATION=") + getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath).getSaveLocation());
 			} catch (std::exception &e) {
 				std::cout << "method check2------" << std::endl;
 				std::cerr << "Caught exception: " << e.what() << std::endl;
