@@ -110,6 +110,10 @@ static void	add_server(std::map<std::string, std::vector<Server> > & servers, st
 	std::vector<Server> & vec = servers[host + ":" + port_str];
 	vec.push_back(Server(port_str, host));
 	Server & server = vec.back();
+	{//to fix exception when no root path is specified in config
+		Location backup("/", "./root/");
+		server.addLocation("/", backup);
+	}
 	std::string	line;
 	std::string	location;
 	Location *	loc = NULL;
