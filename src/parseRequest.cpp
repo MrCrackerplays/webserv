@@ -211,6 +211,38 @@ bool	isRedirection(parsRequest &request, std::map<std::string, std::vector<Serve
 	return false;
 }
 
+bool	cookieEnforcement(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
+	
+	std::string cookie = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath).getRequireCookie();
+	//check if there's a cookie requirement
+	if (cookie == "")
+		return false;
+
+	//check if there's a cookie header
+	if (request.headers.find("Cookie") == request.headers.end()) {
+		request.code = 403;
+		// std::cout << "couldnt find cookie header" << std::endl;
+		return true;
+	}
+
+	std::vector<std::string> vec = request.headers["Cookie"];
+	//check if the required cookie is in the header
+	bool	found = false;
+	for (std::vector<std::string>::iterator it = vec.begin(); it < vec.end(); it++) {
+		std::string str = *it;
+		if (str.find(cookie) != std::string::npos) {
+			found = true;
+			break;
+		}
+	}
+	if (!found) {
+		request.code = 403;
+		// std::cout << "couldnt find cookie inside cookie header" << std::endl;
+		return true;
+	}
+	return false;
+}
+
 parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
 	
 	parsRequest request;
@@ -225,6 +257,11 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 	} else {
 		request.queryString = getQueryParams(request.urlPath, request.query);
 		request.hostNameHeader = getHeaders(requestStream, request.headers);
+
+		if (cookieEnforcement(request, servers, hostPort)) {
+			return request;
+		}
+
 		if (isRedirection(request, servers, hostPort)){
 			return request;
 		}

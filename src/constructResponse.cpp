@@ -13,6 +13,8 @@ void	redirectionResponse(int code, std::string newlocation, response &response){
 	response.header = "HTTP/1.1 " + response.codeMessage + "\r\n";
 	response.header  += "Location: " + newlocation + "\r\n";
 	response.header += "Content-Length: " + std::to_string(0) + "\r\n";
+	if (response.setCookie != "")
+		response.header += "Set-Cookie: " + response.setCookie + "\r\n";
 	response.header  += "\r\n";
 	response.body = "";
 }
@@ -43,6 +45,8 @@ void constructResponseHeader(response& response) {
 	response.header = "HTTP/1.1 " + response.codeMessage + "\r\n";
 	response.header  += "Content-Type: " + response.contentType + "\r\n";
 	response.header += "Content-Length: " + std::to_string(response.contentLenght) + "\r\n";
+	if (response.setCookie != "")
+		response.header += "Set-Cookie: " + response.setCookie + "\r\n";
 	response.header  += "\r\n";
 }
 
