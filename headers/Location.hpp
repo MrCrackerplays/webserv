@@ -20,8 +20,8 @@ protected:
 	std::map<std::string, std::string>	_error_pages;
 public:
 	Location(std::string path,
+			std::string root,
 			std::pair<std::string, std::string> redirect = std::pair<std::string, std::string>("", ""),
-			std::string root = "./root/",
 			bool directory_listing = false,
 			std::string default_file = "",
 			std::string set_cookie = "",
