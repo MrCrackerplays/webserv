@@ -1,5 +1,3 @@
-include .env
-
 NAME := webserv
 CC := c++
 
@@ -31,7 +29,7 @@ $(NAME): cgi-check $(OBJECTS)
 
 obj/%.o: src/%.cpp $(HEADER_FILES)
 	@mkdir -p obj
-	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@ -D PYTHON=\"$(PYTHON)\"
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 clean:
 	rm -f $(OBJECTS)
