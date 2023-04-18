@@ -61,7 +61,7 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 		response.errorPageByCode = getServer(servers, hostPort, request.hostNameHeader).getErrorPage(std::to_string(request.code), request.urlPath);
 		try {
 			readFileBinary(response.errorPageByCode, response.body);
-			response.contentLenght = response.errorPageByCode.length();
+			response.contentLenght = response.body.length();
 			response.contentType = getContentType(response.errorPageByCode);
 		} catch (std::exception &e) {
 			std::cerr << "Caught exception: " << e.what() << std::endl;
