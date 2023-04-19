@@ -96,10 +96,10 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	int statusChild;
 	std::string hostPort = host + ":" + port;
 
-	std::cout << "------------------------------" << std::endl;
-	std::cout << "buffer after request received: " << std::endl;
-	std::cout << parsBuff << std::endl;
-	std::cout << "------------------------------" << std::endl;
+//	std::cout << "------------------------------" << std::endl;
+//	std::cout << "buffer after request received: " << std::endl;
+//	std::cout << parsBuff << std::endl;
+//	std::cout << "------------------------------" << std::endl;
 	
 	request = parseRequest(parsBuff, servers, hostPort);
 	if (request.autoindex == true){
@@ -111,8 +111,6 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 		replyString = formResponseString(response);
 		return replyString;
 	}
-	
-//std::cout<< "PATH: " << request.physicalPathCgi << std::endl;
 	
 	if (request.code != 200){
 		std::cout << "method check1------" << std::endl;
@@ -166,7 +164,7 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	}
 	
 	//reply
-	if (request.code % 100 == 3){
+	if (request.code / 100 == 3){
 		replyString = response.header;
 	} else {
 		replyString = formResponseString(response);
@@ -174,10 +172,3 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	std::cout << "METOD FINISHED" << std::endl;
 	return replyString;
 }
-
-//try {
-//
-//} catch (std::exception &e) {
-//	std::cerr << "Caught exception: " << e.what() << std::endl;
-//	request.code = 500;
-//}

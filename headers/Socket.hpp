@@ -32,9 +32,21 @@
 
 //https://pubs.opengroup.org/onlinepubs/009604499/functions/socket.html
 
+struct ClientInfo {
+
+	int sd;
+	std::string receivedContent;
+	size_t recvBytes;
+	std::string reply;
+	size_t biteToSend;
+};
+
 class Socket{
 	
 protected:
+	
+	//adding pair reply_string-client_socket
+	std::vector<ClientInfo> _clients;
 	
 	//adding servers
 	std::map<std::string, std::vector<Server> > *_servers;
@@ -44,19 +56,12 @@ protected:
 	std::string _hostName;
 	std::string _portNumber;
 	
-	//old
 	int _listenFd;
-
 	std::vector<pollfd> _vFds;
-	std::string _buff;
-	std::vector<std::string> _buffVect;
-	size_t _recvBites;
-	
-	
-	size_t requestContentLen; //need to requestContentLen in order to check my recv without errno
 	
 	
 public:
+	void	closeClientConnection(int i);
 	Socket(char * hostName, char * portNumber);
 	~Socket();
 	

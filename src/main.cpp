@@ -40,6 +40,10 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 
 int	main(int argc, char **argv) {
 	
+	char str[PATH_MAX];
+	getcwd(str, PASS_MAX);
+	std::cout << str << std::endl;
+	
 	std::string	config_file = "configs/default.conf";
 	if (argc > 2) {
 		std::cout << "invalid number of arguments" << std::endl;
@@ -52,7 +56,7 @@ int	main(int argc, char **argv) {
 	std::signal(SIGPIPE, SIG_IGN);
 
 	//test yuliia // comment if not needed :
-	//config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
+	config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
 	//config_file = "/Users/yuliia/Codam/webserv/configs/iframes.conf";
 	
 	std::map<std::string, std::vector<Server> > servers;
