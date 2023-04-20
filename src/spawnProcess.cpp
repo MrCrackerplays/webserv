@@ -98,11 +98,6 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 	arguments[0] = (char *)request.physicalPathCgi.c_str();
 	arguments[1] = NULL;
 	
-	//std::cerr << arguments[0] << std::endl << std::endl;
-//	if (arguments[1] == NULL){
-//		std::cerr << "null found" << std::endl;
-//	}
-	
 	std::cout << "-----envp generate-----" << std::endl;
 	char **envp = envpGenerate(request, portNumSocket, hostNameSocket);
 	if (envp == NULL){
@@ -131,9 +126,6 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		throw std::runtime_error("spawnProcess : fcntl");
 	}
 
-	
-	
-	
 	
 	//spawn a child process
 	childPid = fork();
@@ -181,9 +173,11 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		//write in child block
 		const char* data = request.requestBody.c_str();
 		size_t len = request.requestBody.length();
+		std::cout << "print data that I will write into child: " << request.requestBody << std::endl;
 		while (len > 0) {
-			std::cout << "print data that I will write into child: " << data << std::endl;
 			ssize_t n = write(pipeFdIn[1], data, len);
+			std::cout << "write into child n = " << n << std::endl;
+			std::cout << "print data that I will write into child: " << data << std::endl;
 			if (n < 0) {
 				std::cerr << "parent : write" << std::endl;
 				close(pipeFdIn[0]);
@@ -244,17 +238,13 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 			}
 			else if (res == 0){
 				buff[res] = '\0';
-				std::cerr << "res == 0, buffer: " << buff << std::endl;
 				reply.append(buff, res);
 				break;
 			} else {
 				buff[res] = '\0';
-				std::cerr << "res > 0, buffer: " << buff << std::endl;
 				reply.append(buff, res);
-				std::cerr << "res > 0, reply: " << reply << std::endl;
 			}
 			memset(buff, 0, 1024);
-			std::cerr << "memset buffer: " << buff << std::endl;
 		}
 		close(pipeFdOut[0]);
 	}
