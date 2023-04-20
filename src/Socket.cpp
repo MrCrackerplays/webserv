@@ -92,6 +92,8 @@ void	Socket::acceptNewConnect(int i){
 		}
 		
 		ClientInfo clientStruct;
+		clientStruct.biteToSend = 0;
+		clientStruct.recvBytes = 0;
 		_clients.push_back(clientStruct);
 //		if (_clients.size() >= j){
 //			_clients[j].sd = newFd;//check if j can be actually bigger then 0 first.
@@ -102,7 +104,7 @@ void	Socket::acceptNewConnect(int i){
 	}
 }
 
-int	findContentLenght(std::string buffer){
+size_t	findContentLenght(std::string buffer){
 	
 	size_t pos = buffer.find("Content-Length: ");
 	if (pos != std::string::npos){
@@ -120,10 +122,12 @@ bool	fullRequestReceived(std::string buffer, size_t recvBites){
 	size_t headrSize = buffer.find("\r\n\r\n");
 	if (headrSize != std::string::npos){
 		headrSize += 4;
-		if ((unsigned int)findContentLenght(buffer) == recvBites - headrSize){
+		size_t n = findContentLenght(buffer);
+		if (n == recvBites - headrSize){
 			return true;
 		}
 	}
+	std::cout << "fullRequestReceived - false" << std::endl;
 	return false;
 }
 
@@ -164,7 +168,7 @@ void	Socket::recvConnection(int i){
 			try {
 				_clients[i].reply = methods(_clients[i].receivedContent, *_servers, _portNumber, _hostName);
 				_clients[i].biteToSend = _clients[i].reply.length();
-				_vFds[i].events |= POLLOUT;
+				_vFds[i].events = POLLOUT;
 				//std::cout << "revent: " << _vFds[i].revents << std::endl;
 			} catch (std::exception &e) {
 				std::cerr << "Caught exception: " << e.what() << std::endl;

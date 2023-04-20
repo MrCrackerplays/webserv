@@ -51,9 +51,10 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 	
 	std::string hostNameHeader;
 	std::string line;
+	std::getline(requestStream, line);
+	line.erase();
 	
-	while (std::getline(requestStream, line) && line != "\r\n\r\n") {
-		
+	while (std::getline(requestStream, line) && line != "\r") {
 		size_t pos = line.find(": ");
 		if (pos != std::string::npos) {
 			//std::cout << line << std::endl;
@@ -61,7 +62,9 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 				line.pop_back();
 			}
 			std::string headerName = line.substr(0, pos);
+											std::cout << headerName << std::endl;
 			std::string headerBody = line.substr(pos + 2);
+											std::cout << headerBody << std::endl;
 			size_t	pos2 = headerBody.rfind(":");
 			if (pos2 != std::string::npos) {
 				headerBody = headerBody.substr(0, pos2);
@@ -75,6 +78,7 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 	if (!hostNameHeader.empty() && hostNameHeader.back() == '\r') {
 		hostNameHeader.pop_back();
 	}
+					
 	return hostNameHeader;
 }
 
@@ -247,6 +251,7 @@ bool	cookieEnforcement(parsRequest &request, std::map<std::string, std::vector<S
 parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
 	
 	parsRequest request;
+	
 	std::istringstream requestStream(requestBuff);
 	request.autoindex = false;
 	
@@ -272,14 +277,17 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 		if (request.autoindex == true){
 			request.requestBody = request.physicalPathCgi;
 		} else {
-			requestStream >> request.requestBody;
+			std::string line;
+			while (std::getline(requestStream, line, '\0')) {
+				request.requestBody += line;
+			}
 		}
 		findMethodInServer(request, servers, hostPort);
 		if (request.method != GET && request.autoindex == true){ //???? not sure
 			request.code = 405;
 		}
 	}
-	//std::cout << request.requestBody << std::endl;
+	std::cout << request.requestBody << std::endl;
 	return request;
 }
 
