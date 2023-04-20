@@ -62,9 +62,9 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 				line.pop_back();
 			}
 			std::string headerName = line.substr(0, pos);
-											std::cout << headerName << std::endl;
+										//	std::cout << headerName << std::endl;
 			std::string headerBody = line.substr(pos + 2);
-											std::cout << headerBody << std::endl;
+										//	std::cout << headerBody << std::endl;
 			size_t	pos2 = headerBody.rfind(":");
 			if (pos2 != std::string::npos) {
 				headerBody = headerBody.substr(0, pos2);
