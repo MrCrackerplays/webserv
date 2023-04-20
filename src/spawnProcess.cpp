@@ -20,7 +20,7 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	
 	char **envp;
 	
-	envp = new char*[19];
+	envp = new char*[20];
 	if (envp == NULL)
 		return NULL;
 	std::string str0 = "SERVER_SOFTWARE=webserv/1.0";
@@ -68,8 +68,9 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	envp[15] = (char *)str15.c_str();
 	std::string str16 = "REMOTE_IDENT=";
 	envp[16] = (char *)str16.c_str();
-	envp[17] = NULL;//extra null to allow setting save_location elsewhere
+	envp[17] = (char *)(std::string("PATH=") + getenv("PATH")).c_str();
 	envp[18] = NULL;
+	envp[19] = NULL;
 	//std::cout << "----envp done------" << std::endl;
 	return envp;
 }
@@ -110,7 +111,7 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 	}
 	if (save_location != "SAVE_LOCATION=") {
 		envp[17] = (char *)save_location.c_str();
-		std::cout << "saveloc=" << envp[17] << std::endl;
+		std::cout << "saveloc=" << envp[18] << std::endl;
 	} else {
 		std::cout << "no saveloc" << std::endl;
 	}
