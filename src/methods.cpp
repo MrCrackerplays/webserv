@@ -112,8 +112,6 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 		return replyString;
 	}
 	
-//std::cout<< "PATH: " << request.physicalPathCgi << std::endl;
-	
 	if (request.code != 200){
 		std::cout << "method check1------" << std::endl;
 		response = responseStructConstruct(servers, hostPort, "", request);
@@ -143,7 +141,6 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 				std::cout << "method check4------" << std::endl;
 				parseCorrectResponseCGI(cgiReply, response);
 			}
-			
 		// GET
 		} else if (request.method == GET){
 			try {
@@ -166,7 +163,7 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	}
 	
 	//reply
-	if (request.code % 100 == 3){
+	if (request.code / 100 == 3){
 		replyString = response.header;
 	} else {
 		replyString = formResponseString(response);
@@ -174,10 +171,3 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	std::cout << "METOD FINISHED" << std::endl;
 	return replyString;
 }
-
-//try {
-//
-//} catch (std::exception &e) {
-//	std::cerr << "Caught exception: " << e.what() << std::endl;
-//	request.code = 500;
-//}

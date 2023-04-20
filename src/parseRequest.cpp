@@ -100,6 +100,7 @@ void	physicalPathMagic(std::string& physicalPathCgi, bool& autoindex, std::strin
 			physicalPathCgi = generate_autoindex(physicalPathCgi, path);
 			//this is the body of request -> content, it is not a name
 			//HANDLE
+			std::cout << "autoind body : "<< physicalPathCgi << std::endl;
 			autoindex = true;
 		} else {
 			physicalPathCgi += closestLocation.getDefaultFile();
@@ -247,6 +248,7 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 	
 	parsRequest request;
 	std::istringstream requestStream(requestBuff);
+	request.autoindex = false;
 	
 	request.code = 200;
 	requestStream >> request.methodString;
@@ -277,6 +279,7 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 			request.code = 405;
 		}
 	}
+	//std::cout << request.requestBody << std::endl;
 	return request;
 }
 

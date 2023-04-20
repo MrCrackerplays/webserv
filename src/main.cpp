@@ -40,6 +40,10 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 
 int	main(int argc, char **argv) {
 	
+	char str[PATH_MAX];
+	getcwd(str, PASS_MAX);
+	std::cout << str << std::endl;
+	
 	std::string	config_file = "configs/default.conf";
 	if (argc > 2) {
 		std::cout << "invalid number of arguments" << std::endl;

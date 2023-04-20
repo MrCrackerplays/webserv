@@ -14,7 +14,7 @@ void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds){
 	deflt.events = 0;
 	vFds.push_back(deflt);
 	vFds[0].fd = listenFd;
-	vFds[0].events = POLLIN;
+	vFds[0].events = POLLIN; //was pollin only
 }
 
 void	setToNonBlocking(int listenFd){
