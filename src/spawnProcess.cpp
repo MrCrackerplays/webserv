@@ -68,7 +68,7 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	envp[15] = (char *)str15.c_str();
 	std::string str16 = "REMOTE_IDENT=";
 	envp[16] = (char *)str16.c_str();
-	envp[17] = (char *)(std::string("PATH=") + getenv("PATH=")).c_str();
+	envp[17] = (char *)(std::string("PATH=") + getenv("PATH")).c_str();
 	envp[18] = NULL;
 	envp[19] = NULL;
 	//std::cout << "----envp done------" << std::endl;
