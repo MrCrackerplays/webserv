@@ -84,7 +84,7 @@ void	Socket::acceptNewConnect(int i){
 		}
 		pollfd newPollfd;
 		newPollfd.fd = newFd;
-		newPollfd.events = POLLIN | POLLOUT | POLLHUP;
+		newPollfd.events = POLLIN;
 		_vFds.push_back(newPollfd);
 		if (i == 0 && _clients.size() == 0){
 			ClientInfo clientStruct;
@@ -93,11 +93,11 @@ void	Socket::acceptNewConnect(int i){
 		
 		ClientInfo clientStruct;
 		_clients.push_back(clientStruct);
-		if (_clients.size() >= j){
-			_clients[j].sd = newFd;//check if j can be actually bigger then 0 first.
-		} else {
-			std::cout << "donnow what to do with this yet, j == " << j << std::endl;
-		}
+//		if (_clients.size() >= j){
+//			_clients[j].sd = newFd;//check if j can be actually bigger then 0 first.
+//		} else {
+//			std::cout << "donnow what to do with this yet, j == " << j << std::endl;
+//		}
 		
 	}
 }
@@ -147,14 +147,12 @@ void	Socket::recvConnection(int i){
 	if (res == -1){
 		return;
 	} else if (res < 0){
-		close(_vFds[i].fd);
-		_vFds.erase(_vFds.begin() + i);
+		closeClientConnection(i);
 		std::cerr << "recv failed on i = " << i << "FD: " << _vFds[i].fd << strerror(errno) << std::endl;
 		throw std::runtime_error("SockedLoop : recv");
 	} else if (res == 0){
 		std::cout << "connection was closed by client   " << "for fd " << _vFds[i].fd << std::endl;
-		close(_vFds[i].fd);
-		_vFds.erase(_vFds.begin() + i);
+		closeClientConnection(i);
 	} else {
 		//add on to buffer
 		buff[res] = '\0';
@@ -166,6 +164,7 @@ void	Socket::recvConnection(int i){
 			try {
 				_clients[i].reply = methods(_clients[i].receivedContent, *_servers, _portNumber, _hostName);
 				_clients[i].biteToSend = _clients[i].reply.length();
+				_vFds[i].events |= POLLOUT;
 				//std::cout << "revent: " << _vFds[i].revents << std::endl;
 			} catch (std::exception &e) {
 				std::cerr << "Caught exception: " << e.what() << std::endl;
@@ -184,28 +183,36 @@ void	Socket::checkEvents(){
 			//listening socket event
 			if (_vFds[i].fd == _listenFd){
 				try {
+					std::cout << "try to accept new connection" << std::endl;
 					acceptNewConnect(i);
+					std::cout << "end of accept new connection" << std::endl;
 				} catch (std::exception &e) {
 					std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
 				}
 			//client's from listening socket event
 			} else {
 				try {
+					std::cout << "try to receive" << std::endl;
 					recvConnection(i);
+					std::cout << "end of receive" << std::endl;
 				} catch (std::exception &e) {
 					std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
 				}
 			}
 		} else if ((_vFds[i].revents & POLLOUT) == POLLOUT){
+			std::cout << "try to send data" << std::endl;
 			sendData(i);
+			std::cout << "end send data" << std::endl;
 			
-		} else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
-			
-			try {
-				closeClientConnection(i);
-			} catch (std::exception &e) {
-				std::cerr << "failed to close client with FD: " << _vFds[i].fd << " err message: " << e.what() << std::endl;
-			}
+		// } else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
+		// 	std::cout << "pollHUP" << std::endl;
+		// 	try {
+		// 		std::cout << "close connection" << std::endl;
+		// 		closeClientConnection(i);
+		// 	} catch (std::exception &e) {
+		// 		std::cerr << "failed to close client with FD: " << _vFds[i].fd << " err message: " << e.what() << std::endl;
+		// 	}
+		// }
 		}
 	}
 }

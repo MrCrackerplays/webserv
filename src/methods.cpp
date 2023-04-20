@@ -96,10 +96,10 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	int statusChild;
 	std::string hostPort = host + ":" + port;
 
-//	std::cout << "------------------------------" << std::endl;
-//	std::cout << "buffer after request received: " << std::endl;
-//	std::cout << parsBuff << std::endl;
-//	std::cout << "------------------------------" << std::endl;
+	std::cout << "------------------------------" << std::endl;
+	std::cout << "buffer after request received: " << std::endl;
+	std::cout << parsBuff << std::endl;
+	std::cout << "------------------------------" << std::endl;
 	
 	request = parseRequest(parsBuff, servers, hostPort);
 	if (request.autoindex == true){
@@ -141,7 +141,6 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 				std::cout << "method check4------" << std::endl;
 				parseCorrectResponseCGI(cgiReply, response);
 			}
-			
 		// GET
 		} else if (request.method == GET){
 			try {

@@ -34,7 +34,7 @@
 
 struct ClientInfo {
 
-	int sd;
+	//int sd;
 	std::string receivedContent;
 	size_t recvBytes;
 	std::string reply;
