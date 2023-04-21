@@ -123,7 +123,9 @@ bool	fullRequestReceived(std::string buffer, size_t recvBites){
 	if (headrSize != std::string::npos){
 		headrSize += 4;
 		size_t n = findContentLenght(buffer);
+		std::cout << n << " "  << recvBites << " " << headrSize << std::endl;
 		if (n == recvBites - headrSize){
+			std::cout << "fullRequestReceived - true" << std::endl;
 			return true;
 		}
 	}
@@ -145,9 +147,10 @@ void	Socket::recvConnection(int i){
 	int res = 0;
 	char buff[MAX_REQUEST_SIZE];
 	std::string buffer;
-	std::cout << _vFds[i].fd << std::endl;
+	//std::cout << _vFds[i].fd << std::endl;
 	
 	res = (int)recv(_vFds[i].fd, buff, MAX_REQUEST_SIZE - 1, 0);
+	std::cout << "bites read : " << res << std::endl;
 	if (res == -1){
 		return;
 	} else if (res < 0){
