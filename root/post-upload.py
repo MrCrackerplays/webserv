@@ -1,14 +1,7 @@
 #!/usr/local/bin/python3
-# import cgi, os
-print ("""
-   Content-Type: text/html\r\n
-   <html>
-   <body>
-      <p>simple py test</p>
-   </body>
-   </html>
-   """
-)
+import cgi, os
+import sys
+
 
 # <html>
 # <body>
@@ -20,29 +13,30 @@ print ("""
 # </body>
 # </html>
 
-# env = os.environ
-# form = cgi.FieldStorage()
+env = os.environ
 
-# # Get filename here.
-# fileitem = form['filename']
-# # Test if the file was uploaded
-# if fileitem.filename:
-#    # strip leading path from file name to avoid
-#    # directory traversal attacks
-#    fn = os.path.basename(fileitem.filename)
-#    open(env.get('PATH_TRANSLATED', './') + fn, 'wb').write(fileitem.file.read())
-#    message = 'The file "' + fn + '" was uploaded successfully'
+form = cgi.FieldStorage()
+
+# Get filename here.
+fileitem = form['filename']
+# Test if the file was uploaded
+if fileitem.filename:
+   # strip leading path from file name to avoid
+   # directory traversal attacks
+   fn = os.path.basename(fileitem.filename)
+   open(env.get('SAVE_LOCATION', env.get('PATH_TRANSLATED', './')) + fn, 'wb').write(fileitem.file.read())
+   message = 'The file "' + fn + '" was uploaded successfully to ' + env.get('SAVE_LOCATION', env.get('PATH_TRANSLATED', './')) + fn
 
 
-# else:
-#    message = 'No file was uploaded'
+else:
+   message = 'No file was uploaded'
  
-# print ("""
-#    Content-Type: text/html\r\n
-#    <html>
-#    <body>
-#       <p>%s</p>
-#    </body>
-#    </html>
-#    """ % (message,)
-# )
+print ("""
+   Content-Type: text/html\r\n\r\n
+   <html>
+   <body>
+      <p>%s</p>
+   </body>
+   </html>
+   """ % (message,)
+)

@@ -24,7 +24,7 @@ void	readFileBinary(std::string path, std::string &body){
 
 //https://www.geeksforgeeks.org/http-headers-content-type/
 std::string getContentType(std::string& filename){
-	//can be upper case
+	//can be upper case - added
 	std::map<std::string, std::string> extensionsMap;
 	extensionsMap.insert(std::make_pair("html", "text/html"));
 	extensionsMap.insert(std::make_pair("htm", "text/html"));
@@ -38,7 +38,10 @@ std::string getContentType(std::string& filename){
 	std::string contentType;
 	size_t pos = filename.rfind(".");
 	if (pos != std::string::npos){
-		std::string extension = filename.substr(pos + 1); //compare with lower case
+		std::string extension = filename.substr(pos + 1); //compare with lower case - added
+		for (size_t i = 0; i < extension.length(); i++){
+			extension[i] = std::tolower(extension[i]);
+		}
 		std::map<std::string, std::string>::iterator it = extensionsMap.find(extension);
 		if (it != extensionsMap.end()){
 			return it->second;
@@ -71,7 +74,6 @@ bool isDirectory(std::string& path) {
 	
 	struct stat info;
 	if (stat(path.c_str(), &info) != 0) {
-		// error 404?
 		return false;
 	}
 	if (info.st_mode & S_IFDIR) {
@@ -84,7 +86,6 @@ bool isDirectory(std::string& path) {
 bool isFile(std::string& path) {
 	struct stat info;
 	if (stat(path.c_str(), &info) != 0) {
-		// error 404?
 		return false;
 	}
 	if (info.st_mode & S_IFREG) {
