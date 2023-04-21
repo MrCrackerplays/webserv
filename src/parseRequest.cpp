@@ -247,6 +247,32 @@ bool	cookieEnforcement(parsRequest &request, std::map<std::string, std::vector<S
 	return false;
 }
 
+static std::string	urlDecode(std::string &encoded, bool &isDecoded) {
+	std::string decoded = encoded;
+	size_t pos = decoded.find('%');
+	while (pos < decoded.length()) {
+		if (!isxdigit(decoded[pos + 1]) || !isxdigit(decoded[pos + 2])) {
+			isDecoded = false;
+			return decoded;
+		}
+		std::string hex = decoded.substr(pos + 1, 2);
+		char c = std::stoi(hex, 0, 16);
+		decoded.replace(pos, 3, 1, c);
+		pos = decoded.find('%', pos + 1);
+	}
+	return decoded;
+}
+
+static bool	hasPathTraversal(std::string &path) {
+	size_t pos = path.find("/..");
+	if (pos != std::string::npos && (path[pos + 3] == '/' || path[pos + 3] == '\0' || path[pos + 3] == '?' || path[pos + 3] == '#'))
+		return true;
+	pos = path.find("/.");
+	if (pos != std::string::npos && (path[pos + 2] == '/' || path[pos + 2] == '\0' || path[pos + 2] == '?' || path[pos + 2] == '#'))
+		return true;
+	return false;
+}
+
 parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
 	
 	parsRequest request;
@@ -260,6 +286,18 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 	request.method = getMethodFromRequest(request.methodString);
 	//std::cout << "++++++++++ method int: " << request.method << std::endl;
 	requestStream >> request.urlPath >> request.httpVers;
+	bool isDecoded = true;
+	std::string urlPathDecoded = urlDecode(request.urlPath, isDecoded);
+	if (!isDecoded) {
+		request.code = 400;
+		std::cerr << "url decode failed" << std::endl;
+		return request;
+	}
+	if (hasPathTraversal(urlPathDecoded)) {
+		request.code = 400;
+		std::cerr << "detected path traversal!" << std::endl;
+		return request;
+	}
 	if (isBadRequest(request)){
 		return request;
 	} else {
@@ -278,6 +316,7 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 		if (request.autoindex == true){
 			request.requestBody = request.physicalPathCgi;
 		} else {
+			request.physicalPathCgi = urlDecode(request.physicalPathCgi, isDecoded);
 			std::string line;
 			while (std::getline(requestStream, line, '\0')) {
 				request.requestBody += line;
