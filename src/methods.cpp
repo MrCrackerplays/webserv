@@ -130,7 +130,7 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 				return replyString;
 			}
 			
-			std::cout << "methods: status Child:" << statusChild << std::endl;
+			//std::cout << "methods: status Child:" << statusChild << std::endl;
 			
 			if (statusChild < 0){
 				//std::cout << "method check3------" << std::endl;

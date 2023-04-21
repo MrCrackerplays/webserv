@@ -6,6 +6,36 @@
 #include <poll.h>
 #include <csignal>
 
+
+
+
+void	UpdPoll(){
+
+
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void	setupSocket(std::map<std::string, std::vector<Server> > &servers, Socket &socket){
 	setToNonBlocking(socket.getSocketFd());
 	bindToPort(socket.getSocketFd(), socket.getAddrInfo());

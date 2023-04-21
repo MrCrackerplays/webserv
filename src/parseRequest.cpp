@@ -288,7 +288,7 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 			request.code = 405;
 		}
 	}
-	std::cout << request.requestBody << std::endl;
+	//std::cout << request.requestBody << std::endl;
 	return request;
 }
 

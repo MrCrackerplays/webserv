@@ -18,7 +18,7 @@ void freeEnvp(char **envp) {
 		return;
 	}
 	for (int i = 0; i < 18; ++i) {
-		std::cout << i << std::endl;
+		//std::cout << i << std::endl;
 		if (envp[i] == NULL)
 			i++;
 		else
@@ -163,7 +163,7 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 	if (save_location != "SAVE_LOCATION=") {
 		envp[18] = (char *)save_location.c_str();
 	}
-		//std::cout << "saveloc=" << envp[18] << std::endl;
+	// std::cout << "saveloc=" << envp[18] << std::endl;
 	// } else {
 	// 	std::cout << "no saveloc" << std::endl;
 	// }
@@ -172,7 +172,7 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 	// 		break;
 	// 	std::cout << envp[i] << std::endl;
 	// }
-	//std::cout << "-----after envp-----" << std::endl;
+	// std::cout << "-----after envp-----" << std::endl;
 
 	//initianing 2 pipes and making all ends of both pipes non-blocking
 	//std::cout << "-----pipe init-----" << std::endl;
@@ -230,7 +230,6 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		// if (!chdir(newDir.c_str())){
 		// 	std::cerr << "could not change directory to " << newDir << std::endl; 
 		// 	execve((char *)request.physicalPathCgi.c_str(), NULL, envp);
-			
 		// } else {
 		// 	std::cerr << "changed directory to " << newDir << std::endl; 
 		// 	std::string executable = request.physicalPathCgi.substr(pos + 1);
@@ -248,10 +247,15 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		//write in child block
 		const char* data = request.requestBody.c_str();
 		size_t len = request.requestBody.length();
+		ssize_t n = 0;
 		//std::cout << "print data that I will write into child: " << request.requestBody << std::endl;
 		while (len > 0) {
-			ssize_t n = write(pipeFdIn[1], data, len);
-			//std::cout << "write into child n = " << n << std::endl;
+			if (len > 8192){
+				n = write(pipeFdIn[1], data, 8192);
+			} else {
+				n = write(pipeFdIn[1], data, len);
+			}
+			std::cout << "write into child n = " << n << std::endl;
 			//std::cout << "print data that I will write into child: " << data << std::endl;
 			if (n < 0) {
 				std::cerr << "parent : write" << std::endl;
