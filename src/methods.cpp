@@ -96,10 +96,10 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	int statusChild;
 	std::string hostPort = host + ":" + port;
 
-	std::cout << "------------------------------" << std::endl;
-	std::cout << "buffer after request received: " << std::endl;
-	std::cout << parsBuff << std::endl;
-	std::cout << "------------------------------" << std::endl;
+	// std::cout << "------------------------------" << std::endl;
+	// std::cout << "buffer after request received: " << std::endl;
+	// std::cout << parsBuff << std::endl;
+	// std::cout << "------------------------------" << std::endl;
 	
 	request = parseRequest(parsBuff, servers, hostPort);
 	if (request.autoindex == true){
@@ -113,7 +113,7 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	}
 	
 	if (request.code != 200){
-		std::cout << "method check1------" << std::endl;
+		//std::cout << "method check1------" << std::endl;
 		response = responseStructConstruct(servers, hostPort, "", request);
 	} else {
 		
@@ -122,7 +122,7 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 			try {
 				cgiReply = spawnProcess(request, port, host, statusChild, std::string("SAVE_LOCATION=") + getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath).getSaveLocation());
 			} catch (std::exception &e) {
-				std::cout << "method check2------" << std::endl;
+				//std::cout << "method check2------" << std::endl;
 				std::cerr << "Caught exception: " << e.what() << std::endl;
 				request.code = 500;
 				response = responseStructConstruct(servers, hostPort, "", request);
@@ -133,12 +133,16 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 			std::cout << "methods: status Child:" << statusChild << std::endl;
 			
 			if (statusChild < 0){
-				std::cout << "method check3------" << std::endl;
-				std::cerr << "error in child proper error is still needed lol" <<std::endl;
+				//std::cout << "method check3------" << std::endl;
+				std::cerr << "error in child proper error is still needed lol" <<std::endl; //UNFINISHED
 				request.code = 500;
 				response = responseStructConstruct(servers, hostPort, "", request);
 			} else {
-				std::cout << "method check4------" << std::endl;
+				
+				//std::cout << "method check4------" << std::endl;
+				//std::cout << "++++++++++ method : " << request.methodString << std::endl;
+				//std::cout << "++++++++++ method int: " << request.method << std::endl;
+				response.method = request.method;
 				parseCorrectResponseCGI(cgiReply, response);
 			}
 		// GET
@@ -168,6 +172,6 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	} else {
 		replyString = formResponseString(response);
 	}
-	std::cout << "METOD FINISHED" << std::endl;
+	//std::cout << "METOD FINISHED" << std::endl;
 	return replyString;
 }

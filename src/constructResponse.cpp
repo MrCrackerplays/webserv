@@ -20,10 +20,22 @@ void	redirectionResponse(int code, std::string newlocation, response &response){
 }
 
 void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
-	
+
+
+	//std::cout << "parseCorrectResponseCGI" << std::endl;
+	//std::cout << CGIbuff << std::endl;
 	std::string contentHeader = "Content-Type:";
 	size_t pos = CGIbuff.find("\r\n\r\n"); //end of header
-	
+	if (pos == std::string::npos){
+		//std::cout << "pos == npos" << std::endl;
+		response.body = CGIbuff;
+		response.contentLenght = CGIbuff.length();
+		//std::cout << "codes bfr" << std::endl;
+		codes(200, response.codeMessage);
+		//std::cout << "parseCorrectResponseCGI - end" << std::endl;
+		return;
+	}
+	//std::cout << "pos != npos" << std::endl;
 	//header
 	std::string headerAfterCgi = CGIbuff.substr(0, pos);
 	size_t start = headerAfterCgi.find(contentHeader);
@@ -37,6 +49,7 @@ void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 	response.body = CGIbuff.substr(pos+4, CGIbuff.length());
 	response.contentLenght = response.body.length();
 	codes(200, response.codeMessage);
+	//std::cout << "parseCorrectResponseCGI - end" << std::endl;
 }
 
 void constructResponseHeader(response& response) {
@@ -48,26 +61,35 @@ void constructResponseHeader(response& response) {
 	if (response.setCookie != "")
 		response.header += "Set-Cookie: " + response.setCookie + "\r\n";
 	response.header  += "\r\n";
+	//std::cout << "constructResponseHeader end" << std::endl;
 }
 
 std::string	formResponseString(response response){
 	
+	//std::cout << "formResponseString" << std::endl;
+	//std::cout << response.method << std::endl;
 	constructResponseHeader(response);
 	
 	switch (response.method) {
 		case ERR:
+			//std::cout << "formResponseString: ERR" << std::endl;
 			return response.header + response.errorPageByCode;
 		case NOTSUPPORTED:
+			//std::cout << "formResponseString: NSPRT" << std::endl;
 			return response.header + response.errorPageByCode;
 		
 		case GET:
+			//std::cout << "formResponseString: GET" << std::endl;
 			return response.header + response.body;
 			
 		case DELETE:
+			//std::cout << "formResponseString: DEL" << std::endl;
 			return response.header;
 			
 		case POST:
+			//std::cout << "formResponseString: POST" << std::endl;
 			return response.header + response.body; //UNFINISHED
 	}
+	//std::cout << "formResponseString should not be here" << std::endl;
 	return 0;
 }

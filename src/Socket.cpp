@@ -114,22 +114,34 @@ size_t	findContentLenght(std::string buffer){
 			return std::stoi(buffer.substr(pos, endpos - pos));
 		}
 	}
-	return false;
+	return 0;
 }
 
-bool	fullRequestReceived(std::string buffer, size_t recvBites){
-	
+bool	fullRequestReceived(std::string buffer, size_t recvBites, size_t res){
+
+	size_t contentLen = 0;
 	size_t headrSize = buffer.find("\r\n\r\n");
 	if (headrSize != std::string::npos){
 		headrSize += 4;
-		size_t n = findContentLenght(buffer);
-		std::cout << n << " "  << recvBites << " " << headrSize << std::endl;
-		if (n == recvBites - headrSize){
-			std::cout << "fullRequestReceived - true" << std::endl;
-			return true;
+		contentLen = findContentLenght(buffer);
+		//std::cout << n << " "  << recvBites << " " << headrSize << std::endl;
+		if (contentLen != 0) {
+			if (contentLen + headrSize > recvBites){
+				//std::cout << "fullRequestReceived - false" << std::endl;
+				return false;
+			}
+			else if (recvBites == headrSize + contentLen){
+				//std::cout << "fullRequestReceived - true" << std::endl;
+				return true;
+			}
+		} else {
+			if (res < MAX_REQUEST_SIZE){
+				//std::cout << "fullRequestReceived - true" << std::endl;
+				return true;
+			}
 		}
 	}
-	std::cout << "fullRequestReceived - false" << std::endl;
+	//std::cout << "fullRequestReceived - false" << std::endl;
 	return false;
 }
 
@@ -150,7 +162,11 @@ void	Socket::recvConnection(int i){
 	//std::cout << _vFds[i].fd << std::endl;
 	
 	res = (int)recv(_vFds[i].fd, buff, MAX_REQUEST_SIZE - 1, 0);
-	std::cout << "bites read : " << res << std::endl;
+	// std::cout << "================================" << std::endl;
+	// std::cout << "bites read : " << res << std::endl;
+	// buff[res] = '\0';
+	// std::cout << buff << std::endl;
+	// std::cout << "================================" << std::endl;
 	if (res == -1){
 		return;
 	} else if (res < 0){
@@ -158,7 +174,7 @@ void	Socket::recvConnection(int i){
 		std::cerr << "recv failed on i = " << i << "FD: " << _vFds[i].fd << strerror(errno) << std::endl;
 		throw std::runtime_error("SockedLoop : recv");
 	} else if (res == 0){
-		std::cout << "connection was closed by client   " << "for fd " << _vFds[i].fd << std::endl;
+		std::cerr << "connection was closed by client   " << "for fd " << _vFds[i].fd << std::endl; //unfinished, check for POLLHUP
 		closeClientConnection(i);
 	} else {
 		//add on to buffer
@@ -166,16 +182,16 @@ void	Socket::recvConnection(int i){
 		_clients[i].recvBytes += res;
 		_clients[i].receivedContent.append(buff, res);
 		
-		if (fullRequestReceived(_clients[i].receivedContent, _clients[i].recvBytes) || res < MAX_REQUEST_SIZE){
+		if (fullRequestReceived(_clients[i].receivedContent, _clients[i].recvBytes, res)){
 			//parsing part
 			try {
 				_clients[i].reply = methods(_clients[i].receivedContent, *_servers, _portNumber, _hostName);
 				_clients[i].biteToSend = _clients[i].reply.length();
-				_vFds[i].events = POLLOUT;
+				_vFds[i].events |= POLLOUT;
 				//std::cout << "revent: " << _vFds[i].revents << std::endl;
 			} catch (std::exception &e) {
 				std::cerr << "Caught exception: " << e.what() << std::endl;
-				std::cerr << "PROBABLY should catch it in methods" << std::endl;
+				//std::cerr << "PROBABLY should catch it in methods" << std::endl;
 			}
 
 		}
@@ -190,26 +206,26 @@ void	Socket::checkEvents(){
 			//listening socket event
 			if (_vFds[i].fd == _listenFd){
 				try {
-					std::cout << "try to accept new connection" << std::endl;
+					//std::cout << "try to accept new connection" << std::endl;
 					acceptNewConnect(i);
-					std::cout << "end of accept new connection" << std::endl;
+					//std::cout << "end of accept new connection" << std::endl;
 				} catch (std::exception &e) {
 					std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
 				}
 			//client's from listening socket event
 			} else {
 				try {
-					std::cout << "try to receive" << std::endl;
+					//std::cout << "try to receive" << std::endl;
 					recvConnection(i);
-					std::cout << "end of receive" << std::endl;
+					//std::cout << "end of receive" << std::endl;
 				} catch (std::exception &e) {
 					std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
 				}
 			}
 		} else if ((_vFds[i].revents & POLLOUT) == POLLOUT){
-			std::cout << "try to send data" << std::endl;
+			//std::cout << "try to send data" << std::endl;
 			sendData(i);
-			std::cout << "end send data" << std::endl;
+			//std::cout << "end send data" << std::endl;
 			
 		// } else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
 		// 	std::cout << "pollHUP" << std::endl;

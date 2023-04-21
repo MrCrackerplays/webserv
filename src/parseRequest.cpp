@@ -62,9 +62,8 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 				line.pop_back();
 			}
 			std::string headerName = line.substr(0, pos);
-										//	std::cout << headerName << std::endl;
 			std::string headerBody = line.substr(pos + 2);
-										//	std::cout << headerBody << std::endl;
+			//std::cout << headerName << " : "<< headerBody << std::endl;
 			size_t	pos2 = headerBody.rfind(":");
 			if (pos2 != std::string::npos) {
 				headerBody = headerBody.substr(0, pos2);
@@ -104,7 +103,7 @@ void	physicalPathMagic(std::string& physicalPathCgi, bool& autoindex, std::strin
 			physicalPathCgi = generate_autoindex(physicalPathCgi, path);
 			//this is the body of request -> content, it is not a name
 			//HANDLE
-			std::cout << "autoind body : "<< physicalPathCgi << std::endl;
+			//std::cout << "autoind body : "<< physicalPathCgi << std::endl;
 			autoindex = true;
 		} else {
 			physicalPathCgi += closestLocation.getDefaultFile();
@@ -257,7 +256,9 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 	
 	request.code = 200;
 	requestStream >> request.methodString;
+	//std::cout << "++++++++++ method : " << request.methodString << std::endl;
 	request.method = getMethodFromRequest(request.methodString);
+	//std::cout << "++++++++++ method int: " << request.method << std::endl;
 	requestStream >> request.urlPath >> request.httpVers;
 	if (isBadRequest(request)){
 		return request;
