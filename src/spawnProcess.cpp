@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <poll.h>
 
 void freeEnvp(char **envp) {
 	//std::cout << "=====free envp here====" << std::endl;
@@ -142,6 +143,38 @@ bool	makeNonBlocking(int fd){
 	}
 	return true;
 }
+
+// std::vector<pollfd> generatePipes(int &pipeFdIn, int &pipeFdOut){
+
+// 	// int pipeFdIn[2];
+// 	//int pipeFdOut[2];
+// 	std::vector<pollfd> vPipesCGI;
+
+// 	if (pipe(&pipeFdIn) == -1 || pipe(&pipeFdOut) == -1){
+// 		// freeEnvp(envp);
+// 		// std::cerr << "spawnProcess : pipe" << std::endl;
+// 		throw std::runtime_error("spawnProcess : pipe");
+// 	}
+// 	//std::cout << "-----non blocking-----" << std::endl;
+// 	if (!makeNonBlocking(pipeFdIn[0]) || !makeNonBlocking(pipeFdIn[1]) || !makeNonBlocking(pipeFdOut[0]) || !makeNonBlocking(pipeFdOut[1])){
+// 		// freeEnvp(envp);
+// 		// std::cerr << "spawnProcess : fcntl" << std::endl;
+// 		throw std::runtime_error("spawnProcess : fcntl");
+// 	}
+// 	//put pipes in vector for vCGI in Socket
+// 	pollfd pollFdIn;
+// 	pollFdIn.fd = pipeFdIn[0];
+// 	pollFdIn.events = POLLIN;
+// 	pollFdIn.revents = 0;
+// 	vPipesCGI.push_back(pollFdIn);
+// 	pollfd pollFdOut;
+// 	pollFdOut.fd = pipeFdOut[1];
+// 	pollFdOut.events = POLLOUT;
+// 	pollFdOut.revents = 0;
+// 	vPipesCGI.push_back(pollFdOut);
+
+// 	return vPipesCGI;
+// }
 
 std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket, int &statusChild, std::string save_location) {
 	

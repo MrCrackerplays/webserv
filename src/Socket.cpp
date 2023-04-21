@@ -64,7 +64,6 @@ Socket::Socket(char * hostName, char * portNumber){
 	hints.ai_flags = AI_PASSIVE;
 	
 	_addrinfo = new addrinfo;
-	
 	status = getaddrinfo(hostName, portNumber, &hints, &_addrinfo);
 	if (status < 0){
 		throw std::runtime_error("Port : getaddrinfo");
@@ -96,7 +95,7 @@ void	Socket::acceptNewConnect(int i){
 		}
 		pollfd newPollfd;
 		newPollfd.fd = newFd;
-		newPollfd.events = POLLIN;
+		newPollfd.events = POLLIN | POLLHUP; //added POLLHUP though it may be not proper place to add both
 		_vFds.push_back(newPollfd);
 		if (i == 0 && _clients.size() == 0){
 			ClientInfo clientStruct;
@@ -193,7 +192,6 @@ void	Socket::recvConnection(int i){
 		buff[res] = '\0';
 		_clients[i].recvBytes += res;
 		_clients[i].receivedContent.append(buff, res);
-		
 		if (fullRequestReceived(_clients[i].receivedContent, _clients[i].recvBytes, res)){
 			//parsing part
 			try {
@@ -211,7 +209,7 @@ void	Socket::recvConnection(int i){
 }
 
 void	Socket::checkEvents(){
-	_vCGISize = 0;
+	_vCGISize = 0; //temp
 	for (int i = 0; i < (int)_vFds.size(); i++){
 		if ((_vFds[i].revents & POLLIN) == POLLIN){
 			
@@ -239,15 +237,15 @@ void	Socket::checkEvents(){
 			sendData(i);
 			//std::cout << "end send data" << std::endl;
 			
-		// } else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
-		// 	std::cout << "pollHUP" << std::endl;
-		// 	try {
-		// 		std::cout << "close connection" << std::endl;
-		// 		closeClientConnection(i);
-		// 	} catch (std::exception &e) {
-		// 		std::cerr << "failed to close client with FD: " << _vFds[i].fd << " err message: " << e.what() << std::endl;
-		// 	}
-		// }
+		} else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
+			//std::cout << "pollHUP" << std::endl;
+			try {
+				std::cerr << "close connection" << std::endl;
+				closeClientConnection(i);
+			} catch (std::exception &e) {
+				std::cerr << "failed to close client with FD: " << _vFds[i].fd << " err message: " << e.what() << std::endl;
+			}
+		
 		}
 	}
 }

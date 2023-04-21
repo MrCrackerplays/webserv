@@ -117,7 +117,11 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 		response = responseStructConstruct(servers, hostPort, "", request);
 	} else {
 		
-		//CGI
+		//CGI - block needs to be moved to separate function in separate file
+		//i need to return from method if ther is a cgi request
+		//so in event loop I can create pipes -> vCGI, it will go through poll
+		//I need separate write part for CGI and read part for CGI in event loop
+
 		if (request.callCGI == true){
 			try {
 				cgiReply = spawnProcess(request, port, host, statusChild, std::string("SAVE_LOCATION=") + getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath).getSaveLocation());
