@@ -58,6 +58,9 @@ protected:
 	
 	int _listenFd;
 	std::vector<pollfd> _vFds;
+	size_t _vFdsSize;
+	std::vector<pollfd> _vCGI;
+	size_t _vCGISize;
 	
 	
 public:
@@ -65,19 +68,34 @@ public:
 	Socket(char * hostName, char * portNumber);
 	~Socket();
 	
+	//event methods
 	void	checkEvents();
 	void	acceptNewConnect(int i);
 	void	recvConnection(int i);
-
-	//test purposes
 	void	sendData(int client_socket);
 	
 	//getters
 	int		getSocketFd();
 	addrinfo *getAddrInfo();
 	std::vector<pollfd> &getPollFdVector();
+	std::vector<pollfd> &getCGIVector();
+	size_t	getPollFdVectorSize();
+	size_t	getCGIVectorSize();
+
 	
 	//setters
+    void setPollFdVector(std::vector<pollfd> vFds) {
+        _vFds = std::move(vFds);
+    }
+    void setCGIVector(std::vector<pollfd> cgiFds) {
+        _vCGI = std::move(cgiFds);
+    }
+	void setPollFdVectorSize(size_t size) {
+		_vFdsSize = size;
+	}
+	void setCGIVectorSize(size_t size) {
+		_vCGISize = size;
+	}
 	void	setServers(std::map<std::string, std::vector<Server> > &servers);
 };
 

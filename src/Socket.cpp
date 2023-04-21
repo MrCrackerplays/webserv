@@ -35,6 +35,18 @@ std::vector<pollfd> &Socket::getPollFdVector(){
 	return _vFds;
 }
 
+std::vector<pollfd> &Socket::getCGIVector(){
+	return _vCGI;
+}
+
+size_t	Socket::getPollFdVectorSize(){
+	return _vFds.size();
+}
+
+size_t	Socket::getCGIVectorSize(){
+	return _vCGI.size();
+}
+
 void	Socket::setServers(std::map<std::string, std::vector<Server> > &servers){
 	
 	_servers = &servers;
@@ -199,7 +211,7 @@ void	Socket::recvConnection(int i){
 }
 
 void	Socket::checkEvents(){
-	
+	_vCGISize = 0;
 	for (int i = 0; i < (int)_vFds.size(); i++){
 		if ((_vFds[i].revents & POLLIN) == POLLIN){
 			

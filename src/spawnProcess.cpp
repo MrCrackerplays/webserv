@@ -240,8 +240,7 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		std::cerr << "child execve failed" << std::endl;
 		exit(1); //HOW do I end child process in case of execve failure without exit?
 		
-	}
-	else { //in parent process
+	} else { //in parent process
 		//std::cerr << "----in parent : write in child block----" << std::endl;
 
 		//write in child block
@@ -255,7 +254,7 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 			} else {
 				n = write(pipeFdIn[1], data, len);
 			}
-			std::cout << "write into child n = " << n << std::endl;
+			//std::cout << "write into child n = " << n << std::endl;
 			//std::cout << "print data that I will write into child: " << data << std::endl;
 			if (n < 0) {
 				std::cerr << "parent : write" << std::endl;
