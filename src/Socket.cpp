@@ -35,6 +35,18 @@ std::vector<pollfd> &Socket::getPollFdVector(){
 	return _vFds;
 }
 
+std::vector<pollfd> &Socket::getCGIVector(){
+	return _vCGI;
+}
+
+size_t	Socket::getPollFdVectorSize(){
+	return _vFds.size();
+}
+
+size_t	Socket::getCGIVectorSize(){
+	return _vCGI.size();
+}
+
 void	Socket::setServers(std::map<std::string, std::vector<Server> > &servers){
 	
 	_servers = &servers;
@@ -52,7 +64,6 @@ Socket::Socket(char * hostName, char * portNumber){
 	hints.ai_flags = AI_PASSIVE;
 	
 	_addrinfo = new addrinfo;
-	
 	status = getaddrinfo(hostName, portNumber, &hints, &_addrinfo);
 	if (status < 0){
 		throw std::runtime_error("Port : getaddrinfo");
@@ -68,40 +79,6 @@ Socket::Socket(char * hostName, char * portNumber){
 Socket::~Socket(){
 	//UNFINISHED
 	//freeaddrinfo(_addrinfo); //pointer being freed after allocating with new - check needed
-}
-
-//work with listening socket
-void	Socket::acceptNewConnect(int i){
-	
-	for (int j = i+1; ; j++) {
-		int newFd = accept(_listenFd, NULL, NULL);
-		if (newFd < 0) {
-			if (errno != EWOULDBLOCK) {
-				perror("");
-				throw std::runtime_error("SocketLoop : accept");
-			}
-			break;
-		}
-		pollfd newPollfd;
-		newPollfd.fd = newFd;
-		newPollfd.events = POLLIN;
-		_vFds.push_back(newPollfd);
-		if (i == 0 && _clients.size() == 0){
-			ClientInfo clientStruct;
-			_clients.push_back(clientStruct);
-		}
-		
-		ClientInfo clientStruct;
-		clientStruct.biteToSend = 0;
-		clientStruct.recvBytes = 0;
-		_clients.push_back(clientStruct);
-//		if (_clients.size() >= j){
-//			_clients[j].sd = newFd;//check if j can be actually bigger then 0 first.
-//		} else {
-//			std::cout << "donnow what to do with this yet, j == " << j << std::endl;
-//		}
-		
-	}
 }
 
 size_t	findContentLenght(std::string buffer){
@@ -154,6 +131,60 @@ void	Socket::closeClientConnection(int i){
 	_clients.erase(_clients.begin() + i);
 }
 
+void	Socket::sendData(int i){
+		
+	size_t bitesend = send(_vFds[i].fd, _clients[i].reply.c_str(), _clients[i].reply.length(), 0);
+	if (bitesend < 0){
+		throw std::runtime_error("Socket : send");
+	} else if (bitesend < _clients[i].biteToSend){
+		//not all was sent at once
+		std::string rest = _clients[i].reply.substr(bitesend, _clients[i].reply.length());
+		_clients[i].reply = rest;
+		_clients[i].biteToSend -= bitesend;
+	} else if (_clients[i].biteToSend == bitesend){
+		//all sent
+		try {
+			closeClientConnection(i);
+		} catch (std::exception &e) {
+			std::cerr << "failed to close client with FD: " << _vFds[i].fd << " err message: " << e.what() << std::endl;
+		}
+	}
+}
+
+//work with listening socket
+void	Socket::acceptNewConnect(int i){
+	
+	for (int j = i+1; ; j++) {
+		int newFd = accept(_listenFd, NULL, NULL);
+		if (newFd < 0) {
+			if (errno != EWOULDBLOCK) {
+				perror("");
+				throw std::runtime_error("SocketLoop : accept");
+			}
+			break;
+		}
+		pollfd newPollfd;
+		newPollfd.fd = newFd;
+		newPollfd.events = POLLIN | POLLHUP; //added POLLHUP though it may be not proper place to add both
+		_vFds.push_back(newPollfd);
+		if (i == 0 && _clients.size() == 0){
+			ClientInfo clientStruct;
+			_clients.push_back(clientStruct);
+		}
+		
+		ClientInfo clientStruct;
+		clientStruct.biteToSend = 0;
+		clientStruct.recvBytes = 0;
+		_clients.push_back(clientStruct);
+//		if (_clients.size() >= j){
+//			_clients[j].sd = newFd;//check if j can be actually bigger then 0 first.
+//		} else {
+//			std::cout << "donnow what to do with this yet, j == " << j << std::endl;
+//		}
+		
+	}
+}
+
 void	Socket::recvConnection(int i){
 	
 	int res = 0;
@@ -181,7 +212,6 @@ void	Socket::recvConnection(int i){
 		buff[res] = '\0';
 		_clients[i].recvBytes += res;
 		_clients[i].receivedContent.append(buff, res);
-		
 		if (fullRequestReceived(_clients[i].receivedContent, _clients[i].recvBytes, res)){
 			//parsing part
 			try {
@@ -198,8 +228,18 @@ void	Socket::recvConnection(int i){
 	}
 }
 
-void	Socket::checkEvents(){
+void	Socket::checkCGIevens(){
+
+	if (_vCGI.size() == 0)
+		return;
+
+	//read(pipeFdOut[0])
 	
+
+}
+
+void	Socket::checkEvents(){
+	_vCGISize = 0; //temp
 	for (int i = 0; i < (int)_vFds.size(); i++){
 		if ((_vFds[i].revents & POLLIN) == POLLIN){
 			
@@ -227,35 +267,15 @@ void	Socket::checkEvents(){
 			sendData(i);
 			//std::cout << "end send data" << std::endl;
 			
-		// } else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
-		// 	std::cout << "pollHUP" << std::endl;
-		// 	try {
-		// 		std::cout << "close connection" << std::endl;
-		// 		closeClientConnection(i);
-		// 	} catch (std::exception &e) {
-		// 		std::cerr << "failed to close client with FD: " << _vFds[i].fd << " err message: " << e.what() << std::endl;
-		// 	}
-		// }
-		}
-	}
-}
-
-void	Socket::sendData(int i){
-		
-		size_t bitesend = send(_vFds[i].fd, _clients[i].reply.c_str(), _clients[i].reply.length(), 0);
-		if (bitesend < 0){
-			throw std::runtime_error("Socket : send");
-		} else if (bitesend < _clients[i].biteToSend){
-			//not all was sent at once
-			std::string rest = _clients[i].reply.substr(bitesend, _clients[i].reply.length());
-			_clients[i].reply = rest;
-			_clients[i].biteToSend -= bitesend;
-		} else if (_clients[i].biteToSend == bitesend){
-			//all sent
+		} else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
+			//std::cout << "pollHUP" << std::endl;
 			try {
+				std::cerr << "close connection" << std::endl;
 				closeClientConnection(i);
 			} catch (std::exception &e) {
 				std::cerr << "failed to close client with FD: " << _vFds[i].fd << " err message: " << e.what() << std::endl;
 			}
+		
 		}
 	}
+}

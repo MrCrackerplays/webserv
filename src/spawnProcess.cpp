@@ -11,14 +11,15 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <poll.h>
 
 void freeEnvp(char **envp) {
 	//std::cout << "=====free envp here====" << std::endl;
 	if (envp == NULL) {
 		return;
 	}
-	for (int i = 0; i < 18; ++i) {
-		std::cout << i << std::endl;
+	for (int i = 0; i < 19; ++i) {
+		//std::cout << i << std::endl;
 		if (envp[i] == NULL)
 			i++;
 		else
@@ -30,7 +31,7 @@ void freeEnvp(char **envp) {
 }
 
 
-char **envpGenerateNew(parsRequest request, std::string portNumberSocket, std::string hostNameSocket){
+char **envpGenerateNew(parsRequest request, std::string portNumberSocket, std::string hostNameSocket, std::string save_location){
 	char **envp = new char*[20];
 	if (envp == nullptr)
 		return nullptr;
@@ -125,7 +126,9 @@ char **envpGenerateNew(parsRequest request, std::string portNumberSocket, std::s
 	// std::string str19 = "SCRIPT_URI=" + request.urlPath;
 	// envp[19] = new char[str19.length() + 1];
 	// strcpy(envp[19], str19.c_str());
-	envp[18] = NULL;
+	std::string str18 = save_location;
+	envp[18] = new char[str18.length() + 1];
+	strcpy(envp[18], str18.c_str());
 	envp[19] = NULL;
 
 	return envp;
@@ -143,67 +146,47 @@ bool	makeNonBlocking(int fd){
 	return true;
 }
 
-std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket, int &statusChild, std::string save_location) {
-	
-	std::string reply;
-	pid_t childPid;
-	int pipeFdIn[2];
-	int pipeFdOut[2];
-	//std::cout << "-----start spawn process-----" << std::endl;
-	char *arguments[2];
-	arguments[0] = (char *)request.physicalPathCgi.c_str();
-	arguments[1] = NULL;
-	
-	//std::cout << "-----envp generate-----" << std::endl;
-	char **envp = envpGenerateNew(request, portNumSocket, hostNameSocket);
-	if (envp == NULL){
-		std::cerr << "spawnProcess : new" << std::endl;
-		throw std::runtime_error("spawnProcess : new");
-	}
-	if (save_location != "SAVE_LOCATION=") {
-		envp[18] = (char *)save_location.c_str();
-	}
-		//std::cout << "saveloc=" << envp[18] << std::endl;
-	// } else {
-	// 	std::cout << "no saveloc" << std::endl;
-	// }
-	// for (int i = 0; envp[i] != NULL; i++){
-	// 	if (i == 19)
-	// 		break;
-	// 	std::cout << envp[i] << std::endl;
-	// }
-	//std::cout << "-----after envp-----" << std::endl;
+std::vector<pollfd> initPipesCreatePollFDstruct(int* pipeFdIn, int* pipeFdOut){
 
-	//initianing 2 pipes and making all ends of both pipes non-blocking
-	//std::cout << "-----pipe init-----" << std::endl;
+	// int pipeFdIn[2];
+	//int pipeFdOut[2];
+	std::vector<pollfd> vPipesCGI;
+
 	if (pipe(pipeFdIn) == -1 || pipe(pipeFdOut) == -1){
-		freeEnvp(envp);
-		std::cerr << "spawnProcess : pipe" << std::endl;
+		// freeEnvp(envp);
+		// std::cerr << "spawnProcess : pipe" << std::endl;
 		throw std::runtime_error("spawnProcess : pipe");
 	}
 	//std::cout << "-----non blocking-----" << std::endl;
 	if (!makeNonBlocking(pipeFdIn[0]) || !makeNonBlocking(pipeFdIn[1]) || !makeNonBlocking(pipeFdOut[0]) || !makeNonBlocking(pipeFdOut[1])){
-		freeEnvp(envp);
-		std::cerr << "spawnProcess : fcntl" << std::endl;
+		// freeEnvp(envp);
+		// std::cerr << "spawnProcess : fcntl" << std::endl;
 		throw std::runtime_error("spawnProcess : fcntl");
 	}
+	//put pipes in vector for vCGI in Socket
+	pollfd pollFdIn;
+	pollFdIn.fd = pipeFdIn[0];
+	pollFdIn.events = POLLIN;
+	pollFdIn.revents = 0;
+	vPipesCGI.push_back(pollFdIn);
+	pollfd pollFdOut;
+	pollFdOut.fd = pipeFdOut[1];
+	pollFdOut.events = POLLOUT;
+	pollFdOut.revents = 0;
+	vPipesCGI.push_back(pollFdOut);
+	return vPipesCGI;
+}
 
-	
-	//spawn a child process
-	childPid = fork();
-	//std::cerr << "----fork process, pid: " << childPid << std::endl;
-	if (childPid < 0){ //fork failed
-		close(pipeFdIn[0]);
-		close(pipeFdIn[1]);
-		close(pipeFdOut[0]);
-		close(pipeFdOut[1]);
-		freeEnvp(envp);
-		std::cerr << "spawnProcess : fork" << std::endl;
-		throw std::runtime_error("spawnProcess : fork");
-	}
-	else if (childPid == 0){ //in child process
-		//std::cerr << "----in child----" << std::endl;
-		if (dup2(pipeFdIn[0], STDIN_FILENO) < 0){
+void	closePipes(int* pipeFdIn, int* pipeFdOut){
+	close(pipeFdIn[0]);
+	close(pipeFdIn[1]);
+	close(pipeFdOut[0]);
+	close(pipeFdOut[1]);
+}
+
+void	inChildProcess(int* pipeFdIn, int* pipeFdOut, char **envp, char *path){
+
+	if (dup2(pipeFdIn[0], STDIN_FILENO) < 0){
 			freeEnvp(envp);
 			std::cerr << "child dup2 1" << std::endl;
 			exit(1);
@@ -213,115 +196,119 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 			std::cerr << "child dup2 2" << std::endl;
 			exit(1);
 		}
-		//std::cerr << "----in child: dup2 2 times done" << std::endl;
-		close(pipeFdIn[0]);
-		close(pipeFdIn[1]);
-		close(pipeFdOut[0]);
-		close(pipeFdOut[1]);
-		//std::cerr << "----in child: before execve with arg[0] == " << arguments[0] << std::endl;
-		//execve(arguments[0], arguments, envp);
-		// chdir/some/path/
-		//execve executable.cgi
-		// std::string newDir;
-		// size_t pos = request.physicalPathCgi.rfind('/');
-		// if (pos != std::string::npos){
-		// 	newDir = request.physicalPathCgi.substr(2, pos - 2);
-		// }
-		// if (!chdir(newDir.c_str())){
-		// 	std::cerr << "could not change directory to " << newDir << std::endl; 
-		// 	execve((char *)request.physicalPathCgi.c_str(), NULL, envp);
-			
-		// } else {
-		// 	std::cerr << "changed directory to " << newDir << std::endl; 
-		// 	std::string executable = request.physicalPathCgi.substr(pos + 1);
-		// 	execve((char *)executable.c_str(), NULL, envp);
-		// }
-		execve((char *)request.physicalPathCgi.c_str(), NULL, envp);
+		closePipes(pipeFdIn, pipeFdOut);
+		execve(path, NULL, envp);
 		freeEnvp(envp);
 		std::cerr << "child execve failed" << std::endl;
-		exit(1); //HOW do I end child process in case of execve failure without exit?
-		
-	}
-	else { //in parent process
-		//std::cerr << "----in parent : write in child block----" << std::endl;
+		exit(1);
+}
 
-		//write in child block
-		const char* data = request.requestBody.c_str();
-		size_t len = request.requestBody.length();
-		//std::cout << "print data that I will write into child: " << request.requestBody << std::endl;
-		while (len > 0) {
-			ssize_t n = write(pipeFdIn[1], data, len);
-			//std::cout << "write into child n = " << n << std::endl;
-			//std::cout << "print data that I will write into child: " << data << std::endl;
-			if (n < 0) {
-				std::cerr << "parent : write" << std::endl;
-				close(pipeFdIn[0]);
-				close(pipeFdIn[1]);
-				close(pipeFdOut[0]);
-				close(pipeFdOut[1]);
-				freeEnvp(envp);
-				throw std::runtime_error("spawnProcess: write");
-			}
-			data += n;
-			len -= n;
-		}
-		close(pipeFdIn[1]);
-		close(pipeFdIn[0]);
+//std::vector<pollfd> vPipesCGI - add later
+void	writeInChild(const char* data, size_t len, int* pipeFdIn, int* pipeFdOut, char **envp){
 
-		
-		//waiting for child to proceed
-		//std::cout << "----in parent: waiting for child to proceed---- " << std::endl;
-		int status;
-		if (waitpid(childPid, &status, 0) < 0){
-			freeEnvp(envp);
-			std::cerr << "spawnProcess: waitpid" << std::endl;
-			throw std::runtime_error("spawnProcess: waitpid");
-		}
-		//std::cout << "----in parent: checking child status--- " << std::endl;
-		if (WIFEXITED(status)){
-			statusChild = WEXITSTATUS(status);
-			if (statusChild == 1){
-				statusChild = -1;
-				close(pipeFdOut[1]);
-				close(pipeFdOut[0]);
-				freeEnvp(envp);
-				std::cerr << "execve failed" << std::endl;
-				throw std::runtime_error("spawnProcess : execve");
-			}
+	ssize_t n = 0;
+	while (len > 0) {
+		if (len > 8192){
+			n = write(pipeFdIn[1], data, 8192);
 		} else {
+			n = write(pipeFdIn[1], data, len);
+		}
+		if (n < 0) {
+			//handle error
+		}
+		data += n;
+		len -= n;
+	}
+	close(pipeFdIn[1]);
+}
+
+void	readFromChild(int* pipeFdIn, int* pipeFdOut, std::string &reply, char **envp){
+
+	size_t res = 1;
+	char buff[1024];
+	memset(buff, 0, 1024);
+	while (res > 0){
+		res = read(pipeFdOut[0], buff, 1023);
+		if (res < 0){
+			//handle error
+		}
+		else if (res == 0){
+			buff[res] = '\0';
+			reply.append(buff, res);
+			break;
+		} else {
+			buff[res] = '\0';
+			reply.append(buff, res);
+		}
+		memset(buff, 0, 1024);
+	}
+	close(pipeFdOut[0]);
+}
+
+void	waitForChild(int &statusChild, pid_t childPid, int* pipeFdIn, int* pipeFdOut, char **envp){
+	int status;
+	if (waitpid(childPid, &status, 0) < 0){
+		freeEnvp(envp);
+		std::cerr << "spawnProcess: waitpid" << std::endl;
+		throw std::runtime_error("spawnProcess: waitpid");
+	}
+	if (WIFEXITED(status)){
+		statusChild = WEXITSTATUS(status);
+		if (statusChild == 1){
 			statusChild = -1;
 			close(pipeFdOut[1]);
 			close(pipeFdOut[0]);
 			freeEnvp(envp);
-			std::cerr << "parent: status child failure" << std::endl;
+			std::cerr << "execve failed" << std::endl;
 			throw std::runtime_error("spawnProcess : execve");
 		}
+	} else {
+		statusChild = -1;
 		close(pipeFdOut[1]);
-
-		//read from child block
-		//std::cout << "----in parent: read from child block---- " << std::endl;
-		size_t res = 1;
-		char buff[1024];
-		memset(buff, 0, 1024);
-		while (res > 0){
-			res = read(pipeFdOut[0], buff, 1023);
-			if (res < 0){
-				close(pipeFdOut[0]);
-				freeEnvp(envp);
-				std::cerr << "parent spawnProcess : read" << std::endl;
-				throw std::runtime_error("spawnProcess : read");
-			}
-			else if (res == 0){
-				buff[res] = '\0';
-				reply.append(buff, res);
-				break;
-			} else {
-				buff[res] = '\0';
-				reply.append(buff, res);
-			}
-			memset(buff, 0, 1024);
-		}
 		close(pipeFdOut[0]);
+		freeEnvp(envp);
+		std::cerr << "parent: status child failure" << std::endl;
+		throw std::runtime_error("spawnProcess : execve");
+	}
+}
+
+std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket, int &statusChild, std::string save_location) {
+	
+	std::string reply;
+	pid_t childPid;
+	int pipeFdIn[2];
+	int pipeFdOut[2];
+	
+	char **envp = envpGenerateNew(request, portNumSocket, hostNameSocket, save_location);
+	if (envp == NULL){
+		std::cerr << "spawnProcess : new" << std::endl;
+		throw std::runtime_error("spawnProcess : new");
+	}
+
+	try{
+		initPipesCreatePollFDstruct(pipeFdIn, pipeFdOut);
+	} catch (std::exception &e){
+		std::cerr << e.what() << std::endl;
+		freeEnvp(envp);
+		throw std::runtime_error("spawnProcess : generatePipes");
+	}
+
+	childPid = fork();
+	if (childPid < 0){ //fork failed
+		closePipes(pipeFdIn, pipeFdOut);
+		freeEnvp(envp);
+		std::cerr << "spawnProcess : fork" << std::endl;
+		throw std::runtime_error("spawnProcess : fork");
+	}
+	else if (childPid == 0){
+		inChildProcess(pipeFdIn, pipeFdOut, envp, (char *)request.physicalPathCgi.c_str());
+	} else { 
+
+		writeInChild(request.requestBody.c_str(), request.requestBody.length(), pipeFdIn, pipeFdOut, envp);
+		close(pipeFdIn[0]);//save here
+		waitForChild(statusChild, childPid, pipeFdIn, pipeFdOut, envp);
+		close(pipeFdOut[1]);
+		readFromChild(pipeFdIn, pipeFdOut, reply, envp);
 	}
 	freeEnvp(envp);
 	return reply;

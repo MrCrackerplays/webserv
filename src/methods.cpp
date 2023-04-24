@@ -91,9 +91,35 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 	return response;
 }
 
+void	ifCGItrue(std::string &cgiReply, parsRequest &request, std::string &port, std::string &host, std::string &hostPort, response &response, std::string &replyString, int &statusChild, std::map<std::string, std::vector<Server> > &servers){
+
+	try {
+		cgiReply = spawnProcess(request, port, host, statusChild, std::string("SAVE_LOCATION=") + getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath).getSaveLocation());
+	} catch (std::exception &e) {
+		
+		std::cerr << "Caught exception: " << e.what() << std::endl;
+		request.code = 500;
+		response = responseStructConstruct(servers, hostPort, "", request);
+		replyString = formResponseString(response);
+		return ;
+	}
+
+			
+	if (statusChild < 0){
+
+		std::cerr << "error in child proper error is still needed lol" <<std::endl; //UNFINISHED
+		request.code = 500;
+		response = responseStructConstruct(servers, hostPort, "", request);
+	} else {
+
+		response.method = request.method;
+		parseCorrectResponseCGI(cgiReply, response);
+	}
+}
+
 
 //in case error pages are going bad do we need to have default one to present?
-std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string port, std::string host){
+std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string &port, std::string &host){
 	
 	parsRequest request;
 	response response;
@@ -125,35 +151,12 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 		response = responseStructConstruct(servers, hostPort, "", request);
 	} else {
 		
-		//CGI
 		if (request.callCGI == true){
-			try {
-				cgiReply = spawnProcess(request, port, host, statusChild, std::string("SAVE_LOCATION=") + getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath).getSaveLocation());
-			} catch (std::exception &e) {
-				//std::cout << "method check2------" << std::endl;
-				std::cerr << "Caught exception: " << e.what() << std::endl;
-				request.code = 500;
-				response = responseStructConstruct(servers, hostPort, "", request);
-				replyString = formResponseString(response);
-				return replyString;
-			}
-			
-			std::cout << "methods: status Child:" << statusChild << std::endl;
-			
-			if (statusChild < 0){
-				//std::cout << "method check3------" << std::endl;
-				std::cerr << "error in child proper error is still needed lol" <<std::endl; //UNFINISHED
-				request.code = 500;
-				response = responseStructConstruct(servers, hostPort, "", request);
-			} else {
-				
-				//std::cout << "method check4------" << std::endl;
-				//std::cout << "++++++++++ method : " << request.methodString << std::endl;
-				//std::cout << "++++++++++ method int: " << request.method << std::endl;
-				response.method = request.method;
-				parseCorrectResponseCGI(cgiReply, response);
-			}
-		// GET
+			//CGI - block needs to be moved to separate function in separate file
+			//i need to return from method if ther is a cgi request
+			//so in event loop I can create pipes -> vCGI, it will go through poll
+			//I need separate write part for CGI and read part for CGI in event loop
+			ifCGItrue(cgiReply, request, port, host, hostPort, response, replyString, statusChild, servers);
 		} else if (request.method == GET){
 			try {
 				methodGet(request, body);
@@ -162,7 +165,6 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 				request.code = 500;
 			}
 			response = responseStructConstruct(servers, hostPort, body, request);
-		//DELETE
 		} else if (request.method == DELETE){
 			try {
 				methodDelete(request);

@@ -34,11 +34,11 @@
 
 struct ClientInfo {
 
-	//int sd;
 	std::string receivedContent;
 	size_t recvBytes;
 	std::string reply;
 	size_t biteToSend;
+	bool isCGI;
 };
 
 class Socket{
@@ -58,6 +58,10 @@ protected:
 	
 	int _listenFd;
 	std::vector<pollfd> _vFds;
+	size_t _vFdsSize;
+	std::vector<pollfd> _vCGI;
+	size_t _vCGISize;
+	bool _CGI;
 	
 	
 public:
@@ -65,20 +69,38 @@ public:
 	Socket(char * hostName, char * portNumber);
 	~Socket();
 	
+	//event methods
 	void	checkEvents();
 	void	acceptNewConnect(int i);
 	void	recvConnection(int i);
-
-	//test purposes
 	void	sendData(int client_socket);
+	void	checkCGIevens();
 	
 	//getters
 	int		getSocketFd();
 	addrinfo *getAddrInfo();
 	std::vector<pollfd> &getPollFdVector();
+	std::vector<pollfd> &getCGIVector();
+	size_t	getPollFdVectorSize();
+	size_t	getCGIVectorSize();
+	bool	getCGIbool(){return _CGI;};
+
 	
 	//setters
+    void setPollFdVector(std::vector<pollfd> vFds) {
+        _vFds = std::move(vFds);
+    }
+    void setCGIVector(std::vector<pollfd> cgiFds) {
+        _vCGI = std::move(cgiFds);
+    }
+	void setPollFdVectorSize(size_t size) {
+		_vFdsSize = size;
+	}
+	void setCGIVectorSize(size_t size) {
+		_vCGISize = size;
+	}
 	void	setServers(std::map<std::string, std::vector<Server> > &servers);
+	void	setCGIbool(bool CGI){_CGI = CGI;}
 };
 
 void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);
