@@ -52,7 +52,7 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 	if (setCookie != ""){
 		response.setCookie = setCookie;
 	}
-	if (request.code % 100 == 3){ //redirection
+	if (request.code / 100 == 3){ //redirection
 		redirectionResponse(request.code, request.newlocation, response);
 		return response;
 	}
