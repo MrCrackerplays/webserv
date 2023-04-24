@@ -95,16 +95,16 @@ method	getMethodFromRequest(std::string& method){
 }
 
 void	physicalPathMagic(std::string& physicalPathCgi, bool& autoindex, std::string& path, const Location& closestLocation) {
-	// in case it finishes on '/' I need to add 1 more thing
-	if (physicalPathCgi[physicalPathCgi.length() - 1] == '/'){
+	if (physicalPathCgi[physicalPathCgi.length() - 1] == '/') {
 		
-		if (closestLocation.getDirectoryListing()){
-			//if there is autoindex on instead of get default file we need to generate our own
-			physicalPathCgi = generate_autoindex(physicalPathCgi, path);
-			//this is the body of request -> content, it is not a name
-			//HANDLE
-			//std::cout << "autoind body : "<< physicalPathCgi << std::endl;
+		if (closestLocation.getDirectoryListing()) {
 			autoindex = true;
+			try {
+				physicalPathCgi = generate_autoindex(physicalPathCgi, path);
+			} catch(const std::exception& e) {
+				physicalPathCgi = "";
+			}
+			//std::cout << "autoind body : "<< physicalPathCgi << std::endl;
 		} else {
 			physicalPathCgi += closestLocation.getDefaultFile();
 		}
@@ -315,6 +315,10 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 		request.physicalPathCgi = getFileFromAnyServer(servers, hostPort, request.hostNameHeader, request.urlPath, request.autoindex);
 		if (request.autoindex == true){
 			request.requestBody = request.physicalPathCgi;
+			if (request.requestBody == "") {
+				request.code = 404;
+				return request;
+			}
 		} else {
 			request.physicalPathCgi = urlDecode(request.physicalPathCgi, isDecoded);
 			std::string line;
