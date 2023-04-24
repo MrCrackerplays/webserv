@@ -34,11 +34,11 @@
 
 struct ClientInfo {
 
-	//int sd;
 	std::string receivedContent;
 	size_t recvBytes;
 	std::string reply;
 	size_t biteToSend;
+	bool isCGI;
 };
 
 class Socket{
@@ -61,6 +61,7 @@ protected:
 	size_t _vFdsSize;
 	std::vector<pollfd> _vCGI;
 	size_t _vCGISize;
+	bool _CGI;
 	
 	
 public:
@@ -73,6 +74,7 @@ public:
 	void	acceptNewConnect(int i);
 	void	recvConnection(int i);
 	void	sendData(int client_socket);
+	void	checkCGIevens();
 	
 	//getters
 	int		getSocketFd();
@@ -81,6 +83,7 @@ public:
 	std::vector<pollfd> &getCGIVector();
 	size_t	getPollFdVectorSize();
 	size_t	getCGIVectorSize();
+	bool	getCGIbool(){return _CGI;};
 
 	
 	//setters
@@ -97,6 +100,7 @@ public:
 		_vCGISize = size;
 	}
 	void	setServers(std::map<std::string, std::vector<Server> > &servers);
+	void	setCGIbool(bool CGI){_CGI = CGI;}
 };
 
 void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);
