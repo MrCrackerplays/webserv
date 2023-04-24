@@ -14,6 +14,6 @@
 #include <vector>
 #include <string>
 
-std::string methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string &port, std::string &host);
+std::string methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string &port, std::string &host, bool CGI);
 
 #endif /* methods_hpp */

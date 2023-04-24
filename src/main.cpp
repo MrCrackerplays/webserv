@@ -13,30 +13,10 @@ void	setupSocket(std::map<std::string, std::vector<Server> > &servers, Socket &s
 	setToListen(socket.getSocketFd());
 	initiateVectPoll(socket.getSocketFd(), socket.getPollFdVector());
 	socket.setServers(servers);
+	socket.setCGIbool(false);
+	socket.setCGIVectorSize(0);
+	socket.setPollFdVectorSize(0);
 }
-
-// void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vector<Server> > &servers){
-	
-// 	std::vector<Socket>::iterator it;
-// 	for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
-// 		try {
-// 			setupSocket(servers, *it);
-// 		} catch (std::exception &e) {
-// 			std::cerr << e.what() << std::endl;
-// 		}
-// 	}
-
-// 	while (true) {
-// 		for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
-// 			if (poll(&it->getPollFdVector()[0], (unsigned int)it->getPollFdVector().size(), 0) < 0){
-// 				throw std::runtime_error("Socket : poll");
-// 			} else {
-// 				it->checkEvents();
-			
-// 			}
-// 		}
-// 	}
-// }
 
 void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vector<Server> > &servers){
 	
@@ -64,8 +44,12 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 				socketsAll.push_back(vCGI[i]);
 			}
 		}
+
+
 		if (poll(&socketsAll[0], (unsigned int)socketsAll.size(), 0) < 0){
 			throw std::runtime_error("Socket : poll");
+		
+		
 		} else {
 			//I need to pack FD and SD back in different sockets
 			size_t i = 0;

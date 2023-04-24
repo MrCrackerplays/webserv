@@ -171,10 +171,17 @@ void	Socket::acceptNewConnect(int i){
 			ClientInfo clientStruct;
 			_clients.push_back(clientStruct);
 		}
-		
+
+		//initiate client.struct
 		ClientInfo clientStruct;
 		clientStruct.biteToSend = 0;
 		clientStruct.recvBytes = 0;
+		clientStruct.receivedContent.clear();
+		clientStruct.reply.clear();
+		clientStruct.isCGI = false;
+		clientStruct.code = 200;
+		clientStruct.pipeFdIn = 0;
+		clientStruct.pipeFdOut = 0;
 		_clients.push_back(clientStruct);
 //		if (_clients.size() >= j){
 //			_clients[j].sd = newFd;//check if j can be actually bigger then 0 first.
@@ -215,7 +222,7 @@ void	Socket::recvConnection(int i){
 		if (fullRequestReceived(_clients[i].receivedContent, _clients[i].recvBytes, res)){
 			//parsing part
 			try {
-				_clients[i].reply = methods(_clients[i].receivedContent, *_servers, _portNumber, _hostName);
+				_clients[i].reply = methods(_clients[i].receivedContent, *_servers, _portNumber, _hostName, _clients[i].isCGI);
 				_clients[i].biteToSend = _clients[i].reply.length();
 				_vFds[i].events |= POLLOUT;
 				//std::cout << "revent: " << _vFds[i].revents << std::endl;
@@ -228,18 +235,43 @@ void	Socket::recvConnection(int i){
 	}
 }
 
-void	Socket::checkCGIevens(){
+void	Socket::checkCGIevens(int i){
 
-	if (_vCGI.size() == 0)
-		return;
+	if (_vCGISize == 0 && _clients[i].isCGI == false)
+		return ;
+	else if (_vCGISize == 0 && _clients[i].isCGI == true){
+		//init pipes and create child
+		try{
+			initPipesCreatePollFDstruct(_vCGI, _clients[i].pipeFdIn, _clients[i].pipeFdOut);
+			_clients[i].childPid = fork();
+			envpGenerateNew(_clients[i].envp, _clients[i].receivedContent, _clients[i].recvBytes);
+		} catch (std::exception &e) { 
+			freeEnvp(_clients[i].envp);
+			_clients[i].code = 500; //server error
+			std::cerr << "Failed to init pipes: " << e.what() << std::endl;
+			return ;
+		}
+		_vCGISize = 2;
+	} else if ((_vCGI[1].revents & POLLOUT) == POLLOUT){
+		//write into child
+		//write(pipeFdIn[1]) ->> create a child to write into it
 
-	//read(pipeFdOut[0])
+
+
+
+
+	} else if ((_vCGI[0].revents & POLLIN)== POLLIN){
+		//read(pipeFdOut[0])
+		//read from child
+	}
+
+
+
 	
 
 }
 
 void	Socket::checkEvents(){
-	_vCGISize = 0; //temp
 	for (int i = 0; i < (int)_vFds.size(); i++){
 		if ((_vFds[i].revents & POLLIN) == POLLIN){
 			

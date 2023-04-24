@@ -12,6 +12,8 @@
 #define MAX_REQUEST_SIZE 8192
 
 //#include "Sockadrs.hpp"
+#include "spawnProcess.hpp"
+#include "parseRequest.hpp"
 #include "Server.hpp"
 #include <unistd.h>
 #include <fcntl.h>
@@ -32,13 +34,26 @@
 
 //https://pubs.opengroup.org/onlinepubs/009604499/functions/socket.html
 
+struct CGIInfo {
+
+	int code;
+	int* pipeFdIn;
+	int* pipeFdOut;
+	char **envp;
+	pid_t childPid;
+	parseRequest request;
+};
+
+
 struct ClientInfo {
 
 	std::string receivedContent;
 	size_t recvBytes;
 	std::string reply;
 	size_t biteToSend;
+
 	bool isCGI;
+	CGIInfo cgiInfo;
 };
 
 class Socket{
@@ -61,7 +76,7 @@ protected:
 	size_t _vFdsSize;
 	std::vector<pollfd> _vCGI;
 	size_t _vCGISize;
-	bool _CGI;
+	//bool _CGI;
 	
 	
 public:
@@ -74,7 +89,7 @@ public:
 	void	acceptNewConnect(int i);
 	void	recvConnection(int i);
 	void	sendData(int client_socket);
-	void	checkCGIevens();
+	void	checkCGIevens(int i);
 	
 	//getters
 	int		getSocketFd();

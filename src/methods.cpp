@@ -91,8 +91,10 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 	return response;
 }
 
-void	ifCGItrue(std::string &cgiReply, parsRequest &request, std::string &port, std::string &host, std::string &hostPort, response &response, std::string &replyString, int &statusChild, std::map<std::string, std::vector<Server> > &servers){
+void	ifCGItrue(std::string &port, std::string &host, std::string &hostPort, request &request, std::string &replyString, int &statusChild, std::map<std::string, std::vector<Server> > &servers){
 
+	std::string cgiReply;
+	response response;
 	try {
 		cgiReply = spawnProcess(request, port, host, statusChild, std::string("SAVE_LOCATION=") + getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath).getSaveLocation());
 	} catch (std::exception &e) {
@@ -103,8 +105,7 @@ void	ifCGItrue(std::string &cgiReply, parsRequest &request, std::string &port, s
 		replyString = formResponseString(response);
 		return ;
 	}
-
-			
+	
 	if (statusChild < 0){
 
 		std::cerr << "error in child proper error is still needed lol" <<std::endl; //UNFINISHED
@@ -119,7 +120,7 @@ void	ifCGItrue(std::string &cgiReply, parsRequest &request, std::string &port, s
 
 
 //in case error pages are going bad do we need to have default one to present?
-std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string &port, std::string &host){
+std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string &port, std::string &host, bool CGI){
 	
 	parsRequest request;
 	response response;
@@ -156,7 +157,7 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 			//i need to return from method if ther is a cgi request
 			//so in event loop I can create pipes -> vCGI, it will go through poll
 			//I need separate write part for CGI and read part for CGI in event loop
-			ifCGItrue(cgiReply, request, port, host, hostPort, response, replyString, statusChild, servers);
+			ifCGItrue(request, port, host, hostPort, replyString, statusChild, servers);
 		} else if (request.method == GET){
 			try {
 				methodGet(request, body);
