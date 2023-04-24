@@ -96,7 +96,6 @@ method	getMethodFromRequest(std::string& method){
 
 void	physicalPathMagic(std::string& physicalPathCgi, bool& autoindex, std::string& path, const Location& closestLocation) {
 	if (physicalPathCgi[physicalPathCgi.length() - 1] == '/') {
-		
 		if (closestLocation.getDirectoryListing()) {
 			autoindex = true;
 			try {
@@ -111,40 +110,35 @@ void	physicalPathMagic(std::string& physicalPathCgi, bool& autoindex, std::strin
 	}
 }
 
-std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& servers, std::string& hostPort, std::string& hostNameHeader, std::string& url, bool &autoindex){
-	
-	std::string physicalPathCgi;
-	std::vector<Server> serversVect = servers[hostPort];
+static Server& getCorrectServer(std::string& hostNameHeader, std::vector<Server> &serversVect) {
 	std::vector<Server>::iterator it;
 	if (hostNameHeader.length()) {
 		for (it = serversVect.begin(); it < serversVect.end(); it++) {
 			Server & local = *it;
 			for (std::vector<const std::string>::iterator it2 = local.getNames().begin(); it2 < local.getNames().end(); it2++) {
 				std::string str = *it2;
-				//std::cout <<str<<std::endl;
 				if (str == hostNameHeader) {
-					const Location & closestLocation = local.getClosestLocation(url);
-					std::string root = closestLocation.getRoot();
-					std::string path = closestLocation.getPath();
-					physicalPathCgi = root + url.substr(path.length());
-					physicalPathMagic(physicalPathCgi, autoindex, path, closestLocation);
-					return physicalPathCgi;
+					return (local);
 				}
 			}
 		}
 	}
-	const Location & closestLocation = serversVect.at(0).getClosestLocation(url);
+	return (serversVect.at(0));
+}
+
+std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& servers, std::string& hostPort, std::string& hostNameHeader, std::string& url, bool &autoindex) {
+	std::vector<Server> serversVect = servers[hostPort];
+	Server & correctServer = getCorrectServer(hostNameHeader, serversVect);
+	const Location & closestLocation = correctServer.getClosestLocation(url);
 	std::string root = closestLocation.getRoot();
 	std::string path = closestLocation.getPath();
-	physicalPathCgi = root + url.substr(path.length());
+	std::string physicalPathCgi = root + url.substr(path.length());
 	physicalPathMagic(physicalPathCgi, autoindex, path, closestLocation);
 	return physicalPathCgi;
 }
 
 Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string& hostNameHeader){
-	
 	std::vector<Server> &serversVect = servers[hostPort];
-	
 	if (hostNameHeader.length()) {
 		for (std::vector<Server>::iterator it = serversVect.begin(); it < serversVect.end(); it++) {
 			Server & local = *it;
@@ -159,13 +153,11 @@ Server & getServer(std::map<std::string, std::vector<Server> > &servers, std::st
 	return serversVect.front();
 }
 
-void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort){
-	
+void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string& hostPort) {
 	Location location = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath);
 	std::vector<std::string> methods = location.getMethods();
 	std::vector<std::string> cgis = location.getCGIs();
-	
-	
+
 	if (std::find(methods.begin(), methods.end(), request.methodString) == methods.end()){
 		request.code = 405;// Method Not Allowed
 		request.callCGI = false;
@@ -286,23 +278,24 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 	request.method = getMethodFromRequest(request.methodString);
 	//std::cout << "++++++++++ method int: " << request.method << std::endl;
 	requestStream >> request.urlPath >> request.httpVers;
-	bool isDecoded = true;
-	std::string urlPathDecoded = urlDecode(request.urlPath, isDecoded);
-	if (!isDecoded) {
-		request.code = 400;
-		std::cerr << "url decode failed" << std::endl;
-		return request;
-	}
-	if (hasPathTraversal(urlPathDecoded)) {
-		request.code = 400;
-		std::cerr << "detected path traversal!" << std::endl;
-		return request;
-	}
 	if (isBadRequest(request)){
 		return request;
 	} else {
 		request.queryString = getQueryParams(request.urlPath, request.query);
 		request.hostNameHeader = getHeaders(requestStream, request.headers);
+
+		bool isDecoded = true;
+		std::string urlPathDecoded = urlDecode(request.urlPath, isDecoded);
+		if (!isDecoded) {
+			request.code = 400;
+			std::cerr << "url decode failed" << std::endl;
+			return request;
+		}
+		if (hasPathTraversal(urlPathDecoded)) {
+			request.code = 400;
+			std::cerr << "detected path traversal!" << std::endl;
+			return request;
+		}
 
 		if (cookieEnforcement(request, servers, hostPort)) {
 			return request;
@@ -313,14 +306,20 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 		}
 		
 		request.physicalPathCgi = getFileFromAnyServer(servers, hostPort, request.hostNameHeader, request.urlPath, request.autoindex);
-		if (request.autoindex == true){
+		if (request.autoindex == true) {
 			request.requestBody = request.physicalPathCgi;
 			if (request.requestBody == "") {
 				request.code = 404;
 				return request;
 			}
 		} else {
+			if (request.physicalPathCgi[request.physicalPathCgi.length() - 1] != '/'
+				&& !isFile(request.physicalPathCgi)) {
+				request.code = 404;
+				return request;
+			}
 			request.physicalPathCgi = urlDecode(request.physicalPathCgi, isDecoded);
+
 			std::string line;
 			while (std::getline(requestStream, line, '\0')) {
 				request.requestBody += line;
