@@ -14,6 +14,7 @@
 //#include "Sockadrs.hpp"
 #include "spawnProcess.hpp"
 #include "parseRequest.hpp"
+#include "constructResponse.hpp"
 #include "Server.hpp"
 #include <unistd.h>
 #include <fcntl.h>
@@ -23,7 +24,6 @@
 #include <sys/select.h>
 #include <vector>
 #include <fstream>
-#include "parseRequest.hpp"
 #include <stdexcept>
 #include <stdio.h>
 #include <iostream>
@@ -37,11 +37,14 @@
 struct CGIInfo {
 
 	int code;
-	int* pipeFdIn;
-	int* pipeFdOut;
 	char **envp;
 	pid_t childPid;
-	parseRequest request;
+	parseRequest *CGIrequest;
+	response *CGIresponse;
+
+	std::vector<pollfd> vCGI;
+	int* pipeFdIn;
+	int* pipeFdOut;
 };
 
 

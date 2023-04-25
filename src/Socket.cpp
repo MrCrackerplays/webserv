@@ -235,26 +235,31 @@ void	Socket::recvConnection(int i){
 	}
 }
 
-void	Socket::checkCGIevens(int i){
+
+
+void	Socket::checkCGIevens(int i){ 
+	//there might be more vCGI then 1, as a 
+	//few clients from this server can call CGI. I can fix issue with indexes as I have index i that shows the client. 
+	//for every client there are 2 pipes, so I can use i*2 and i*2+1 to get the right pipes. 
+	// this need to be fixed on Socket - poll loop level.
 
 	if (_vCGISize == 0 && _clients[i].isCGI == false)
 		return ;
 	else if (_vCGISize == 0 && _clients[i].isCGI == true){
+		
 		//init pipes and create child
 		try{
-			initPipesCreatePollFDstruct(_vCGI, _clients[i].pipeFdIn, _clients[i].pipeFdOut);
-			_clients[i].childPid = fork();
-			envpGenerateNew(_clients[i].envp, _clients[i].receivedContent, _clients[i].recvBytes);
+			_clients[i].cgiInfo.childPid = launchChild(_clients[i].cgiInfo.CGIrequest, _portNumber, _hostName, 
+							_vCGI, _clients[i].cgiInfo.pipeFdIn, _clients[i].cgiInfo.pipeFdOut, _clients[i].cgiInfo.envp);
+			_vCGISize = 2;
 		} catch (std::exception &e) { 
-			freeEnvp(_clients[i].envp);
-			_clients[i].code = 500; //server error
 			std::cerr << "Failed to init pipes: " << e.what() << std::endl;
 			return ;
 		}
-		_vCGISize = 2;
+		
+
+		
 	} else if ((_vCGI[1].revents & POLLOUT) == POLLOUT){
-		//write into child
-		//write(pipeFdIn[1]) ->> create a child to write into it
 
 
 
@@ -262,7 +267,7 @@ void	Socket::checkCGIevens(int i){
 
 	} else if ((_vCGI[0].revents & POLLIN)== POLLIN){
 		//read(pipeFdOut[0])
-		//read from child
+		//read from child - 0
 	}
 
 

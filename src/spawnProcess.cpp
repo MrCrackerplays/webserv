@@ -31,7 +31,7 @@ void freeEnvp(char **envp) {
 }
 
 
-char **envpGenerateNew(parsRequest request, std::string portNumberSocket, std::string hostNameSocket, std::string save_location){
+char **envpGenerateNew(parsRequest request, std::string portNumberSocket, std::string hostNameSocket){
 	char **envp = new char*[20];
 	if (envp == nullptr)
 		return nullptr;
@@ -126,7 +126,7 @@ char **envpGenerateNew(parsRequest request, std::string portNumberSocket, std::s
 	// std::string str19 = "SCRIPT_URI=" + request.urlPath;
 	// envp[19] = new char[str19.length() + 1];
 	// strcpy(envp[19], str19.c_str());
-	std::string str18 = save_location;
+	std::string str18 = request.save_location;
 	envp[18] = new char[str18.length() + 1];
 	strcpy(envp[18], str18.c_str());
 	envp[19] = NULL;
@@ -315,7 +315,53 @@ pid_t	forkProcess(){
 	return childPid;
 }
 
-std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket, int &statusChild, std::string save_location) {
+pid_t	launchChild(parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket, 
+								std::vector<pollfd> &vCGI, int* pipeFdIn, int* pipeFdOut, char **envp){
+
+
+	try{
+		initPipesCreatePollFDstruct(vCGI, pipeFdIn, pipeFdOut);
+	} catch (std::exception &e){
+		std::cerr << e.what() << std::endl;
+		throw std::runtime_error("spawnProcess : generatePipes");
+	}
+
+	envp = envpGenerateNew(request, portNumSocket, hostNameSocket);
+	if (envp == NULL){
+		closePipes(pipeFdIn, pipeFdOut);
+		std::cerr << "spawnProcess : new" << std::endl;
+		throw std::runtime_error("spawnProcess : new");
+	}
+	pid_t childPid;
+	childPid = fork();
+	if (childPid < 0){ //fork failed
+		closePipes(pipeFdIn, pipeFdOut);
+		freeEnvp(envp);
+		std::cerr << "spawnProcess : fork" << std::endl;
+		throw std::runtime_error("spawnProcess : fork");
+	}
+
+	if (childPid == 0){		//in child process
+		if (dup2(pipeFdIn[0], STDIN_FILENO) < 0){
+			freeEnvp(envp);
+			std::cerr << "child dup2 1" << std::endl;
+			exit(1);
+		}
+		if (dup2(pipeFdOut[1], STDOUT_FILENO) < 0){
+			freeEnvp(envp);
+			std::cerr << "child dup2 2" << std::endl;
+			exit(1);
+		}
+		closePipes(pipeFdIn, pipeFdOut);
+		execve(path, NULL, envp);
+		freeEnvp(envp);
+		std::cerr << "child execve failed" << std::endl;
+		exit(1);
+	}
+	return childPid;
+}
+
+std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket, int &statusChild) {
 	
 	std::string reply;
 	pid_t childPid;
@@ -330,7 +376,7 @@ std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::s
 		throw std::runtime_error("spawnProcess : generatePipes");
 	}
 
-	char **envp = envpGenerateNew(request, portNumSocket, hostNameSocket, save_location);
+	char **envp = envpGenerateNew(request, portNumSocket, hostNameSocket);
 	if (envp == NULL){
 		std::cerr << "spawnProcess : new" << std::endl;
 		throw std::runtime_error("spawnProcess : new");

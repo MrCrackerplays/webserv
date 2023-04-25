@@ -11,9 +11,7 @@
 #include "parseRequest.hpp"
 #include <poll.h>
 
-std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket, int &statusChild, std::string save_location);
-
-
+std::string	spawnProcess(parsRequest request, std::string& portNumSocket, std::string& hostNameSocket, int &statusChild);
 
 void	freeEnvp(char **envp);
 void	closePipes(int* pipeFdIn, int* pipeFdOut);
@@ -34,6 +32,8 @@ void	readFromChild(int* pipeFdIn, int* pipeFdOut, std::string &reply, char **env
 void	initPipesCreatePollFDstruct(std::vector<pollfd> &vPipesCGI, int* pipeFdIn, int* pipeFdOut)
 
 
+
+pid_t	launchChild(parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket, std::vector<pollfd> &vCGI, int* pipeFdIn, int* pipeFdOut, char **envp);
 
 
 #endif /* spawnProcess_hpp */

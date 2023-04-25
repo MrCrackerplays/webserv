@@ -96,7 +96,8 @@ void	ifCGItrue(std::string &port, std::string &host, std::string &hostPort, requ
 	std::string cgiReply;
 	response response;
 	try {
-		cgiReply = spawnProcess(request, port, host, statusChild, std::string("SAVE_LOCATION=") + getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath).getSaveLocation());
+		request.save_location = std::string("SAVE_LOCATION=") + getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath).getSaveLocation();
+		cgiReply = spawnProcess(request, port, host, statusChild);
 	} catch (std::exception &e) {
 		
 		std::cerr << "Caught exception: " << e.what() << std::endl;

@@ -30,6 +30,7 @@ typedef struct {
 	size_t requestBodyLen;
 	
 	//from location:
+	std::string save_location;
 	std::string physicalPathCgi;
 	std::map<std::string, std::string>	ErrorPages;
 	bool callCGI;
