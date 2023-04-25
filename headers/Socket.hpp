@@ -32,28 +32,15 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-//https://pubs.opengroup.org/onlinepubs/009604499/functions/socket.html
-
-struct CGIInfo {
-
-	int code;
-	char **envp;
-	pid_t childPid;
-	parseRequest *CGIrequest;
-	response *CGIresponse;
-
-	std::vector<pollfd> vCGI;
-	int* pipeFdIn;
-	int* pipeFdOut;
-};
-
-
 struct ClientInfo {
 
 	std::string receivedContent;
 	size_t recvBytes;
 	std::string reply;
 	size_t biteToSend;
+
+	parsRequest ClientRequest;
+	response ClientResponse;
 
 	bool isCGI;
 	CGIInfo cgiInfo;
@@ -101,7 +88,7 @@ public:
 	std::vector<pollfd> &getCGIVector();
 	size_t	getPollFdVectorSize();
 	size_t	getCGIVectorSize();
-	bool	getCGIbool(){return _CGI;};
+	bool	getCGIbool(){return _clients[0].isCGI;};//fix
 
 	
 	//setters
@@ -118,7 +105,7 @@ public:
 		_vCGISize = size;
 	}
 	void	setServers(std::map<std::string, std::vector<Server> > &servers);
-	void	setCGIbool(bool CGI){_CGI = CGI;}
+	void	setCGIbool(bool CGI){_clients[0].isCGI = true;};//fix
 };
 
 void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);

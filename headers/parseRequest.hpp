@@ -18,6 +18,7 @@ typedef struct {
 	bool autoindex;
 	
 	//from request:
+	std::string parsBuff;
 	std::map <std::string, std::vector<std::string> > query;
 	std::string queryString;
 	std::map <std::string, std::vector<std::string> > headers;
