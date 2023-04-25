@@ -6,24 +6,15 @@
 //
 
 #include "methods.hpp"
-#include "constructResponse.hpp"
-#include "parseRequest.hpp"
 #include "codes.hpp"
-#include "spawnProcess.hpp"
 #include <cstdio>
 #include <map>
 
-//existance, read and executable checks
-//streaming binary file content in body
 void	methodGet(parsRequest& request, std::string& body){
 	
-	//request.physicalPathCgi = "/Users/yuliia/Codam/webserv/root/upload_test.html";
 	if (isDirectory(request.physicalPathCgi) == false && isFile(request.physicalPathCgi) == false){
 		request.code = 404;
 		return;
-//	} else if (ifFileExecutable(request.physicalPathCgi) == false) {
-//		request.code = 401;
-//		return;
 	} else if (ifFileReadable(request.physicalPathCgi) == false) {
 		request.code = 401;
 		return;
@@ -31,8 +22,6 @@ void	methodGet(parsRequest& request, std::string& body){
 	readFileBinary(request.physicalPathCgi, body);
 }
 
-//existance, write checks
-//removing file with physical path provided
 void methodDelete(parsRequest& request){
 
 	if (isDirectory(request.physicalPathCgi) == false && isFile(request.physicalPathCgi) == false){
@@ -91,51 +80,16 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 	return response;
 }
 
-void	ifCGItrue(std::string &cgiReply, parsRequest &request, std::string &port, std::string &host, std::string &hostPort, response &response, std::string &replyString, int &statusChild, std::map<std::string, std::vector<Server> > &servers){
-
-	try {
-		cgiReply = spawnProcess(request, port, host, statusChild, std::string("SAVE_LOCATION=") + getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath).getSaveLocation());
-	} catch (std::exception &e) {
-		
-		std::cerr << "Caught exception: " << e.what() << std::endl;
-		request.code = 500;
-		response = responseStructConstruct(servers, hostPort, "", request);
-		replyString = formResponseString(response);
-		return ;
-	}
-
-			
-	if (statusChild < 0){
-
-		std::cerr << "error in child proper error is still needed lol" <<std::endl; //UNFINISHED
-		request.code = 500;
-		response = responseStructConstruct(servers, hostPort, "", request);
-	} else {
-
-		response.method = request.method;
-		parseCorrectResponseCGI(cgiReply, response);
-	}
-}
-
-
-//in case error pages are going bad do we need to have default one to present?
-std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string &port, std::string &host){
+std::string	methods(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string &port, std::string &host, bool CGI){
 	
-	parsRequest request;
 	response response;
 	std::string body;
 	
-	std::string cgiReply;
 	std::string replyString;
-	int statusChild;
 	std::string hostPort = host + ":" + port;
-
-	// std::cout << "------------------------------" << std::endl;
-	// std::cout << "buffer after request received: " << std::endl;
-	// std::cout << parsBuff << std::endl;
-	// std::cout << "------------------------------" << std::endl;
 	
-	request = parseRequest(parsBuff, servers, hostPort);
+	request = parseRequest(request.parsBuff, servers, hostPort);
+	//response.method = request.method;
 	if (request.autoindex == true){
 		if (request.code == 200){
 			response = responseStructConstruct(servers, hostPort, request.requestBody, request);
@@ -147,16 +101,11 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	}
 	
 	if (request.code != 200){
-		//std::cout << "method check1------" << std::endl;
 		response = responseStructConstruct(servers, hostPort, "", request);
 	} else {
 		
 		if (request.callCGI == true){
-			//CGI - block needs to be moved to separate function in separate file
-			//i need to return from method if ther is a cgi request
-			//so in event loop I can create pipes -> vCGI, it will go through poll
-			//I need separate write part for CGI and read part for CGI in event loop
-			ifCGItrue(cgiReply, request, port, host, hostPort, response, replyString, statusChild, servers);
+			std::cout << "CGI is not in method.cpp, in case of issue stand by until it work from Socket.cpp" << std::endl;
 		} else if (request.method == GET){
 			try {
 				methodGet(request, body);
@@ -182,6 +131,5 @@ std::string	methods(std::string parsBuff, std::map<std::string, std::vector<Serv
 	} else {
 		replyString = formResponseString(response);
 	}
-	//std::cout << "METOD FINISHED" << std::endl;
 	return replyString;
 }

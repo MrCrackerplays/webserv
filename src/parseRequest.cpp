@@ -19,15 +19,15 @@ std::string	getQueryParams(std::string &path, std::map<std::string, std::vector<
 	
 	std::string::size_type pos = path.find('?');
 	std::string extractedQueryParams;
-	if (pos != std::string::npos){ //instead of npos size_type(-1) can be used
+	if (pos != std::string::npos){
 		extractedQueryParams = path.substr(pos + 1);
 		path.erase(pos);
 		std::istringstream queryStream(extractedQueryParams);
 		std::string parameter;
 		while(std::getline(queryStream, parameter, '&')) {
-			queryString += parameter; ///create queryString for envp further
+			queryString += parameter;
 			std::string::size_type equalsPos = parameter.find('=');
-			if (equalsPos != std::string::npos) { //instead of npos
+			if (equalsPos != std::string::npos) {
 				std::string key = parameter.substr(0, equalsPos);
 				std::string value = parameter.substr(equalsPos + 1);
 				requestQuery[key].push_back(value);
@@ -57,13 +57,11 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 	while (std::getline(requestStream, line) && line != "\r") {
 		size_t pos = line.find(": ");
 		if (pos != std::string::npos) {
-			//std::cout << line << std::endl;
 			if (!line.empty() && line.back() == '\r') {
 				line.pop_back();
 			}
 			std::string headerName = line.substr(0, pos);
 			std::string headerBody = line.substr(pos + 2);
-			//std::cout << headerName << " : "<< headerBody << std::endl;
 			size_t	pos2 = headerBody.rfind(":");
 			if (pos2 != std::string::npos) {
 				headerBody = headerBody.substr(0, pos2);
@@ -103,7 +101,6 @@ void	physicalPathMagic(std::string& physicalPathCgi, bool& autoindex, std::strin
 			} catch(const std::exception& e) {
 				physicalPathCgi = "";
 			}
-			//std::cout << "autoind body : "<< physicalPathCgi << std::endl;
 		} else {
 			physicalPathCgi += closestLocation.getDefaultFile();
 		}
@@ -283,9 +280,7 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 	
 	request.code = 200;
 	requestStream >> request.methodString;
-	//std::cout << "++++++++++ method : " << request.methodString << std::endl;
 	request.method = getMethodFromRequest(request.methodString);
-	//std::cout << "++++++++++ method int: " << request.method << std::endl;
 	requestStream >> request.urlPath >> request.httpVers;
 	if (isBadRequest(request)){
 		return request;
@@ -335,11 +330,10 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 			}
 		}
 		findMethodInServer(request, servers, hostPort);
-		if (request.method != GET && request.autoindex == true){ //???? not sure
+		if (request.method != GET && request.autoindex == true){ //? not sure
 			request.code = 405;
 		}
 	}
-	//std::cout << request.requestBody << std::endl;
 	return request;
 }
 

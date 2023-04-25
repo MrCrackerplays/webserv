@@ -171,17 +171,15 @@ void	Socket::acceptNewConnect(int i){
 			ClientInfo clientStruct;
 			_clients.push_back(clientStruct);
 		}
-		
+
+		//initiate client.struct
 		ClientInfo clientStruct;
 		clientStruct.biteToSend = 0;
 		clientStruct.recvBytes = 0;
+		clientStruct.receivedContent.clear();
+		clientStruct.reply.clear();
+		clientStruct.isCGI = false;
 		_clients.push_back(clientStruct);
-//		if (_clients.size() >= j){
-//			_clients[j].sd = newFd;//check if j can be actually bigger then 0 first.
-//		} else {
-//			std::cout << "donnow what to do with this yet, j == " << j << std::endl;
-//		}
-		
 	}
 }
 
@@ -215,7 +213,8 @@ void	Socket::recvConnection(int i){
 		if (fullRequestReceived(_clients[i].receivedContent, _clients[i].recvBytes, res)){
 			//parsing part
 			try {
-				_clients[i].reply = methods(_clients[i].receivedContent, *_servers, _portNumber, _hostName);
+				_clients[i].ClientRequest.parsBuff = _clients[i].receivedContent;
+				_clients[i].reply = methods(_clients[i].ClientRequest, *_servers, _portNumber, _hostName, _clients[i].isCGI);
 				_clients[i].biteToSend = _clients[i].reply.length();
 				_vFds[i].events |= POLLOUT;
 				//std::cout << "revent: " << _vFds[i].revents << std::endl;
@@ -228,18 +227,110 @@ void	Socket::recvConnection(int i){
 	}
 }
 
-void	Socket::checkCGIevens(){
+//there might be more vCGI then 1, as a 
+//few clients from this server can call CGI. I can fix issue with indexes as I have index i that shows the client. 
+//for every client there are 2 pipes, so I can use i*2 and i*2+1 to get the right pipes. 
+// this need to be fixed on Socket - poll loop level.
+void	Socket::checkCGIevens(int i){ 
 
-	if (_vCGI.size() == 0)
-		return;
+	std::string hostPort = _hostName + ":" + _portNumber;
 
-	//read(pipeFdOut[0])
-	
+	if (_clients[i].CgiDone == true)
+		return ;
+	if (_vCGISize == 0 && _clients[i].isCGI == false)
+		return ;
 
+
+	else if (_vCGISize == 0 && _clients[i].isCGI == true){ //init pipes and create child // NOT the size of vCGI but other check for first launch of this function
+		
+		try{
+			_clients[i].cgiInfo.childPid = launchChild(_clients[i].cgiInfo, _clients[i].ClientRequest, _portNumber, _hostName);
+			_vCGISize = 2;
+		} catch (std::exception &e) { 
+			std::cerr << "Failed to init pipes: " << e.what() << std::endl;
+			clients[i].ClientResponse.code = 500;
+			_clients[i].ClientResponse = responseStructConstruct(_servers, hostPort, "", _clients[i].ClientRequest);
+			_clients[i].reply = formResponseString(response);
+			_clients[i].CgiDone = true;
+			//free+close is done in launchChild
+			return ;
+		}
+		
+	} else if ((_vCGI[1].revents & POLLOUT) == POLLOUT){ //write in child, wait for child
+		try{
+			writeInChild(_clients[i].ClientRequest.requestBody.c_str(), _clients[i].ClientRequest.requestBody.length() , _clients[i].cgiInfo.pipeFdIn);
+		}
+		catch (std::exception &e) {
+			std::cerr << "Failed to write in child: " << e.what() << std::endl;
+			clients[i].ClientResponse.code = 500;
+			_clients[i].ClientResponse = responseStructConstruct(_servers, hostPort, "", _clients[i].ClientRequest);
+			_clients[i].reply = formResponseString(response);
+			_clients[i].CgiDone = true;
+			freeEnvp(_clients[i].cgiInfo.envp);
+			closePipes(_clients[i].cgiInfo.pipeFdIn, _clients[i].cgiInfo.pipeFdOut);
+			return ;
+		}
+		
+		try{
+			_clients[i].cgiInfo.statusChild = 0;
+			waitForChild(_clients[i].cgiInfo.statusChild, _clients[i].cgiInfo.childPid);
+		}
+		catch (std::exception &e) {
+			std::cerr << "Caught exception: " << e.what() << std::endl;
+			_clients[i].ClientResponse.code = 500;
+			_clients[i].ClientResponse = responseStructConstruct(_servers, hostPort, "", _clients[i].ClientRequest);
+			_clients[i].reply = formResponseString(_clients[i].ClientResponse);
+			_clients[i].CgiDone = true;
+			freeEnvp(_clients[i].cgiInfo.envp);
+			closePipes(_clients[i].cgiInfo.pipeFdIn, _clients[i].cgiInfo.pipeFdOut);
+			return ;
+		}
+		if (_clients[i].cgiInfo.statusChild < 0){ //not sure if to check that here
+			std::cerr << "error in child : if (statusChild < 0) | from POLLOUT" <<std::endl; 
+			_clients[i].ClientResponse.code = 500;
+			_clients[i].ClientResponse = responseStructConstruct(_servers, hostPort, "", _clients[i].ClientRequest);
+			_clients[i].reply = formResponseString(_clients[i].ClientResponse);
+			_clients[i].CgiDone = true;
+			freeEnvp(_clients[i].cgiInfo.envp);
+			closePipes(_clients[i].cgiInfo.pipeFdIn, _clients[i].cgiInfo.pipeFdOut);
+			return ;
+		}
+
+
+	} else if ((_vCGI[0].revents & POLLIN)== POLLIN){ //read from child
+		
+		if (_clients[i].cgiInfo.statusChild < 0){ //not sure if to check that here
+			std::cerr << "error in child : if statusChild < 0 | from POLLIN" << std::endl; 
+			_clients[i].ClientResponse.code = 500;
+			_clients[i].ClientResponse = responseStructConstruct(_servers, hostPort, "", _clients[i].ClientRequest);
+			_clients[i].reply = formResponseString(_clients[i].ClientResponse);
+			_clients[i].CgiDone = true;
+			freeEnvp(_clients[i].cgiInfo.envp);
+			closePipes(_clients[i].cgiInfo.pipeFdIn, _clients[i].cgiInfo.pipeFdOut);
+			return ;
+		}
+
+		try{
+			readFromChild(_clients[i].cgiInfo.pipeFdOut, _clients[i].reply);
+			parseCorrectResponseCGI(_clients[i].reply, _clients[i].ClientResponse);
+			_clients[i].CgiDone = true;
+			freeEnvp(_clients[i].cgiInfo.envp);
+			closePipes(_clients[i].cgiInfo.pipeFdIn, _clients[i].cgiInfo.pipeFdOut);
+		}
+		catch (std::exception &e) {
+			std::cerr << "Failed to read from child: " << e.what() << std::endl;
+			_clients[i].ClientResponse.code = 500;
+			_clients[i].ClientResponse = responseStructConstruct(_servers, hostPort, "", _clients[i].ClientRequest);
+			_clients[i].reply = formResponseString(_clients[i].ClientResponse);
+			_clients[i].CgiDone = true;
+			freeEnvp(_clients[i].cgiInfo.envp);
+			closePipes(_clients[i].cgiInfo.pipeFdIn, _clients[i].cgiInfo.pipeFdOut);
+			return ;
+		}
+	}
 }
 
 void	Socket::checkEvents(){
-	_vCGISize = 0; //temp
 	for (int i = 0; i < (int)_vFds.size(); i++){
 		if ((_vFds[i].revents & POLLIN) == POLLIN){
 			

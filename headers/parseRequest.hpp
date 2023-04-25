@@ -18,6 +18,7 @@ typedef struct {
 	bool autoindex;
 	
 	//from request:
+	std::string parsBuff;
 	std::map <std::string, std::vector<std::string> > query;
 	std::string queryString;
 	std::map <std::string, std::vector<std::string> > headers;
@@ -30,6 +31,7 @@ typedef struct {
 	size_t requestBodyLen;
 	
 	//from location:
+	std::string save_location;
 	std::string physicalPathCgi;
 	std::map<std::string, std::string>	ErrorPages;
 	bool callCGI;

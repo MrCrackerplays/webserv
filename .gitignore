@@ -8,3 +8,5 @@ webserv
 server_xcode_project/
 server_xcode_project
 cgi-check
+
+src/storeOldChild.cpp

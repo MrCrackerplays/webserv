@@ -12,6 +12,9 @@
 #define MAX_REQUEST_SIZE 8192
 
 //#include "Sockadrs.hpp"
+#include "spawnProcess.hpp"
+#include "parseRequest.hpp"
+#include "constructResponse.hpp"
 #include "Server.hpp"
 #include <unistd.h>
 #include <fcntl.h>
@@ -21,7 +24,6 @@
 #include <sys/select.h>
 #include <vector>
 #include <fstream>
-#include "parseRequest.hpp"
 #include <stdexcept>
 #include <stdio.h>
 #include <iostream>
@@ -30,15 +32,19 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-//https://pubs.opengroup.org/onlinepubs/009604499/functions/socket.html
-
 struct ClientInfo {
 
 	std::string receivedContent;
 	size_t recvBytes;
 	std::string reply;
 	size_t biteToSend;
+
+	parsRequest ClientRequest;
+	response ClientResponse;
+
 	bool isCGI;
+	bool CgiDone;
+	CGIInfo cgiInfo;
 };
 
 class Socket{
@@ -61,7 +67,7 @@ protected:
 	size_t _vFdsSize;
 	std::vector<pollfd> _vCGI;
 	size_t _vCGISize;
-	bool _CGI;
+	//bool _CGI;
 	
 	
 public:
@@ -74,7 +80,7 @@ public:
 	void	acceptNewConnect(int i);
 	void	recvConnection(int i);
 	void	sendData(int client_socket);
-	void	checkCGIevens();
+	void	checkCGIevens(int i);
 	
 	//getters
 	int		getSocketFd();
@@ -83,7 +89,7 @@ public:
 	std::vector<pollfd> &getCGIVector();
 	size_t	getPollFdVectorSize();
 	size_t	getCGIVectorSize();
-	bool	getCGIbool(){return _CGI;};
+	bool	getCGIbool(){return _clients[0].isCGI;};//fix
 
 	
 	//setters
@@ -100,7 +106,7 @@ public:
 		_vCGISize = size;
 	}
 	void	setServers(std::map<std::string, std::vector<Server> > &servers);
-	void	setCGIbool(bool CGI){_CGI = CGI;}
+	void	setCGIbool(bool CGI){_clients[0].isCGI = true;};//fix
 };
 
 void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);

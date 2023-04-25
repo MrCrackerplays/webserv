@@ -9,11 +9,13 @@
 #define methods_hpp
 
 #include "Server.hpp"
+#include "constructResponse.hpp"
+#include "parseRequest.hpp"
 #include <sstream>
 #include <map>
 #include <vector>
 #include <string>
 
-std::string methods(std::string parsBuff, std::map<std::string, std::vector<Server> > &servers, std::string &port, std::string &host);
+std::string methods(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string &port, std::string &host, bool CGI);
 
 #endif /* methods_hpp */

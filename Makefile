@@ -9,7 +9,7 @@ endif
 CLASSES := Location Server Socket
 OBJECTS := autoindex.o codes.o config.o constructResponse.o location_block_util.o \
 			main.o methods.o parseRequest.o server_block_util.o SocketUtils.o \
-			spawnProcess.o utilsMethods.o
+			spawnProcess.o utilsMethods.o 
 HEADER_FILES := autoindex.hpp codes.hpp config.hpp constructResponse.hpp \
 			methods.hpp parseRequest.hpp spawnProcess.hpp utilsMethods.hpp
 INCLUDE := headers
