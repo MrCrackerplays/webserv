@@ -36,6 +36,13 @@ std::vector<pollfd> &Socket::getPollFdVector(){
 }
 
 std::vector<pollfd> &Socket::getCGIVector(){
+
+	//temp solution
+	if (_vCGISize > 0){
+		_vCGI.push_back(_clients[1].cgiInfo.vCGI[0]);
+		_vCGI.push_back(_clients[1].cgiInfo.vCGI[1]);
+	}
+
 	return _vCGI;
 }
 
@@ -132,7 +139,7 @@ void	Socket::closeClientConnection(int i){
 }
 
 void	Socket::sendData(int i){
-		
+	std::cout << "sendData" << std::endl;
 	size_t bitesend = send(_vFds[i].fd, _clients[i].reply.c_str(), _clients[i].reply.length(), 0);
 	if (bitesend < 0){
 		throw std::runtime_error("Socket : send");
@@ -191,11 +198,11 @@ void	Socket::recvConnection(int i){
 	//std::cout << _vFds[i].fd << std::endl;
 	
 	res = (int)recv(_vFds[i].fd, buff, MAX_REQUEST_SIZE - 1, 0);
-	// std::cout << "================================" << std::endl;
-	// std::cout << "bites read : " << res << std::endl;
-	// buff[res] = '\0';
-	// std::cout << buff << std::endl;
-	// std::cout << "================================" << std::endl;
+	std::cout << "================================" << std::endl;
+	std::cout << "bites read : " << res << std::endl;
+	buff[res] = '\0';
+	std::cout << buff << std::endl;
+	std::cout << "================================" << std::endl;
 	if (res == -1){
 		return;
 	} else if (res < 0){
@@ -216,7 +223,8 @@ void	Socket::recvConnection(int i){
 				_clients[i].ClientRequest.parsBuff = _clients[i].receivedContent;
 				_clients[i].reply = methods(_clients[i].ClientRequest, *_servers, _portNumber, _hostName, _clients[i].isCGI);
 				_clients[i].biteToSend = _clients[i].reply.length();
-				_vFds[i].events |= POLLOUT;
+				if (_clients[i].isCGI == false)
+					_vFds[i].events |= POLLOUT;
 				//std::cout << "revent: " << _vFds[i].revents << std::endl;
 			} catch (std::exception &e) {
 				std::cerr << "Caught exception: " << e.what() << std::endl;
@@ -249,12 +257,11 @@ void	Socket::CGIerrorReply(int i){
 
 void	Socket::checkCGIevens(int i){ 
 
-	int j = i * 2;
+	int j = i;
 
 	std::cout << "-------checkCGIevens-------" << std::endl;
 
-	if (_vCGISize == 0 || _clients[i].isCGI == false)
-		return ;
+
 	if (_clients[i].CgiDone == true)
 		return ;
 
@@ -273,7 +280,8 @@ void	Socket::checkCGIevens(int i){
 			return ;
 		}
 		
-	} else if ((_vCGI[j + 1].revents & POLLOUT) == POLLOUT){ //write in child, wait for child
+	} else if ((_clients[i].cgiInfo.vCGI[1].revents & POLLOUT) == POLLOUT){ //write in child, wait for child
+		
 		try{
 			std::cout << "writing in child" << std::endl;
 			writeInChild(_clients[i].ClientRequest.requestBody.c_str(), _clients[i].ClientRequest.requestBody.length() , _clients[i].cgiInfo.pipeFdIn);
@@ -300,13 +308,13 @@ void	Socket::checkCGIevens(int i){
 			CGIerrorReply(i);
 			return ;
 		} else {
-			_vCGI[j].events |= POLLIN;
+			_clients[i].cgiInfo.vCGI[0].events |= POLLIN;
 			std::cout << "------- end of checkCGIevens : waiting done child -------" << std::endl;
 			return ;
 		}
 
 
-	} else if ((_vCGI[j].revents & POLLIN)== POLLIN){ //read from child
+	} else if ((_clients[i].cgiInfo.vCGI[0].revents & POLLIN)== POLLIN){ //read from child
 		
 		if (_clients[i].cgiInfo.statusChild < 0){ //not sure if to check that here
 			std::cerr << "error in child : if statusChild < 0 | from POLLIN" << std::endl; 
@@ -359,6 +367,7 @@ void	Socket::checkEvents(){
 			sendData(i);
 			//std::cout << "end send data" << std::endl;
 			
+<<<<<<< HEAD
 		} else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
 			//std::cout << "pollHUP" << std::endl;
 			try {
@@ -368,6 +377,17 @@ void	Socket::checkEvents(){
 				std::cerr << "failed to close client with FD: " << _vFds[i].fd << " err message: " << e.what() << std::endl;
 			}
 		}
+=======
+		} //else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
+//			//std::cout << "pollHUP" << std::endl;
+//			try {
+//				std::cerr << "close connection" << std::endl;
+//				closeClientConnection(i);
+//			} catch (std::exception &e) {
+//				std::cerr << "failed to close client with FD: " << _vFds[i].fd << " err message: " << e.what() << std::endl;
+//			}
+//		}
+>>>>>>> 749517ef0018239e942fd776a675e2cc8da1ee64
 		if (i > 0 && _clients[i].isCGI == true){
 			std::cout << "CGI events | i = " << i << std::endl;
 			checkCGIevens(i);

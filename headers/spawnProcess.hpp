@@ -23,7 +23,7 @@ struct CGIInfo {
 	pid_t childPid;
 	int statusChild;
 
-	std::vector<pollfd> vCGI;
+	std::vector<pollfd> vCGI; // pipeFdIn[0] - POLLIN // pipeFdOut[1] - POLLOUT
 	int pipeFdIn[2];
 	int pipeFdOut[2];
 };
@@ -35,10 +35,13 @@ char	**envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 bool	makeNonBlocking(int fd);
 void	initPipesCreatePollFDstruct(std::vector<pollfd> &vPipesCGI, int* pipeFdIn, int* pipeFdOut);
 
-pid_t	launchChild(CGIInfo info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket);
+pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket);
 
 void	writeInChild(const char* data, size_t dataLen, int* pipeFdIn);
 void	waitForChild(int &statusChild, pid_t childPid);
 void	readFromChild(int* pipeFdOut, std::string &reply);
+
+//test
+void	forkChildTest(CGIInfo info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket);
 
 #endif /* spawnProcess_hpp */

@@ -253,7 +253,29 @@ void	waitForChild(int &statusChild, pid_t childPid){
 	}
 }
 
-pid_t	launchChild(CGIInfo info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket){
+void	forkChildTest(CGIInfo info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket){
+	if (info.childPid == 0){		//in child process
+		if (dup2(info.pipeFdIn[0], STDIN_FILENO) < 0){
+			freeEnvp(info.envp);
+			closePipes(info.pipeFdIn, info.pipeFdOut);
+			std::cerr << "child dup2 1" << std::endl;
+			exit(1);
+		}
+		if (dup2(info.pipeFdOut[1], STDOUT_FILENO) < 0){
+			freeEnvp(info.envp);
+			closePipes(info.pipeFdIn, info.pipeFdOut);
+			std::cerr << "child dup2 2" << std::endl;
+			exit(1);
+		}
+		closePipes(info.pipeFdIn, info.pipeFdOut);
+		execve((char *)request.physicalPathCgi.c_str(), NULL, info.envp);
+		freeEnvp(info.envp);
+		std::cerr << "child execve failed" << std::endl;
+		exit(1);
+	}
+}
+
+pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket){
 
 	try{
 		initPipesCreatePollFDstruct(info.vCGI, info.pipeFdIn, info.pipeFdOut);

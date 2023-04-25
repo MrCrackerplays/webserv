@@ -66,6 +66,8 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
     			i += pollFdSize + cgiSize;
 
 				//check events for this socket
+				//test: only one test case to test child:
+				it->setClientCGI(1);
 				it->checkEvents();
 			}
 		}
@@ -92,7 +94,7 @@ int	main(int argc, char **argv) {
 	std::signal(SIGPIPE, SIG_IGN);
 
 	//test yuliia // comment if not needed :
-	//config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
+	config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
 	//config_file = "/Users/yuliia/Codam/webserv/configs/iframes.conf";
 	
 	std::map<std::string, std::vector<Server> > servers;

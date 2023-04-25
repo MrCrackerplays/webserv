@@ -107,6 +107,14 @@ public:
 	}
 	void	setServers(std::map<std::string, std::vector<Server> > &servers);
 	void	setCGIbool(bool CGI, int i){_clients[i].isCGI = CGI;};//fix
+	
+	void	setClientCGI(int i){
+		if (_vCGISize > 0){
+			_clients[i].cgiInfo.vCGI[0].revents = _vCGI[0].revents;
+			_clients[i].cgiInfo.vCGI[1].revents = _vCGI[1].revents;
+		}
+		
+	};
 };
 
 void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);
