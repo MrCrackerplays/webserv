@@ -16,6 +16,7 @@
 #include <vector>
 #include <string>
 
-std::string methods(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string &port, std::string &host, bool CGI);
+std::string methods(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string &port, std::string &host, bool &CGI);
+response responseStructConstruct(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string body, parsRequest& request);
 
 #endif /* methods_hpp */
