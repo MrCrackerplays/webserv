@@ -232,11 +232,20 @@ bool	cookieEnforcement(parsRequest &request, std::map<std::string, std::vector<S
 	std::vector<std::string> vec = request.headers["Cookie"];
 	//check if the required cookie is in the header
 	bool	found = false;
-	for (std::vector<std::string>::iterator it = vec.begin(); it < vec.end(); it++) {
+	for (std::vector<std::string>::iterator it = vec.begin(); !found && it < vec.end(); it++) {
 		std::string str = *it;
-		if (str.find(cookie) != std::string::npos) {
+		std::string delimiter = "; ";
+		size_t pos = 0;
+		while ((pos = str.find(delimiter)) != std::string::npos) {
+			std::string token = str.substr(0, pos);
+			if (token == cookie) {
+				found = true;
+				break;
+			}
+			str.erase(0, pos + delimiter.length());
+		}
+		if (!found && str == cookie) {
 			found = true;
-			break;
 		}
 	}
 	if (!found) {
