@@ -24,7 +24,7 @@ public:
 			std::string root,
 			std::pair<std::string, std::string> redirect = std::pair<std::string, std::string>("", ""),
 			bool directory_listing = false,
-			std::string default_file = "",
+			std::string default_file = "index.html",
 			std::string set_cookie = "",
 			std::string require_cookie = "",
 			size_t client_body_limit = 0,
