@@ -13,7 +13,7 @@ void	setupSocket(std::map<std::string, std::vector<Server> > &servers, Socket &s
 	setToListen(socket.getSocketFd());
 	initiateVectPoll(socket.getSocketFd(), socket.getPollFdVector());
 	socket.setServers(servers);
-	socket.setCGIbool(false);
+	//socket.setCGIbool(false); need to be done in client struct
 	socket.setCGIVectorSize(0);
 	socket.setPollFdVectorSize(0);
 }

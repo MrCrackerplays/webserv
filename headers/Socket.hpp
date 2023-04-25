@@ -67,7 +67,6 @@ protected:
 	size_t _vFdsSize;
 	std::vector<pollfd> _vCGI;
 	size_t _vCGISize;
-	//bool _CGI;
 	
 	
 public:
@@ -81,6 +80,7 @@ public:
 	void	recvConnection(int i);
 	void	sendData(int client_socket);
 	void	checkCGIevens(int i);
+	void	CGIerrorReply(int i);
 	
 	//getters
 	int		getSocketFd();
@@ -89,7 +89,7 @@ public:
 	std::vector<pollfd> &getCGIVector();
 	size_t	getPollFdVectorSize();
 	size_t	getCGIVectorSize();
-	bool	getCGIbool(){return _clients[0].isCGI;};//fix
+	bool	getCGIbool(int i){return _clients[i].isCGI;};
 
 	
 	//setters
@@ -106,7 +106,7 @@ public:
 		_vCGISize = size;
 	}
 	void	setServers(std::map<std::string, std::vector<Server> > &servers);
-	void	setCGIbool(bool CGI){_clients[0].isCGI = true;};//fix
+	void	setCGIbool(bool CGI, int i){_clients[i].isCGI = CGI;};//fix
 };
 
 void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);
