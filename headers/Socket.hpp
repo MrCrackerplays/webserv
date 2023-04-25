@@ -43,6 +43,7 @@ struct ClientInfo {
 	response ClientResponse;
 
 	bool isCGI;
+	bool CgiDone;
 	CGIInfo cgiInfo;
 };
 

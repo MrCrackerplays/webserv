@@ -187,25 +187,29 @@ void	inChildProcess(int* pipeFdIn, int* pipeFdOut, char **envp, char *path){
 		exit(1);
 }
 
-void	writeInChild(const char* data, size_t len, int* pipeFdIn, int* pipeFdOut, char **envp){
+
+
+
+void	writeInChild(const char* data, size_t dataLen, int* pipeFdIn){
 
 	ssize_t n = 0;
-	while (len > 0) {
-		if (len > 8192){
+	while (dataLen > 0) {
+		if (dataLen > 8192){
 			n = write(pipeFdIn[1], data, 8192);
 		} else {
-			n = write(pipeFdIn[1], data, len);
+			n = write(pipeFdIn[1], data, dataLen);
 		}
 		if (n < 0) {
-			//handle error
+			throw std::runtime_error("SpawnProcess: writeInChild : write");
 		}
 		data += n;
-		len -= n;
+		dataLen -= n;
 	}
 	close(pipeFdIn[1]);
 }
 
-void	readFromChild(int* pipeFdIn, int* pipeFdOut, std::string &reply, char **envp){
+
+void	readFromChild(int* pipeFdOut, std::string &reply){
 
 	size_t res = 1;
 	char buff[1024];
@@ -228,7 +232,7 @@ void	readFromChild(int* pipeFdIn, int* pipeFdOut, std::string &reply, char **env
 	close(pipeFdOut[0]);
 }
 
-void	waitForChild(int &statusChild, pid_t childPid, int* pipeFdIn, int* pipeFdOut, char **envp){
+void	waitForChild(int &statusChild, pid_t childPid){
 	int status;
 	if (waitpid(childPid, &status, 0) < 0){
 		// freeEnvp(envp);
@@ -239,17 +243,11 @@ void	waitForChild(int &statusChild, pid_t childPid, int* pipeFdIn, int* pipeFdOu
 		statusChild = WEXITSTATUS(status);
 		if (statusChild == 1){
 			statusChild = -1;
-			// close(pipeFdOut[1]);
-			// close(pipeFdOut[0]);
-			// freeEnvp(envp);
 			std::cerr << "execve failed" << std::endl;
 			throw std::runtime_error("spawnProcess : execve");
 		}
 	} else {
 		statusChild = -1;
-		// close(pipeFdOut[1]);
-		// close(pipeFdOut[0]);
-		// freeEnvp(envp);
 		std::cerr << "parent: status child failure" << std::endl;
 		throw std::runtime_error("spawnProcess : execve");
 	}
@@ -282,11 +280,13 @@ pid_t	launchChild(CGIInfo info, parsRequest &request, std::string& portNumSocket
 	if (info.childPid == 0){		//in child process
 		if (dup2(info.pipeFdIn[0], STDIN_FILENO) < 0){
 			freeEnvp(info.envp);
+			closePipes(info.pipeFdIn, info.pipeFdOut);
 			std::cerr << "child dup2 1" << std::endl;
 			exit(1);
 		}
 		if (dup2(info.pipeFdOut[1], STDOUT_FILENO) < 0){
 			freeEnvp(info.envp);
+			closePipes(info.pipeFdIn, info.pipeFdOut);
 			std::cerr << "child dup2 2" << std::endl;
 			exit(1);
 		}
