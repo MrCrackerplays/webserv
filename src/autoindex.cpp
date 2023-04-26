@@ -14,10 +14,13 @@ static void generate_table(std::ostringstream & index, std::string & path, std::
 		throw AutoindexGenerationException();
 	struct dirent *	ent = readdir(dir);
 	while (ent != NULL) {
-		if (std::string(ent->d_name) != ".") {
+		if (std::string(ent->d_name) != "." && (display_path != "/" || std::string(ent->d_name) != "..")) {
 		index << "<tr>";
 		index << "<td>";
-		index << "<a href=\"" << display_path << "/" << ent->d_name << "\">" << ent->d_name << "</a>";
+		index << "<a href=\"" << display_path;
+		if (display_path[display_path.size() - 1] != '/')
+			index << "/";
+		index << ent->d_name << "\">" << ent->d_name << "</a>";
 		{
 			struct stat	attributes;
 			if (stat((path + "/" + ent->d_name).c_str(), &attributes) != 0)
