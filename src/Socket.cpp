@@ -56,6 +56,17 @@ Socket::Socket(char * hostName, char * portNumber){
 	if (_listenFd < 0){
 		throw std::runtime_error("Socket : socket");
 	}
+
+	ClientInfo clientStruct;
+	_clients.push_back(clientStruct);
+	_clients[0].recvBytes = 0;
+	_clients[0].receivedContent.clear();
+	_clients[0].reply.clear();
+	_clients[0].biteToSend = 0;
+	_clients[0].isCGI = false;
+	_clients[0].CgiDone = false;
+	_clients[0].cgiInfo.vCGI.clear();
+
 }
 
 Socket::~Socket(){
@@ -154,14 +165,7 @@ void	Socket::acceptNewConnect(int i){
 		newPollfd.fd = newFd;
 		newPollfd.events = POLLIN | POLLHUP; //added POLLHUP though it may be not proper place to add both
 		_vFds.push_back(newPollfd);
-		if (i == 0 && _clients.size() == 0){ //if listening socket, clientStruct need to empty
-			ClientInfo clientStruct;
-			_clients.push_back(clientStruct);
-			_clients[0].recvBytes = 0;
-			_clients[0].receivedContent.clear();
-			_clients[0].reply.clear();
-			_clients[0].isCGI = false;
-		}
+		
 
 		//initiate client.struct
 		ClientInfo clientStruct;

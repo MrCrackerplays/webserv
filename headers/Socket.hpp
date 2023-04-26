@@ -65,8 +65,6 @@ protected:
 	int _listenFd;
 	std::vector<pollfd> _vFds;
 	size_t _vFdsSize;
-	std::vector<pollfd> _vCGI;
-	size_t _vCGISize;
 	
 	
 public:
@@ -98,40 +96,72 @@ public:
 	std::vector<pollfd> &getPollFdVector(){return _vFds;};
 	std::vector<pollfd> &getCGIVector(int i){return _clients[i].cgiInfo.vCGI;};
 
-	size_t	getPollFdVectorSize(){return _vCGI.size();};
+	size_t	getPollFdVectorSize(){return _vFds.size();};
 	size_t	getCGIVectorSize(int i){return _clients[i].cgiInfo.vCGI.size();};
 
-	bool	getCGIbool(int i){return _clients[i].isCGI;};
+	bool	getCGIbool(int i){
+		if (_vFdsSize < i){
+			return false;
+		}
+		if (!_clients[i].isCGI){
+			return false;
+		}
+		return _clients[i].isCGI;
+		};
 	
 	//SETTRES________________________________________________________
 	void	setServers(std::map<std::string, std::vector<Server> > &servers){ _servers = &servers;};
 
 
-    void setPollFdVector(pollfd vFd, int clientInd) {
-        _vFds[clientInd] = std::move(vFd);
-    }
+    // void setPollFdVector(pollfd vFd, int clientInd) {
+    //     _vFds[clientInd] = std::move(vFd);
+    // }
 
-    void setCGIVector(pollfd cgiFd0, pollfd cgiFd1, int clientInd) {
+    // void setCGIVector(int clientInd, const std::vector<pollfd>& cgiFdVec) {
 
-		CGIInfo &cgiInfo = _clients[clientInd].cgiInfo;
+	// 	CGIInfo &cgiInfo = _clients[clientInd].cgiInfo;
+	// 	if (cgiInfo.vCGI.size() == 1) {
+	// 		cgiInfo.vCGI[0] = std::move(cgiFd0);
 
-		if (cgiInfo.vCGI.size() == 1) {
-			cgiInfo.vCGI[0] = std::move(cgiFd0);
+	// 	} else if (cgiInfo.vCGI.size() == 2) {
+	// 		cgiInfo.vCGI[0] = std::move(cgiFd0);
+	// 		cgiInfo.vCGI[1] = std::move(cgiFd1);
+	// 	}
+    // }
+	// void setCGIVector(int clientInd, const std::vector<pollfd>& cgiFdVec) {
+    	
+	// 	CGIInfo& cgiInfo = _clients[clientInd].cgiInfo;
+   	// 	if (cgiInfo.vCGI.size() == 1) {
+    //     	cgiInfo.vCGI[0] = std::move(cgiFdVec[0]);
 
-		} else if (cgiInfo.vCGI.size() == 2) {
-			cgiInfo.vCGI[0] = std::move(cgiFd0);
-			cgiInfo.vCGI[1] = std::move(cgiFd1);
-		}
+    // 	} else if (cgiInfo.vCGI.size() == 2) {
+    //    		cgiInfo.vCGI[0] = std::move(cgiFdVec[0]);
+    //   		cgiInfo.vCGI[1] = std::move(cgiFdVec[1]);
+    // 	}
+	// }
 
-    }
 
+	void setPollFdVector(int clientInd, const std::vector<pollfd>& pollFdVec){
+		// _vFds[clientInd] = pollFdVec;
+		_vFds[clientInd] = std::move(pollFdVec);
+		};
+
+	void setCGIVector(int clientInd, const std::vector<pollfd>& cgiFdVec) {
+
+    	CGIInfo &cgiInfo = _clients[clientInd].cgiInfo;
+    	if (cgiInfo.vCGI.size() == 1) {
+        	cgiInfo.vCGI[0] = std::move(cgiFdVec[0]);
+    	} else if (cgiInfo.vCGI.size() == 2) {
+        	cgiInfo.vCGI[0] = std::move(cgiFdVec[0]);
+        	cgiInfo.vCGI[1] = std::move(cgiFdVec[1]);
+   		}
+	};
+
+	
+	
 	void setPollFdVectorSize(size_t size) {
 		_vFdsSize = size;
-	}
-	void setCGIVectorSize(size_t size) {
-		_vCGISize = size;
-	}
-
+	};
 };
 
 void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);
