@@ -179,7 +179,7 @@ void	initPipesCreatePollFDstruct(std::vector<pollfd> &vPipesCGI, int* pipeFdIn, 
 }
 
 
-size_t	writeInChild(const char* data, size_t dataLen, int* pipeFdIn){ //have to do it in multiple calls
+size_t	writeChild(const char* data, size_t dataLen, int* pipeFdIn){ //have to do it in multiple calls
 
 	ssize_t n = 0;
 	// while (dataLen > 0) {
@@ -211,7 +211,7 @@ size_t	writeInChild(const char* data, size_t dataLen, int* pipeFdIn){ //have to 
 }
 
 
-size_t	readFromChild(int* pipeFdOut, std::string &reply){ //have to do it in multiple calls
+size_t	readChild(int* pipeFdOut, std::string &reply){ //have to do it in multiple calls
 
 	size_t res = 1;
 	char buff[1024];
@@ -250,7 +250,7 @@ size_t	readFromChild(int* pipeFdOut, std::string &reply){ //have to do it in mul
 	return 0;
 }
 
-void	waitForChild(int &statusChild, pid_t childPid){
+void	waitChild(int &statusChild, pid_t childPid){
 	std::cout << "---- wait for child ----" << std::endl;
 	int status;
 	pid_t wpidRes = waitpid(childPid, &status, WNOHANG);
@@ -321,10 +321,10 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 	}
 	std::cout << "--- in parent from launchChild---- " << std::endl;
 	//in parent process
-	close(pipeFdIn[0]);
-	pipeFdIn[0] = -1;
-	close(pipeFdOut[1]);
-	pipeFdOut[1] = -1;
+	close(info.pipeFdIn[0]);
+	info.pipeFdIn[0] = -1;
+	close(info.pipeFdOut[1]);
+	info.pipeFdOut[1] = -1;
 	//pollhup will notify tat clild is done
 	std::cout << "end of launchChild ----- child pid: " << info.childPid << std::endl;
 	return info.childPid;

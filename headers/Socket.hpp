@@ -70,60 +70,68 @@ protected:
 	
 	
 public:
-	void	closeClientConnection(int i);
 	Socket(char * hostName, char * portNumber);
 	~Socket();
 	
-	//event methods
+	//EVENTS_METHODS_________________________________________________
 	void	checkEvents();
 	void	acceptNewConnect(int i);
 	void	recvConnection(int i);
 	void	sendData(int client_socket);
 	void	checkCGIevens(int i);
+	void	closeClientConnection(int i);
 
-	//cgi methods
+
+	//CGI_METHODS____________________________________________________
 	void	CGIerrorReply(int i);
 	void	writeInChild(int i);
 	void	readFromChild(int i);
 	void	startChild(int i);
 	void	pickCGIState(int i);
 	
-	//getters
-	int		getSocketFd();
-	addrinfo *getAddrInfo();
-	std::vector<pollfd> &getPollFdVector();
-	std::vector<pollfd> &getCGIVector();
-	size_t	getPollFdVectorSize();
-	size_t	getCGIVectorSize();
+	
+	//GETTERS________________________________________________________
+	
+	int		getSocketFd(){return _listenFd;};
+	addrinfo *getAddrInfo(){return _addrinfo;};
 
+	std::vector<pollfd> &getPollFdVector(){return _vFds;};
+	std::vector<pollfd> &getCGIVector(int i){return _clients[i].cgiInfo.vCGI;};
+
+	size_t	getPollFdVectorSize(){return _vCGI.size();};
+	size_t	getCGIVectorSize(int i){return _clients[i].cgiInfo.vCGI.size();};
 
 	bool	getCGIbool(int i){return _clients[i].isCGI;};
-	std::vector<pollfd> &getCGIVectorFromClient(){return _clients[0].cgiInfo.vCGI;};
-
 	
-	//setters
-    void setPollFdVector(std::vector<pollfd> vFds) {
-        _vFds = std::move(vFds);
+	//SETTRES________________________________________________________
+	void	setServers(std::map<std::string, std::vector<Server> > &servers){ _servers = &servers;};
+
+
+    void setPollFdVector(pollfd vFd, int clientInd) {
+        _vFds[clientInd] = std::move(vFd);
     }
-    void setCGIVector(std::vector<pollfd> cgiFds) {
-        _vCGI = std::move(cgiFds);
+
+    void setCGIVector(pollfd cgiFd0, pollfd cgiFd1, int clientInd) {
+
+		CGIInfo &cgiInfo = _clients[clientInd].cgiInfo;
+
+		if (cgiInfo.vCGI.size() == 1) {
+			cgiInfo.vCGI[0] = std::move(cgiFd0);
+
+		} else if (cgiInfo.vCGI.size() == 2) {
+			cgiInfo.vCGI[0] = std::move(cgiFd0);
+			cgiInfo.vCGI[1] = std::move(cgiFd1);
+		}
+
     }
+
 	void setPollFdVectorSize(size_t size) {
 		_vFdsSize = size;
 	}
 	void setCGIVectorSize(size_t size) {
 		_vCGISize = size;
 	}
-	void	setServers(std::map<std::string, std::vector<Server> > &servers);
-	void	setCGIbool(bool CGI, int i){_clients[i].isCGI = CGI;};//fix
-	
-	void	setClientCGI(int i){
-		if (_vCGISize > 0){
-			_clients[i].cgiInfo.vCGI[0].revents = _vCGI[0].revents;
-			_clients[i].cgiInfo.vCGI[1].revents = _vCGI[1].revents;
-		}
-		
-	};
+
 };
 
 void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);

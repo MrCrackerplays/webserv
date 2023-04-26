@@ -59,12 +59,12 @@ void	initPipesCreatePollFDstruct(std::vector<pollfd> &vPipesCGI, int* pipeFdIn, 
 
 pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket);
 
-size_t	writeInChild(const char* data, size_t dataLen, int* pipeFdIn);
+size_t	writeChild(const char* data, size_t dataLen, int* pipeFdIn);
 
 
-void	waitForChild(int &statusChild, pid_t childPid);
+void	waitChild(int &statusChild, pid_t childPid);
 
 
-size_t	readFromChild(int* pipeFdOut, std::string &reply);
+size_t	readChild(int* pipeFdOut, std::string &reply);
 
 #endif /* spawnProcess_hpp */
