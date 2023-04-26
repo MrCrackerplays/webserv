@@ -290,12 +290,10 @@ void	Socket::writeInChild(int i){
 		std::cout << << _clients[i].ClientRequest.requestBody << std::endl;
 		std::cout << "---------------body end --------------" << std::endl;
 
-
-
 		size_t wrote = writeInChild(_clients[i].ClientRequest.requestBody.c_str(), _clients[i].ClientRequest.requestBody.length() , _clients[i].cgiInfo.pipeFdIn);
 		_clients[i].ClientRequest.requestBody.erase(0, wrote);
 		if (_clients[i].ClientRequest.requestBody.length() == 0){
-			_clients[i].cgiInfo.state = WRITE_DONE;
+			//_clients[i].cgiInfo.state = WRITE_DONE; - better to do it in status change -> pickCGIState()
 			_clients[i].cgiInfo.vCGI[0].events |= POLLOUT; // or _clients[i].cgiInfo.vCGI[0].events &= ~POLLOUT
 		}
 	}
@@ -346,6 +344,8 @@ void Socket::pickCGIState(int i){
 
 	else if (_clients[i].cgiInfo.state == WRITE_READY && (_clients[i].cgiInfo.vCGI[1].revents & POLLHUP) == POLLHUP){
 		_clients[i].cgiInfo.state = WRITE_DONE;
+		_clients[i].cgiInfo.vCGI.erase(_clients[i].cgiInfo.vCGI.begin() + 1);
+		_clients[i].cgiInfo.vCGIsize = 1;
 		std::cout << "write done" << std::endl;
 	}
 
@@ -356,6 +356,8 @@ void Socket::pickCGIState(int i){
 
 	else if (_clients[i].cgiInfo.state == READ_READY && (_clients[i].cgiInfo.vCGI[0].revents & POLLHUP)== POLLHUP){
 		_clients[i].cgiInfo.state = READ_DONE;
+		_clients[i].cgiInfo.vCGI.erase(_clients[i].cgiInfo.vCGI.begin());
+		_clients[i].cgiInfo.vCGIsize = 0;
 		std::cout << "read done" << std::endl;
 	}
 }
@@ -387,17 +389,11 @@ void	Socket::readFromChild(int i){
 
 void	Socket::checkCGIevens(int i){ 
 
-	int j = i;
-
-	std::cout << "-------checkCGIevens-------" << std::endl;
-
-	
-
 	//gt out if CGI is done
 	if (_clients[i].CgiDone == true)
 		return ;
 
-
+	std::cout << "-------checkCGIevens-------" << std::endl;
 	
 
 	//if no pipes, create pipes -> non-blocking -> vectorCGI -> fork -> execve -> close parent pipes
@@ -422,6 +418,7 @@ void	Socket::checkCGIevens(int i){
 		_clients[i].CgiDone = true;
 		freeEnvp(_clients[i].cgiInfo.envp);
 		closePipes(_clients[i].cgiInfo.pipeFdIn, _clients[i].cgiInfo.pipeFdOut);
+		_vFds[i].events |= POLLOUT // &= ~POLLOUT;
 		return ;
 	}
 }
@@ -452,6 +449,12 @@ void	Socket::checkEvents(){
 		} else if ((_vFds[i].revents & POLLOUT) == POLLOUT){
 			std::cout << "try to send data" << std::endl;
 			sendData(i);
+			
+			if (_clients[i].isCGI == true && _clients[i].CgiDone = true)
+			{
+				_clients[i].isCGI = false;
+				_clients[i].CgiDone = false;
+			}
 			std::cout << "end send data" << std::endl;
 			
 		} else if ((_vFds[i].revents & POLLHUP) == POLLHUP){

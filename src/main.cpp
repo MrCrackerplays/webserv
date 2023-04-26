@@ -46,8 +46,6 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 					it->setCGIVectorSize(vCGI.size());
 				}
 			}
-			
-
 			// std::vector<pollfd> vCGI = it->getCGIVector();
 			// it->setCGIVectorSize(vCGI.size());
 			// for (int i = 0; i < (int)vCGI.size(); i++) {
