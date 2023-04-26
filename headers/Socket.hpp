@@ -83,7 +83,8 @@ public:
 
 	//cgi methods
 	void	CGIerrorReply(int i);
-	void	WriteInChild(int i);
+	void	writeInChild(int i);
+	void	readFromChild(int i);
 	void	startChild(int i);
 	void	pickCGIState(int i);
 	

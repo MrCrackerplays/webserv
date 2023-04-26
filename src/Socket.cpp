@@ -282,7 +282,7 @@ void	Socket::startChild(int i){
 }
 
 
-void	Socket::WriteInChild(int i){
+void	Socket::writeInChild(int i){
 
 	std::cout << "-- writing in child --" << std::endl;
 	try{
@@ -360,6 +360,31 @@ void Socket::pickCGIState(int i){
 	}
 }
 
+void	Socket::readFromChild(int i){
+
+
+	std::cout << "------- reading from child ---------" << std::endl;
+	if (_clients[i].cgiInfo.statusChild < 0){ //not sure if to check that here
+			std::cerr << "error in child : if statusChild < 0 | from POLLIN" << std::endl;
+			_clients[i].cgiInfo.state = ERROR; 
+			CGIerrorReply(i);
+			return ;
+		}
+
+	try{
+		readFromChild(_clients[i].cgiInfo.pipeFdOut, _clients[i].reply);
+		std::cout << "reply from child: " << _clients[i].reply << std::endl;
+	}
+
+	catch (std::exception &e) {
+		std::cerr << "Failed to read from child: " << e.what() << std::endl;
+		_clients[i].cgiInfo.state = ERROR; 
+		CGIerrorReply(i);
+		return ;
+	}
+	std::cout << "------- reading from child done ---------" << std::endl;
+}
+
 void	Socket::checkCGIevens(int i){ 
 
 	int j = i;
@@ -383,31 +408,21 @@ void	Socket::checkCGIevens(int i){
 
 	} else if (_clients[i].cgiInfo.state == WRITE_READY){ //write in child, wait for child
 		
+		writeInChild(i);
+		return ;
 		
-
-
-	} else if ((_clients[i].cgiInfo.vCGI[0].revents & POLLIN)== POLLIN){ //read from child
+	} else if (_clients[i].cgiInfo.state == READ_READY){ //read from child
 		
-		if (_clients[i].cgiInfo.statusChild < 0){ //not sure if to check that here
-			std::cerr << "error in child : if statusChild < 0 | from POLLIN" << std::endl; 
-			CGIerrorReply(i);
-			return ;
-		}
+		readFromChild(i);
+		return ;
 
-		try{
-			std::cout << "reading from child" << std::endl;
-			readFromChild(_clients[i].cgiInfo.pipeFdOut, _clients[i].reply);
-			std::cout << "reply from child: " << _clients[i].reply << std::endl;
-			parseCorrectResponseCGI(_clients[i].reply, _clients[i].ClientResponse);
-			_clients[i].CgiDone = true;
-			freeEnvp(_clients[i].cgiInfo.envp);
-			closePipes(_clients[i].cgiInfo.pipeFdIn, _clients[i].cgiInfo.pipeFdOut);
-		}
-		catch (std::exception &e) {
-			std::cerr << "Failed to read from child: " << e.what() << std::endl;
-			CGIerrorReply(i);
-			return ;
-		}
+	} else if (_clients[i].cgiInfo.state == READ_DONE){ //read done, close pipes, wait for child
+		
+		parseCorrectResponseCGI(_clients[i].reply, _clients[i].ClientResponse);
+		_clients[i].CgiDone = true;
+		freeEnvp(_clients[i].cgiInfo.envp);
+		closePipes(_clients[i].cgiInfo.pipeFdIn, _clients[i].cgiInfo.pipeFdOut);
+		return ;
 	}
 }
 

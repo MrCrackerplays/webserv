@@ -30,7 +30,7 @@ typedef enum {
 	READ_DONE,
 
 	ERROR,
-	TIMEOUT // not used
+	//TIMEOUT // not used
 	
 } cgiState;
 
