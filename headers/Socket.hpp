@@ -80,7 +80,12 @@ public:
 	void	recvConnection(int i);
 	void	sendData(int client_socket);
 	void	checkCGIevens(int i);
+
+	//cgi methods
 	void	CGIerrorReply(int i);
+	void	WriteInChild(int i);
+	void	startChild(int i);
+	void	pickCGIState(int i);
 	
 	//getters
 	int		getSocketFd();
@@ -89,7 +94,10 @@ public:
 	std::vector<pollfd> &getCGIVector();
 	size_t	getPollFdVectorSize();
 	size_t	getCGIVectorSize();
+
+
 	bool	getCGIbool(int i){return _clients[i].isCGI;};
+	std::vector<pollfd> &getCGIVectorFromClient(){return _clients[0].cgiInfo.vCGI;};
 
 	
 	//setters

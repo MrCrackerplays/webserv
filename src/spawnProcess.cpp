@@ -25,10 +25,16 @@ void freeEnvp(char **envp) {
 }
 
 void	closePipes(int* pipeFdIn, int* pipeFdOut){
-	close(pipeFdIn[0]);
-	close(pipeFdIn[1]);
-	close(pipeFdOut[0]);
-	close(pipeFdOut[1]);
+	if (pipeFdIn == nullptr || pipeFdOut == nullptr)
+		return;
+	if (pipeFdIn[0] != -1)
+		close(pipeFdIn[0]);
+	if (pipeFdIn[1] != -1)
+		close(pipeFdIn[1]);
+	if (pipeFdOut[0] != -1)
+		close(pipeFdOut[0]);
+	if (pipeFdOut[1] != -1)
+		close(pipeFdOut[1]);
 }
 
 
@@ -148,10 +154,14 @@ bool	makeNonBlocking(int fd){
 
 void	initPipesCreatePollFDstruct(std::vector<pollfd> &vPipesCGI, int* pipeFdIn, int* pipeFdOut){ //socket pick
 
+	//set pipes to -1 by default at the start of the function
+	pipeFdIn[0] = -1;
+	pipeFdIn[1] = -1;
+	pipeFdOut[0] = -1;
+	pipeFdOut[1] = -1;
 	if (pipe(pipeFdIn) == -1 || pipe(pipeFdOut) == -1){
 		throw std::runtime_error("spawnProcess : pipe");
 	}
-	//std::cout << "-----non blocking-----" << std::endl;
 	if (!makeNonBlocking(pipeFdIn[0]) || !makeNonBlocking(pipeFdIn[1]) || !makeNonBlocking(pipeFdOut[0]) || !makeNonBlocking(pipeFdOut[1])){
 		throw std::runtime_error("spawnProcess : fcntl");
 	}
@@ -168,32 +178,24 @@ void	initPipesCreatePollFDstruct(std::vector<pollfd> &vPipesCGI, int* pipeFdIn, 
 	vPipesCGI.push_back(pollFdOut);
 }
 
-void	inChildProcess(int* pipeFdIn, int* pipeFdOut, char **envp, char *path){
 
-	if (dup2(pipeFdIn[0], STDIN_FILENO) < 0){
-			freeEnvp(envp);
-			std::cerr << "child dup2 1" << std::endl;
-			exit(1);
-		}
-		if (dup2(pipeFdOut[1], STDOUT_FILENO) < 0){
-			freeEnvp(envp);
-			std::cerr << "child dup2 2" << std::endl;
-			exit(1);
-		}
-		closePipes(pipeFdIn, pipeFdOut);
-		execve(path, NULL, envp);
-		freeEnvp(envp);
-		std::cerr << "child execve failed" << std::endl;
-		exit(1);
-}
-
-
-
-
-void	writeInChild(const char* data, size_t dataLen, int* pipeFdIn){
+size_t	writeInChild(const char* data, size_t dataLen, int* pipeFdIn){ //have to do it in multiple calls
 
 	ssize_t n = 0;
-	while (dataLen > 0) {
+	// while (dataLen > 0) {
+	// 	if (dataLen > 8192){
+	// 		n = write(pipeFdIn[1], data, 8192);
+	// 	} else {
+	// 		n = write(pipeFdIn[1], data, dataLen);
+	// 	}
+	// 	if (n < 0) {
+	// 		throw std::runtime_error("SpawnProcess: writeInChild : write");
+	// 	}
+	// 	data += n;
+	// 	dataLen -= n;
+	// }
+
+	if (dataLen > 0) {
 		if (dataLen > 8192){
 			n = write(pipeFdIn[1], data, 8192);
 		} else {
@@ -202,42 +204,61 @@ void	writeInChild(const char* data, size_t dataLen, int* pipeFdIn){
 		if (n < 0) {
 			throw std::runtime_error("SpawnProcess: writeInChild : write");
 		}
-		data += n;
-		dataLen -= n;
 	}
-	close(pipeFdIn[1]);
+	if (dataLen == 0)
+		close(pipeFdIn[1]);
+	return 0;
 }
 
 
-void	readFromChild(int* pipeFdOut, std::string &reply){
+size_t	readFromChild(int* pipeFdOut, std::string &reply){ //have to do it in multiple calls
 
 	size_t res = 1;
 	char buff[1024];
 	memset(buff, 0, 1024);
-	while (res > 0){
-		res = read(pipeFdOut[0], buff, 1023);
-		if (res < 0){
-			//handle error
-		}
-		else if (res == 0){
-			buff[res] = '\0';
-			reply.append(buff, res);
-			break;
-		} else {
-			buff[res] = '\0';
-			reply.append(buff, res);
-		}
-		memset(buff, 0, 1024);
+	// while (res > 0){
+	// 	res = read(pipeFdOut[0], buff, 1023);
+	// 	if (res < 0){
+	// 		//handle error
+	// 	}
+	// 	else if (res == 0){
+	// 		buff[res] = '\0';
+	// 		reply.append(buff, res);
+	// 		break;
+	// 	} else {
+	// 		buff[res] = '\0';
+	// 		reply.append(buff, res);
+	// 	}
+	// 	memset(buff, 0, 1024);
+	// }
+
+
+	res = read(pipeFdOut[0], buff, 1023);
+	if (res < 0){
+		//handle error
+		throw std::runtime_error("SpawnProcess: readFromChild : read");
 	}
-	close(pipeFdOut[0]);
+	else if (res == 0){
+		buff[res] = '\0';
+		reply.append(buff, res);
+		close(pipeFdOut[0]);
+		return 0;
+	} else {
+		buff[res] = '\0';
+		reply.append(buff, res);
+	}
+	return 0;
 }
 
 void	waitForChild(int &statusChild, pid_t childPid){
+	std::cout << "---- wait for child ----" << std::endl;
 	int status;
-	if (waitpid(childPid, &status, 0) < 0){
-		// freeEnvp(envp);
-		std::cerr << "spawnProcess: waitpid" << std::endl;
-		throw std::runtime_error("spawnProcess: waitpid");
+	pid_t wpidRes = waitpid(childPid, &status, WNOHANG);
+	if (wpidRes < 0){ 
+		if (wpidRes != -1){ //if this is -1 continue WNOHANG
+			std::cerr << "spawnProcess: waitpid" << std::endl;
+			throw std::runtime_error("spawnProcess: waitpid");
+		}
 	}
 	if (WIFEXITED(status)){
 		statusChild = WEXITSTATUS(status);
@@ -253,32 +274,12 @@ void	waitForChild(int &statusChild, pid_t childPid){
 	}
 }
 
-void	forkChildTest(CGIInfo info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket){
-	if (info.childPid == 0){		//in child process
-		if (dup2(info.pipeFdIn[0], STDIN_FILENO) < 0){
-			freeEnvp(info.envp);
-			closePipes(info.pipeFdIn, info.pipeFdOut);
-			std::cerr << "child dup2 1" << std::endl;
-			exit(1);
-		}
-		if (dup2(info.pipeFdOut[1], STDOUT_FILENO) < 0){
-			freeEnvp(info.envp);
-			closePipes(info.pipeFdIn, info.pipeFdOut);
-			std::cerr << "child dup2 2" << std::endl;
-			exit(1);
-		}
-		closePipes(info.pipeFdIn, info.pipeFdOut);
-		execve((char *)request.physicalPathCgi.c_str(), NULL, info.envp);
-		freeEnvp(info.envp);
-		std::cerr << "child execve failed" << std::endl;
-		exit(1);
-	}
-}
-
 pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket){
 
+	//std::cout << request.physicalPathCgi << std::endl;
 	try{
 		initPipesCreatePollFDstruct(info.vCGI, info.pipeFdIn, info.pipeFdOut);
+		info.vCGIsize = 2;
 	} catch (std::exception &e){
 		std::cerr << e.what() << std::endl;
 		throw std::runtime_error("spawnProcess : generatePipes");
@@ -298,8 +299,8 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		std::cerr << "spawnProcess : fork" << std::endl;
 		throw std::runtime_error("spawnProcess : fork");
 	}
-
 	if (info.childPid == 0){		//in child process
+	std::cout << "--- in child ---- " << std::endl;
 		if (dup2(info.pipeFdIn[0], STDIN_FILENO) < 0){
 			freeEnvp(info.envp);
 			closePipes(info.pipeFdIn, info.pipeFdOut);
@@ -318,5 +319,45 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		std::cerr << "child execve failed" << std::endl;
 		exit(1);
 	}
+	std::cout << "--- in parent from launchChild---- " << std::endl;
+	//in parent process
+	close(pipeFdIn[0]);
+	pipeFdIn[0] = -1;
+	close(pipeFdOut[1]);
+	pipeFdOut[1] = -1;
+	//pollhup will notify tat clild is done
+	std::cout << "end of launchChild ----- child pid: " << info.childPid << std::endl;
 	return info.childPid;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// void	inChildProcess(int* pipeFdIn, int* pipeFdOut, char **envp, char *path){
+
+// 	if (dup2(pipeFdIn[0], STDIN_FILENO) < 0){
+// 			freeEnvp(envp);
+// 			std::cerr << "child dup2 1" << std::endl;
+// 			exit(1);
+// 		}
+// 		if (dup2(pipeFdOut[1], STDOUT_FILENO) < 0){
+// 			freeEnvp(envp);
+// 			std::cerr << "child dup2 2" << std::endl;
+// 			exit(1);
+// 		}
+// 		closePipes(pipeFdIn, pipeFdOut);
+// 		execve(path, NULL, envp);
+// 		freeEnvp(envp);
+// 		std::cerr << "child execve failed" << std::endl;
+// 		exit(1);
+// }

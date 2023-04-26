@@ -36,15 +36,24 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 			std::vector<pollfd> vFds = it->getPollFdVector();
 			it->setPollFdVectorSize(vFds.size());
 			for (int i = 0; i < (int)vFds.size(); i++) {
-				socketsAll.push_back(vFds[i]);
-			}
-			std::vector<pollfd> vCGI = it->getCGIVector();
-			it->setCGIVectorSize(vCGI.size());
-			for (int i = 0; i < (int)vCGI.size(); i++) {
-				socketsAll.push_back(vCGI[i]);
-			}
-		}
 
+
+				socketsAll.push_back(vFds[i]);
+				if (it->getCGIbool(i) == true){
+					std::vector<pollfd> vCGI = it->getCGIVectorFromClient(i);
+					socketsAll.push_back(vCGI[0]);
+					socketsAll.push_back(vCGI[1]);
+					it->setCGIVectorSize(vCGI.size());
+				}
+			}
+			
+
+			// std::vector<pollfd> vCGI = it->getCGIVector();
+			// it->setCGIVectorSize(vCGI.size());
+			// for (int i = 0; i < (int)vCGI.size(); i++) {
+			// 	socketsAll.push_back(vCGI[i]);
+			// }
+		}
 
 		if (poll(&socketsAll[0], (unsigned int)socketsAll.size(), 0) < 0){
 			throw std::runtime_error("Socket : poll");
@@ -94,7 +103,7 @@ int	main(int argc, char **argv) {
 	std::signal(SIGPIPE, SIG_IGN);
 
 	//test yuliia // comment if not needed :
-	config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
+	//config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
 	//config_file = "/Users/yuliia/Codam/webserv/configs/iframes.conf";
 	
 	std::map<std::string, std::vector<Server> > servers;

@@ -16,6 +16,24 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
+typedef enum {
+
+	NO_PIPES,
+	PIPES_INIT,
+
+	WRITE_READY,
+	// WRITE,
+	WRITE_DONE,
+
+	READ_READY,
+	// READ,
+	READ_DONE,
+
+	ERROR,
+	TIMEOUT // not used
+	
+} cgiState;
+
 struct CGIInfo {
 
 	int code;
@@ -24,8 +42,10 @@ struct CGIInfo {
 	int statusChild;
 
 	std::vector<pollfd> vCGI; // pipeFdIn[0] - POLLIN // pipeFdOut[1] - POLLOUT
+	int vCGIsize;
 	int pipeFdIn[2];
 	int pipeFdOut[2];
+	cgiState state;
 };
 
 
@@ -35,13 +55,16 @@ char	**envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 bool	makeNonBlocking(int fd);
 void	initPipesCreatePollFDstruct(std::vector<pollfd> &vPipesCGI, int* pipeFdIn, int* pipeFdOut);
 
+
+
 pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket);
 
-void	writeInChild(const char* data, size_t dataLen, int* pipeFdIn);
-void	waitForChild(int &statusChild, pid_t childPid);
-void	readFromChild(int* pipeFdOut, std::string &reply);
+size_t	writeInChild(const char* data, size_t dataLen, int* pipeFdIn);
 
-//test
-void	forkChildTest(CGIInfo info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket);
+
+void	waitForChild(int &statusChild, pid_t childPid);
+
+
+size_t	readFromChild(int* pipeFdOut, std::string &reply);
 
 #endif /* spawnProcess_hpp */

@@ -174,9 +174,13 @@ void	Socket::acceptNewConnect(int i){
 		newPollfd.fd = newFd;
 		newPollfd.events = POLLIN | POLLHUP; //added POLLHUP though it may be not proper place to add both
 		_vFds.push_back(newPollfd);
-		if (i == 0 && _clients.size() == 0){
+		if (i == 0 && _clients.size() == 0){ //if listening socket, clientStruct need to empty
 			ClientInfo clientStruct;
 			_clients.push_back(clientStruct);
+			_clients[0].recvBytes = 0;
+			_clients[0].receivedContent.clear();
+			_clients[0].reply.clear();
+			_clients[0].isCGI = false;
 		}
 
 		//initiate client.struct
@@ -186,7 +190,7 @@ void	Socket::acceptNewConnect(int i){
 		clientStruct.receivedContent.clear();
 		clientStruct.reply.clear();
 		clientStruct.isCGI = false;
-		_clients.push_back(clientStruct);
+		_clients.push_back(clientStruct); //erase it when time UNFINISHED
 	}
 }
 
@@ -225,6 +229,10 @@ void	Socket::recvConnection(int i){
 				_clients[i].biteToSend = _clients[i].reply.length();
 				if (_clients[i].isCGI == false)
 					_vFds[i].events |= POLLOUT;
+				else{
+					_clients[i].cgiInfo.state = NO_PIPES;
+					_clients[i].CgiDone = false;
+				}
 				//std::cout << "revent: " << _vFds[i].revents << std::endl;
 			} catch (std::exception &e) {
 				std::cerr << "Caught exception: " << e.what() << std::endl;
@@ -255,63 +263,127 @@ void	Socket::CGIerrorReply(int i){
 		
 }
 
+void	Socket::startChild(int i){
+
+	std::cout << "-- startChild --" << std::endl;
+
+	try{
+		_clients[i].cgiInfo.childPid = launchChild(_clients[i].cgiInfo, _clients[i].ClientRequest, _portNumber, _hostName);
+		_clients[i].cgiInfo.state = PIPES_INIT;
+		_clients[i].cgiInfo.vCGIsize = 2;
+		_clients[i].cgiInfo.vCGI[1].revents |= POLLOUT;
+	} catch (std::exception &e) { 
+		std::cerr << "Failed to init pipes: " << e.what() << std::endl;
+		_clients[i].cgiInfo.state = ERROR;
+		CGIerrorReply(i);
+		//free+close is done in launchChild
+	}
+	std::cout << "-- done startChild --" << std::endl;
+}
+
+
+void	Socket::WriteInChild(int i){
+
+	std::cout << "-- writing in child --" << std::endl;
+	try{
+		std::cout << "---------------body: -----------------" << std::endl;
+		std::cout << << _clients[i].ClientRequest.requestBody << std::endl;
+		std::cout << "---------------body end --------------" << std::endl;
+
+
+
+		size_t wrote = writeInChild(_clients[i].ClientRequest.requestBody.c_str(), _clients[i].ClientRequest.requestBody.length() , _clients[i].cgiInfo.pipeFdIn);
+		_clients[i].ClientRequest.requestBody.erase(0, wrote);
+		if (_clients[i].ClientRequest.requestBody.length() == 0){
+			_clients[i].cgiInfo.state = WRITE_DONE;
+			_clients[i].cgiInfo.vCGI[0].events |= POLLOUT; // or _clients[i].cgiInfo.vCGI[0].events &= ~POLLOUT
+		}
+	}
+	catch (std::exception &e) {
+		std::cerr << "Failed to write in child: " << e.what() << std::endl;
+		_clients[i].cgiInfo.state = ERROR;
+		CGIerrorReply(i);
+		return ;
+	}
+	std::cout << "-- writing in child done --" << std::endl;
+
+
+	//wait need to be done separately after pipes are done and till all reply received
+		std::cout << "-- waiting for child --" << std::endl;
+	try{
+		_clients[i].cgiInfo.statusChild = 0;
+		waitForChild(_clients[i].cgiInfo.statusChild, _clients[i].cgiInfo.childPid); //waiting need to be done outside the poll loop
+		std::cout << "waiting for child done, status : " << _clients[i].cgiInfo.statusChild << std::endl;
+	}
+	catch (std::exception &e) {
+		std::cerr << "Caught exception: " << e.what() << std::endl;
+		CGIerrorReply(i);
+		return ;
+	}
+	// if (_clients[i].cgiInfo.statusChild < 0){ //not sure if to check that here
+	// 	std::cerr << "error in child : if (statusChild < 0) | from POLLOUT" <<std::endl;
+	// 	_clients[i].cgiInfo.state = ERROR;
+	// 	CGIerrorReply(i);
+	// 	return ;
+	// } else {
+	// 	_clients[i].cgiInfo.vCGI[0].events |= POLLIN;
+	// 	std::cout << "------- end of checkCGIevens : waiting done child -------" << std::endl;
+	// 	return ;
+	// }
+
+
+}
+
+void Socket::pickCGIState(int i){
+
+	if (_clients[i].cgiInfo.CGIstate == NO_PIPES){
+		std::cout << "no pipes yet" << std::endl;
+	}
+	else if (_clients[i].cgiInfo.state == PIPES_INIT && (_clients[i].cgiInfo.vCGI[1].revents & POLLOUT) == POLLOUT){
+		_clients[i].cgiInfo.state = WRITE_READY;
+		std::cout << "write ready" << std::endl;
+	}
+
+	else if (_clients[i].cgiInfo.state == WRITE_READY && (_clients[i].cgiInfo.vCGI[1].revents & POLLHUP) == POLLHUP){
+		_clients[i].cgiInfo.state = WRITE_DONE;
+		std::cout << "write done" << std::endl;
+	}
+
+	else if (_clients[i].cgiInfo.state == WRITE_DONE && (_clients[i].cgiInfo.vCGI[0].revents & POLLIN)== POLLIN){
+		_clients[i].cgiInfo.state = READ_READY;
+		std::cout << "read ready" << std::endl;
+	}
+
+	else if (_clients[i].cgiInfo.state == READ_READY && (_clients[i].cgiInfo.vCGI[0].revents & POLLHUP)== POLLHUP){
+		_clients[i].cgiInfo.state = READ_DONE;
+		std::cout << "read done" << std::endl;
+	}
+}
+
 void	Socket::checkCGIevens(int i){ 
 
 	int j = i;
 
 	std::cout << "-------checkCGIevens-------" << std::endl;
 
+	
 
+	//gt out if CGI is done
 	if (_clients[i].CgiDone == true)
 		return ;
 
-	else if (_vCGISize == 0 && _clients[i].isCGI == true){ //init pipes and create child // NOT the size of vCGI but other check for first launch of this function
+
+	
+
+	//if no pipes, create pipes -> non-blocking -> vectorCGI -> fork -> execve -> close parent pipes
+	if (_clients[i].cgiInfo.CGIstate == NO_PIPES && _clients[i].isCGI == true){ 
 		
-		try{
-			std::cout << "launching child" << std::endl;
-			_clients[i].cgiInfo.childPid = launchChild(_clients[i].cgiInfo, _clients[i].ClientRequest, _portNumber, _hostName);
-			_vCGISize += 2;
-			_vCGI[j + 1].events |= POLLOUT;
-		} catch (std::exception &e) { 
-			std::cerr << "Failed to init pipes: " << e.what() << std::endl;
-			CGIerrorReply(i);
-			//free+close is done in launchChild
-			std::cout << "------- end of checkCGIevens : launching child -------" << std::endl;
-			return ;
-		}
+		startChild(i);
+		return ;
+
+	} else if (_clients[i].cgiInfo.state == WRITE_READY){ //write in child, wait for child
 		
-	} else if ((_clients[i].cgiInfo.vCGI[1].revents & POLLOUT) == POLLOUT){ //write in child, wait for child
 		
-		try{
-			std::cout << "writing in child" << std::endl;
-			writeInChild(_clients[i].ClientRequest.requestBody.c_str(), _clients[i].ClientRequest.requestBody.length() , _clients[i].cgiInfo.pipeFdIn);
-		}
-		catch (std::exception &e) {
-			std::cerr << "Failed to write in child: " << e.what() << std::endl;
-			CGIerrorReply(i);
-			return ;
-		}
-		
-		try{
-			std::cout << "waiting for child" << std::endl;
-			_clients[i].cgiInfo.statusChild = 0;
-			waitForChild(_clients[i].cgiInfo.statusChild, _clients[i].cgiInfo.childPid);
-			std::cout << "waiting for child done, status : " << _clients[i].cgiInfo.statusChild << std::endl;
-		}
-		catch (std::exception &e) {
-			std::cerr << "Caught exception: " << e.what() << std::endl;
-			CGIerrorReply(i);
-			return ;
-		}
-		if (_clients[i].cgiInfo.statusChild < 0){ //not sure if to check that here
-			std::cerr << "error in child : if (statusChild < 0) | from POLLOUT" <<std::endl; 
-			CGIerrorReply(i);
-			return ;
-		} else {
-			_clients[i].cgiInfo.vCGI[0].events |= POLLIN;
-			std::cout << "------- end of checkCGIevens : waiting done child -------" << std::endl;
-			return ;
-		}
 
 
 	} else if ((_clients[i].cgiInfo.vCGI[0].revents & POLLIN)== POLLIN){ //read from child
@@ -346,30 +418,29 @@ void	Socket::checkEvents(){
 			//listening socket event
 			if (_vFds[i].fd == _listenFd){
 				try {
-					//std::cout << "try to accept new connection" << std::endl;
+					std::cout << "try to accept new connection" << std::endl;
 					acceptNewConnect(i);
-					//std::cout << "end of accept new connection" << std::endl;
+					std::cout << "end of accept new connection" << std::endl;
 				} catch (std::exception &e) {
 					std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
 				}
 			//client's from listening socket event
 			} else {
 				try {
-					//std::cout << "try to receive" << std::endl;
+					std::cout << "try to receive" << std::endl;
 					recvConnection(i);
-					//std::cout << "end of receive" << std::endl;
+					std::cout << "end of receive" << std::endl;
 				} catch (std::exception &e) {
 					std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
 				}
 			}
 		} else if ((_vFds[i].revents & POLLOUT) == POLLOUT){
-			//std::cout << "try to send data" << std::endl;
+			std::cout << "try to send data" << std::endl;
 			sendData(i);
-			//std::cout << "end send data" << std::endl;
+			std::cout << "end send data" << std::endl;
 			
-<<<<<<< HEAD
 		} else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
-			//std::cout << "pollHUP" << std::endl;
+			std::cout << "pollHUP" << std::endl;
 			try {
 				std::cerr << "close connection" << std::endl;
 				closeClientConnection(i);
@@ -377,17 +448,7 @@ void	Socket::checkEvents(){
 				std::cerr << "failed to close client with FD: " << _vFds[i].fd << " err message: " << e.what() << std::endl;
 			}
 		}
-=======
-		} //else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
-//			//std::cout << "pollHUP" << std::endl;
-//			try {
-//				std::cerr << "close connection" << std::endl;
-//				closeClientConnection(i);
-//			} catch (std::exception &e) {
-//				std::cerr << "failed to close client with FD: " << _vFds[i].fd << " err message: " << e.what() << std::endl;
-//			}
-//		}
->>>>>>> 749517ef0018239e942fd776a675e2cc8da1ee64
+
 		if (i > 0 && _clients[i].isCGI == true){
 			std::cout << "CGI events | i = " << i << std::endl;
 			checkCGIevens(i);
