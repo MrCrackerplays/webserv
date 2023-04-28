@@ -51,7 +51,7 @@ size_t Server::getClientBodyLimit(std::string path) const
 
 const std::string Server::getErrorPage(std::string error_code, std::string path) const
 {
-	std::string result = "root/errors/error.html";
+	std::string result = "errors/error.html";
 	std::map<std::string, std::string>::const_iterator found = this->_error_pages.find(error_code);
 	if (found != this->_error_pages.end())
 		result = found->second;
