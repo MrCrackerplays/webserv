@@ -65,6 +65,10 @@ protected:
 	int _listenFd;
 	std::vector<pollfd> _vFds;
 	size_t _vFdsSize;
+
+
+	// size_t _vCGISizeTemp;
+	// std::vector<pollfd> &_vCGITemp;
 	
 	
 public:
@@ -90,32 +94,45 @@ public:
 	
 	//GETTERS________________________________________________________
 	
-	int		getSocketFd(){return _listenFd;};
-	addrinfo *getAddrInfo(){return _addrinfo;};
+	int		getSocketFd();
+	addrinfo *getAddrInfo();
 
-	std::vector<pollfd> &getPollFdVector(){return _vFds;};
-	std::vector<pollfd> &getCGIVector(int i){return _clients[i].cgiInfo.vCGI;};
+	std::vector<pollfd> &getPollFdVector();
+	size_t	getPollFdVectorSize();
+	
 
-	size_t	getPollFdVectorSize(){return _vFds.size();};
-	size_t	getCGIVectorSize(int i){return _clients[i].cgiInfo.vCGI.size();};
-
-	bool	getCGIbool(int i){
-		if (_vFdsSize < i){
-			return false;
-		}
-		if (!_clients[i].isCGI){
-			return false;
-		}
-		return _clients[i].isCGI;
-		};
+	std::vector<pollfd> &getCGIVector(int i);
+	size_t	getCGIVectorSize(int i);
+	bool	getCGIbool(int i);
+	size_t numberOfConnections(int i);
 	
 	//SETTRES________________________________________________________
-	void	setServers(std::map<std::string, std::vector<Server> > &servers){ _servers = &servers;};
+	void	setServers(std::map<std::string, std::vector<Server> > &servers);
+
+	
+//old parts
+	void setPollFdVector(std::vector<pollfd> vFds);
 
 
-    // void setPollFdVector(pollfd vFd, int clientInd) {
-    //     _vFds[clientInd] = std::move(vFd);
+    // void setCGIVector(std::vector<pollfd> cgiFds) {
+    //     _vCGITemp = std::move(cgiFds);
     // }
+
+	void setPollFdVectorSize(size_t size);
+	void setPollFdVector1(int clientInd, const std::vector<pollfd>& pollFdVec);
+	void setCGIVector(int clientInd, const std::vector<pollfd>& cgiFdVec);
+	void unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::vector<pollfd> socketsAll);
+
+};
+
+void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);
+void	setToNonBlocking(int listenFd);
+void	bindToPort(int listenFd, addrinfo *addrinfo);
+void	setToListen(int listenFd);
+
+
+#endif /* Socket_hpp */
+
 
     // void setCGIVector(int clientInd, const std::vector<pollfd>& cgiFdVec) {
 
@@ -128,6 +145,7 @@ public:
 	// 		cgiInfo.vCGI[1] = std::move(cgiFd1);
 	// 	}
     // }
+
 	// void setCGIVector(int clientInd, const std::vector<pollfd>& cgiFdVec) {
     	
 	// 	CGIInfo& cgiInfo = _clients[clientInd].cgiInfo;
@@ -140,35 +158,6 @@ public:
     // 	}
 	// }
 
-
-	void setPollFdVector(int clientInd, const std::vector<pollfd>& pollFdVec){
-		// _vFds[clientInd] = pollFdVec;
-		_vFds[clientInd] = std::move(pollFdVec);
-		};
-
-	void setCGIVector(int clientInd, const std::vector<pollfd>& cgiFdVec) {
-
-    	CGIInfo &cgiInfo = _clients[clientInd].cgiInfo;
-    	if (cgiInfo.vCGI.size() == 1) {
-        	cgiInfo.vCGI[0] = std::move(cgiFdVec[0]);
-    	} else if (cgiInfo.vCGI.size() == 2) {
-        	cgiInfo.vCGI[0] = std::move(cgiFdVec[0]);
-        	cgiInfo.vCGI[1] = std::move(cgiFdVec[1]);
-   		}
-	};
-
-	
-	
-	void setPollFdVectorSize(size_t size) {
-		_vFdsSize = size;
-	};
-};
-
-void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);
-void	setToNonBlocking(int listenFd);
-void	bindToPort(int listenFd, addrinfo *addrinfo);
-void	setToListen(int listenFd);
-
-
-
-#endif /* Socket_hpp */
+	// void setCGIVectorSize(size_t size) {
+	// 	_vCGISizeTemp = size;
+	// }

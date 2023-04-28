@@ -13,14 +13,13 @@ void	setupSocket(std::map<std::string, std::vector<Server> > &servers, Socket &s
 	setToListen(socket.getSocketFd());
 	initiateVectPoll(socket.getSocketFd(), socket.getPollFdVector());
 	socket.setServers(servers);
-	//socket.setCGIbool(false); need to be done in client struct
-	// socket.setCGIVectorSize(0);
 	socket.setPollFdVectorSize(0);
 }
 
 void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vector<Server> > &servers){
-	//std::cout << "pollLoop1" << std::endl;
+
 	std::vector<Socket>::iterator it;
+
 	for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
 		try {
 			setupSocket(servers, *it);
@@ -28,109 +27,42 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 			std::cerr << e.what() << std::endl;
 		}
 	}
-	//std::cout << "pollLoop2" << std::endl;
+	std::vector<pollfd> socketsAll;
 	while (true) {
-		std::vector<pollfd> socketsAll;
+		socketsAll.clear();
+		size_t i = 0;
 		for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
-			std::cout << "poll loop3" << std::endl;
+
 			std::vector<pollfd> vFds = it->getPollFdVector();
 			it->setPollFdVectorSize(vFds.size());
-			
 			for (int i = 0; i < (int)vFds.size(); i++) {
 				socketsAll.push_back(vFds[i]);
-
-				if (it->getCGIbool(i) == true){
-					std::vector<pollfd> vCGI = it->getCGIVector(i);
-					if (vCGI.size() == 1){
-						socketsAll.push_back(vCGI[0]);
-					} else if (vCGI.size() == 2){
-						socketsAll.push_back(vCGI[0]);
-						socketsAll.push_back(vCGI[1]);
-					}
+			}
+			if (it->getCGIbool(i) == true){
+				std::vector<pollfd> vCGI = it->getCGIVector(i);
+				for (int i = 0; i < (int)vCGI.size(); i++) {
+					socketsAll.push_back(vCGI[i]);
 				}
+				i++;
 			}
 		}
-		//std::cout << "poll loop4" << std::endl;
 		if (poll(&socketsAll[0], (unsigned int)socketsAll.size(), 0) < 0){
 			throw std::runtime_error("Socket : poll");
 		
-		
 		} else {
-			//I need to pack FD and SD back in different sockets
-			
-			//std::cout << "poll loop5" << std::endl;
-			size_t iforAll = 0;
-			//size_t itCounter = 0;
+			size_t iAll = 0;
 			for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
-    			//get the size of the original pollfd vectors
-
-    			// size_t pollFdSize = it->getPollFdVectorSize();
-				// for (size_t oneSocketCounter = 0; oneSocketCounter < pollFdSize; oneSocketCounter++)
-				// {
-				// 	bool isCGIinConnection = it->getCGIbool(iforAll);
-				// 	if (isCGIinConnection == true){
-				// 		size_t cgiSize = it->getCGIVectorSize(oneSocketCounter);
-				// 		it->setPollFdVector(socketsAll.begin() + iforAll, socketsAll.begin() + iforAll + 1);
-				// 		iforAll++;
-				// 		if (cgiSize == 0){
-				// 			break;
-				// 		} else if (cgiSize == 1){
-				// 			it->setCGIVector(oneSocketCounter, {socketsAll[iforAll]});
-				// 			iforAll++;
-				// 		} else if (cgiSize == 2){
-				// 			it->setCGIVector(oneSocketCounter, {socketsAll[iforAll], socketsAll[iforAll+1]});
-				// 			iforAll += 2;
-				// 		}
-				// 	}
-					
-				// }
+				size_t nConnections = it->numberOfConnections(i);
 				
-    //get the size of the original pollfd vectors
-    			size_t pollFdSize = it->getPollFdVectorSize();
-   				for (size_t oneSocketCounter = 0; oneSocketCounter < pollFdSize; oneSocketCounter++)
-    			{
-        			bool isCGIinConnection = it->getCGIbool(iforAll);
-        			if (isCGIinConnection == true){
-            			size_t cgiSize = it->getCGIVectorSize(oneSocketCounter);
-            			it->setPollFdVector(socketsAll.begin() + iforAll, socketsAll.begin() + iforAll + 1);
-            			iforAll++;
-            			if (cgiSize == 0){
-                			break;
-            			} else if (cgiSize == 1){
-                			std::vector<pollfd> oneSocketCounterVec(1);
-                			oneSocketCounterVec[0] = socketsAll[iforAll];
-                			it->setCGIVector(oneSocketCounter, oneSocketCounterVec);
-                			iforAll++;
-            			} else if (cgiSize == 2){
-                			std::vector<pollfd> oneSocketCounterVec(2);
-               				oneSocketCounterVec[0] = socketsAll[iforAll];
-                			oneSocketCounterVec[1] = socketsAll[iforAll + 1];
-                			it->setCGIVector(oneSocketCounter, oneSocketCounterVec);
-                			iforAll += 2;
-            			}
-        			}
-
+				for (size_t n = 0; n < nConnections; n++) {
+					it->unpackVectorintoSocket(iAll, n, socketsAll);
 				}
-
-
-		
-
-
-    			//copy the corresponding number of pollfd structures back into their respective vectors
-   				//it->setPollFdVector(std::vector<pollfd>(socketsAll.begin() + i, socketsAll.begin() + i + pollFdSize));
-    			//it->setCGIVector(std::vector<pollfd>(socketsAll.begin() + i + pollFdSize, socketsAll.begin() + i + pollFdSize + cgiSize));
-
-    			//increment the iterator by the total number of pollfd structures
-    			//i += pollFdSize + cgiSize;
-
-				//check events for this socket
-				//test: only one test case to test child:
-				//it->setClientCGI(1);
 				it->checkEvents();
 			}
 		}
 
 	}
+
 }
 
 

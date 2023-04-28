@@ -8,6 +8,102 @@
 #include "Socket.hpp"
 #include "methods.hpp"
 
+
+
+	int		Socket::getSocketFd(){return _listenFd;};
+	addrinfo * Socket::getAddrInfo(){return _addrinfo;};
+
+	std::vector<pollfd> &Socket::getPollFdVector(){return _vFds;};
+	size_t	Socket::getPollFdVectorSize(){return _vFds.size();};
+	
+
+	std::vector<pollfd> &Socket::getCGIVector(int i){
+		//std::cout << "getCGIVector for i= "<< i << std::endl;
+		return _clients[i].cgiInfo.vCGI;
+	};
+
+	size_t	Socket::getCGIVectorSize(int i){
+		//std::cout << "getCGIVectorSize for i= "<< i << " : " << _clients[i].cgiInfo.vCGI.size() << std::endl;
+		return _clients[i].cgiInfo.vCGI.size();
+	};
+
+	bool	Socket::getCGIbool(int i){
+		//std::cout << "getCGIbool for i= "<< i << std::endl;
+		if (_vFdsSize < i){
+			return false;
+		}
+		if (!_clients[i].isCGI){
+			return false;
+		}
+		return _clients[i].isCGI;
+	};
+	void	Socket::setServers(std::map<std::string, std::vector<Server> > &servers){ _servers = &servers;};
+	void Socket::setPollFdVector(std::vector<pollfd> vFds) {
+        _vFds = std::move(vFds);
+    }
+
+
+	void Socket::setPollFdVectorSize(size_t size) {
+		_vFdsSize = size;
+	}
+	
+	void Socket::setPollFdVector1(int clientInd, const std::vector<pollfd>& pollFdVec){
+		// _vFds[clientInd] = pollFdVec;
+		_vFds = std::move(pollFdVec);
+
+	};
+
+	size_t Socket::numberOfConnections(int i){
+
+		//std::cout << "numberOfConnections for i= "<< i << std::endl;
+		size_t totalCguFdSize = 0;
+		for (std::vector<pollfd>::iterator it = _vFds.begin(); it != _vFds.end(); it++){
+			if (_clients[i].isCGI){
+				totalCguFdSize += _clients[i].cgiInfo.vCGI.size();
+			}
+		}
+		return totalCguFdSize + _vFds.size();
+	};
+
+	void Socket::setCGIVector(int clientInd, const std::vector<pollfd>& cgiFdVec) {
+
+    	CGIInfo &cgiInfo = _clients[clientInd].cgiInfo;
+    	if (cgiInfo.vCGI.size() == 1) {
+        	cgiInfo.vCGI[0] = std::move(cgiFdVec[0]);
+    	} else if (cgiInfo.vCGI.size() == 2) {
+        	cgiInfo.vCGI[0] = std::move(cgiFdVec[0]);
+        	cgiInfo.vCGI[1] = std::move(cgiFdVec[1]);
+   		}
+	};
+
+	void Socket::unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::vector<pollfd> socketsAll) {
+
+		
+		//std::cout << "unpackVectorintoSocket" << std::endl;
+		CGIInfo &CGIinfo = _clients[fdCounter].cgiInfo;
+		bool isCGI = _clients[fdCounter].isCGI;
+
+		_vFds[fdCounter] = std::move(socketsAll[allCounter]);
+		allCounter++;
+		if(isCGI){
+			if (CGIinfo.vCGI.size() == 1) {
+				CGIinfo.vCGI[0] = std::move(socketsAll[allCounter]);
+				allCounter++;
+			} else if (CGIinfo.vCGI.size() == 2) {
+				CGIinfo.vCGI[0] = std::move(socketsAll[allCounter]);
+				allCounter++;
+				CGIinfo.vCGI[1] = std::move(socketsAll[allCounter]);
+				allCounter++;
+			}
+		}
+	};
+
+
+
+
+
+
+
 void	printVectPollFd(std::vector<pollfd> vect){
 	
 	for(std::vector<pollfd>::iterator it = vect.begin(); it != vect.end(); it++){
@@ -22,18 +118,6 @@ void	printVectStr(std::vector<std::string> vect){
 		std::cout << *it << std::endl;
 	}
 }
-
-// std::vector<pollfd> &Socket::getCGIVector(){
-
-// 	//temp solution
-// 	if (_vCGISize > 0){
-// 		_vCGI.push_back(_clients[1].cgiInfo.vCGI[0]);
-// 		_vCGI.push_back(_clients[1].cgiInfo.vCGI[1]);
-// 	}
-
-// 	return _vCGI;
-// }
-
 
 Socket::Socket(char * hostName, char * portNumber){
 	
