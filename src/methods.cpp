@@ -9,6 +9,7 @@
 #include "codes.hpp"
 #include <cstdio>
 #include <map>
+#include <dirent.h>
 
 void	methodGet(parsRequest& request, std::string& body){
 	
@@ -22,14 +23,30 @@ void	methodGet(parsRequest& request, std::string& body){
 	readFileBinary(request.physicalPathCgi, body);
 }
 
-void methodDelete(parsRequest& request){
+static bool	isEmptyDir(std::string& path) {
+	DIR *dir = opendir(path.c_str());
+	if (!dir) {
+		return false;
+	}
+	struct dirent *ent = readdir(dir);
+	int i = 0;
+	while (ent && i < 3) {
+		i++;
+		ent = readdir(dir);
+	}
+	return (i == 2);
+}
 
-	if (isDirectory(request.physicalPathCgi) == false && isFile(request.physicalPathCgi) == false){
+void methodDelete(parsRequest& request) {
+	if (isDirectory(request.physicalPathCgi) == false && isFile(request.physicalPathCgi) == false) {
 		request.code = 404;
-	} else if (ifFileWritable(request.physicalPathCgi) == false){
+	} else if (ifFileWritable(request.physicalPathCgi) == false) {
 		request.code = 401;
 	}
-	if (std::remove(request.physicalPathCgi.c_str()) != 0){
+	else if (isDirectory(request.physicalPathCgi) && !isEmptyDir(request.physicalPathCgi)) {
+		request.code = 409;
+	}
+	else if (std::remove(request.physicalPathCgi.c_str()) != 0) {
 		throw std::runtime_error("methods : remove");
 	}
 }
