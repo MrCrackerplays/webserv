@@ -334,6 +334,7 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 			request.code = 405;
 		}
 	}
+	request.requestBodyLen = request.requestBody.length();
 	return request;
 }
 

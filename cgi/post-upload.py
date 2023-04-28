@@ -12,7 +12,10 @@ import cgi, os
 # </body>
 # </html>
 
+
+
 env = os.environ
+print(env)
 form = cgi.FieldStorage()
 
 # Get filename here.

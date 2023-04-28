@@ -25,8 +25,8 @@ void freeEnvp(char **envp) {
 }
 
 void	closePipes(int* pipeFdIn, int* pipeFdOut){
-	if (pipeFdIn == nullptr || pipeFdOut == nullptr)
-		return;
+	// if (pipeFdIn == nullptr || pipeFdOut == nullptr)
+	// 	return;
 	if (pipeFdIn[0] != -1)
 		close(pipeFdIn[0]);
 	if (pipeFdIn[1] != -1)
@@ -95,7 +95,7 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	envp[9] = new char[str9.length() + 1];
 	strcpy(envp[9], str9.c_str());
 	
-	std::string str10 = "PATH_INFO=" + request.hostNameHeader;
+	std::string str10 = "PATH_INFO=";
 	envp[10] = new char[str10.length() + 1];
 	strcpy(envp[10], str10.c_str());
 	
@@ -176,6 +176,10 @@ void	initPipesCreatePollFDstruct(std::vector<pollfd> &vPipesCGI, int* pipeFdIn, 
 	pollFdOut.events = POLLOUT | POLLHUP;
 	pollFdOut.revents = 0;
 	vPipesCGI.push_back(pollFdOut);
+	std::cout << "pipeFdIn[0] = " << pipeFdIn[0] << std::endl;
+	std::cout << "pipeFdIn[1] = " << pipeFdIn[1] << std::endl;
+	std::cout << "pipeFdOut[0] = " << pipeFdOut[0] << std::endl;
+	std::cout << "pipeFdOut[1] = " << pipeFdOut[1] << std::endl;
 }
 
 
@@ -291,6 +295,9 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		std::cerr << "spawnProcess : new" << std::endl;
 		throw std::runtime_error("spawnProcess : new");
 	}
+	// for (int i = 0; i < 18; i++){
+	// 	std::cerr << info.envp[i] << std::endl;
+	//  }
 
 	info.childPid = fork();
 	if (info.childPid < 0){ //fork failed
@@ -300,7 +307,7 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		throw std::runtime_error("spawnProcess : fork");
 	}
 	if (info.childPid == 0){		//in child process
-	std::cout << "--- in child ---- " << std::endl;
+			std::cout << "--- in child ---- " << std::endl;
 		if (dup2(info.pipeFdIn[0], STDIN_FILENO) < 0){
 			freeEnvp(info.envp);
 			closePipes(info.pipeFdIn, info.pipeFdOut);
@@ -313,7 +320,15 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 			std::cerr << "child dup2 2" << std::endl;
 			exit(1);
 		}
-		closePipes(info.pipeFdIn, info.pipeFdOut);
+
+	
+
+		// closePipes(info.pipeFdIn, info.pipeFdOut);
+		close(info.pipeFdIn[0]);
+		close(info.pipeFdIn[1]);
+		close(info.pipeFdOut[0]);
+		close(info.pipeFdOut[1]);
+		std::cerr << "child execve" << std::endl;
 		execve((char *)request.physicalPathCgi.c_str(), NULL, info.envp);
 		freeEnvp(info.envp);
 		std::cerr << "child execve failed" << std::endl;
@@ -321,12 +336,14 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 	}
 	std::cout << "--- in parent from launchChild---- " << std::endl;
 	//in parent process
-	close(info.pipeFdIn[0]);
-	info.pipeFdIn[0] = -1;
-	close(info.pipeFdOut[1]);
-	info.pipeFdOut[1] = -1;
+	// close(info.pipeFdIn[0]);
+	// info.pipeFdIn[0] = -1;
+	// close(info.pipeFdOut[1]);
+	// info.pipeFdOut[1] = -1;
 	//pollhup will notify tat clild is done
 	std::cout << "end of launchChild ----- child pid: " << info.childPid << std::endl;
+	int statusChild;
+	waitChild(statusChild, info.childPid);
 	return info.childPid;
 }
 

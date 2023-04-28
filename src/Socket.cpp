@@ -290,16 +290,28 @@ void	Socket::recvConnection(int i){
 		_clients[i].recvBytes += res;
 		_clients[i].receivedContent.append(buff, res);
 		if (fullRequestReceived(_clients[i].receivedContent, _clients[i].recvBytes, res)){
+
+				std::cout << "---- before method ----" << std::endl;
+				std::cout << "Bytes: " << _clients[i].recvBytes << std::endl;
+				std::cout << "content: " << _clients[i].receivedContent << std::endl;
+				std::cout << "---------------------------" << std::endl;
+
 			//parsing part
 			try {
 				_clients[i].ClientRequest.parsBuff = _clients[i].receivedContent;
 				_clients[i].reply = methods(_clients[i].ClientRequest, *_servers, _portNumber, _hostName, _clients[i].isCGI);
-				_clients[i].biteToSend = _clients[i].reply.length();
 				if (_clients[i].isCGI == false)
 					_vFds[i].events |= POLLOUT;
 				else{
 					_clients[i].cgiInfo.state = NO_PIPES;
 					_clients[i].CgiDone = false;
+					std::cout << _clients[i].ClientRequest.requestBody << std::endl;
+
+					std::cout << "---- CGI request struct ----" << std::endl;
+					std::cout << "method: " << _clients[i].ClientRequest.method << std::endl;
+					std::cout << "body: " << _clients[i].ClientRequest.requestBody << std::endl;
+					std::cout << "bodyLen: " << _clients[i].ClientRequest.requestBodyLen << std::endl;
+					std::cout << "---------------------------" << std::endl;
 				}
 				//std::cout << "revent: " << _vFds[i].revents << std::endl;
 			} catch (std::exception &e) {
@@ -477,6 +489,7 @@ void	Socket::checkCGIevens(int i){
 	if (_clients[i].cgiInfo.state == NO_PIPES && _clients[i].isCGI == true){ 
 		
 		startChild(i);
+		exit(0);
 		return ;
 
 	} else if (_clients[i].cgiInfo.state == WRITE_READY){ //write in child, wait for child

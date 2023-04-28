@@ -85,7 +85,7 @@ int	main(int argc, char **argv) {
 
 	//test yuliia // comment if not needed :
 	//config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
-	config_file = "/Users/ydemura/Desktop/webserv_tests/configs/postuploadtest.conf";
+	//config_file = "/Users/ydemura/Desktop/webserv_tests/configs/postuploadtest.conf";
 	
 	std::map<std::string, std::vector<Server> > servers;
 	std::vector<Socket> vectSockets;
