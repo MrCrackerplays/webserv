@@ -431,6 +431,9 @@ void	Socket::readFromChild(int i){
 
 void Socket::pickCGIState(int i){
 
+	//std::cout << "------- pickCGIState ---------" << std::endl;
+	//std::cout << "state: " << _clients[i].cgiInfo.state << std::endl;
+
 	if (_clients[i].cgiInfo.state == NO_PIPES){
 		std::cout << "no pipes yet" << std::endl;
 	}
@@ -464,11 +467,13 @@ void	Socket::checkCGIevens(int i){
 	//gt out if CGI is done
 	if (_clients[i].CgiDone == true)
 		return ;
+	pickCGIState(i);
 
-	std::cout << "-------checkCGIevens-------" << std::endl;
+	//std::cout << "-------checkCGIevens-------" << std::endl;
 	
 
 	//if no pipes, create pipes -> non-blocking -> vectorCGI -> fork -> execve -> close parent pipes
+
 	if (_clients[i].cgiInfo.state == NO_PIPES && _clients[i].isCGI == true){ 
 		
 		startChild(i);
@@ -536,7 +541,7 @@ void	Socket::checkEvents(){
 		}
 
 		if (i > 0 && _clients[i].isCGI == true){
-			std::cout << "CGI events | i = " << i << std::endl;
+			//std::cout << "CGI events | i = " << i << std::endl;
 			checkCGIevens(i);
 		}
 	}
