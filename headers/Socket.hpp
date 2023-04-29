@@ -51,27 +51,22 @@ class Socket{
 	
 protected:
 	
-	//adding pair reply_string-client_socket
 	std::vector<ClientInfo> _clients;
-	
-	//adding servers
 	std::map<std::string, std::vector<Server> > *_servers;
 	
-	//transfering addinfo into socket
 	struct addrinfo *_addrinfo;
 	std::string _hostName;
 	std::string _portNumber;
-	
 	int _listenFd;
+	
 	std::vector<pollfd> _vFds;
 	size_t _vFdsSize;
-
-
-	// size_t _vCGISizeTemp;
-	// std::vector<pollfd> &_vCGITemp;
-	
 	
 public:
+	
+	void	printClientFds();
+	
+	
 	Socket(char * hostName, char * portNumber);
 	~Socket();
 	

@@ -41,7 +41,9 @@ struct CGIInfo {
 	pid_t childPid;
 	int statusChild;
 
-	std::vector<pollfd> vCGI; // pipeFdIn[0] - POLLIN // pipeFdOut[1] - POLLOUT
+	std::vector<pollfd> vCGI; 
+	// vCGI[0] - pipeFdIn[1] 	POLLOUT - write-into-child end
+	// vCGI[1] - pipeFdOut[0]	POLLIN  - read-from-child end
 	int vCGIsize;
 	int pipeFdIn[2];
 	int pipeFdOut[2];

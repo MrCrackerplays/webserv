@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3
-import cgi, os
-import sys
+# import cgi, os
+# import sys
 
 
 # <html>
@@ -14,8 +14,8 @@ import sys
 # </html>
 
 print("HELLO FROM CGI")
-env = os.environ
-print(env)
+# env = os.environ
+# print(env)
 
 # form = cgi.FieldStorage()
 

@@ -166,20 +166,35 @@ void	initPipesCreatePollFDstruct(std::vector<pollfd> &vPipesCGI, int* pipeFdIn, 
 		throw std::runtime_error("spawnProcess : fcntl");
 	}
 	//put pipes in vector for vCGI in Socket
-	pollfd pollFdIn;
-	pollFdIn.fd = pipeFdIn[0];
-	pollFdIn.events = POLLIN | POLLHUP;
-	pollFdIn.revents = 0;
-	vPipesCGI.push_back(pollFdIn);
-	pollfd pollFdOut;
-	pollFdOut.fd = pipeFdOut[1];
-	pollFdOut.events = POLLOUT | POLLHUP;
-	pollFdOut.revents = 0;
-	vPipesCGI.push_back(pollFdOut);
-	std::cout << "pipeFdIn[0] = " << pipeFdIn[0] << std::endl;
-	std::cout << "pipeFdIn[1] = " << pipeFdIn[1] << std::endl;
-	std::cout << "pipeFdOut[0] = " << pipeFdOut[0] << std::endl;
-	std::cout << "pipeFdOut[1] = " << pipeFdOut[1] << std::endl;
+
+
+	pollfd pollWrite; //write into pipe child
+	pollWrite.fd = pipeFdIn[1];
+	pollWrite.events = POLLOUT | POLLHUP;
+	pollWrite.revents = 0;
+	vPipesCGI.push_back(pollWrite);
+	pollfd pollRead; //read from pipe clild
+	pollRead.fd = pipeFdOut[0];
+	pollRead.events = POLLIN | POLLHUP;
+	pollRead.revents = 0;
+	vPipesCGI.push_back(pollRead);
+
+
+	//probably incorrect:
+	// pollfd pollFdIn;
+	// pollFdIn.fd = pipeFdIn[0];
+	// pollFdIn.events = POLLIN | POLLHUP;
+	// pollFdIn.revents = 0;
+	// vPipesCGI.push_back(pollFdIn);
+	// pollfd pollFdOut;
+	// pollFdOut.fd = pipeFdOut[1];
+	// pollFdOut.events = POLLOUT | POLLHUP;
+	// pollFdOut.revents = 0;
+	// vPipesCGI.push_back(pollFdOut);
+	// std::cout << "pipeFdIn[0] = " << pipeFdIn[0] << std::endl;
+	// std::cout << "pipeFdIn[1] = " << pipeFdIn[1] << std::endl;
+	// std::cout << "pipeFdOut[0] = " << pipeFdOut[0] << std::endl;
+	// std::cout << "pipeFdOut[1] = " << pipeFdOut[1] << std::endl;
 }
 
 
@@ -264,18 +279,18 @@ void	waitChild(int &statusChild, pid_t childPid){
 			throw std::runtime_error("spawnProcess: waitpid");
 		}
 	}
-	if (WIFEXITED(status)){
-		statusChild = WEXITSTATUS(status);
-		if (statusChild == 1){
-			statusChild = -1;
-			std::cerr << "execve failed" << std::endl;
-			throw std::runtime_error("spawnProcess : execve");
-		}
-	} else {
-		statusChild = -1;
-		std::cerr << "parent: status child failure" << std::endl;
-		throw std::runtime_error("spawnProcess : execve");
-	}
+	// if (WIFEXITED(status)){
+	// 	statusChild = WEXITSTATUS(status);
+	// 	if (statusChild == 1){
+	// 		statusChild = -1;
+	// 		std::cerr << "execve failed" << std::endl;
+	// 		throw std::runtime_error("spawnProcess : execve");
+	// 	}
+	// } else {
+	// 	statusChild = -1;
+	// 	std::cerr << "parent: status child failure" << std::endl;
+	// 	throw std::runtime_error("spawnProcess : execve");
+	// }
 }
 
 pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket){
@@ -298,6 +313,12 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 	// for (int i = 0; i < 18; i++){
 	// 	std::cerr << info.envp[i] << std::endl;
 	//  }
+	// std::cerr << "---- before fork pipes are:----" << std::endl;
+	// std::cerr << "pipeFdIn[0] = " << info.pipeFdIn[0] << std::endl;
+	// std::cerr << "pipeFdIn[1] = " << info.pipeFdIn[1] << std::endl;
+	// std::cerr << "pipeFdOut[0] = " << info.pipeFdOut[0] << std::endl;
+	// std::cerr << "pipeFdOut[1] = " << info.pipeFdOut[1] << std::endl;
+	// std::cerr << "------------------------------" << std::endl;
 
 	info.childPid = fork();
 	if (info.childPid < 0){ //fork failed
@@ -324,26 +345,38 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 	
 
 		// closePipes(info.pipeFdIn, info.pipeFdOut);
+
+		// std::cout << "---- before execve:----" << std::endl;
+		// std::cerr << "pipeFdIn[0] = " << info.pipeFdIn[0] << std::endl;
+		// std::cerr << "pipeFdIn[1] = " << info.pipeFdIn[1] << std::endl;
+		// std::cerr << "pipeFdOut[0] = " << info.pipeFdOut[0] << std::endl;
+		// std::cerr << "pipeFdOut[1] = " << info.pipeFdOut[1] << std::endl;
+		// std::cout << "------------------------------" << std::endl;
 		close(info.pipeFdIn[0]);
 		close(info.pipeFdIn[1]);
 		close(info.pipeFdOut[0]);
 		close(info.pipeFdOut[1]);
-		std::cerr << "child execve" << std::endl;
+		std::cerr << "child execve now :" << std::endl;
 		execve((char *)request.physicalPathCgi.c_str(), NULL, info.envp);
 		freeEnvp(info.envp);
 		std::cerr << "child execve failed" << std::endl;
 		exit(1);
+	} else {
+		std::cout << "--- in parent from launchChild---- " << std::endl;
+		//in parent process
+		
+		close(info.pipeFdIn[0]);
+		info.pipeFdIn[0] = -1;
+		close(info.pipeFdOut[1]);
+		info.pipeFdOut[1] = -1;
+		
+	
+		// int statusChild;
+		// waitChild(statusChild, info.childPid);
+		std::cout << "end of launchChild ----- child pid: " << info.childPid << std::endl;
+		//pollhup will notify tat clild is done
 	}
-	std::cout << "--- in parent from launchChild---- " << std::endl;
-	//in parent process
-	// close(info.pipeFdIn[0]);
-	// info.pipeFdIn[0] = -1;
-	// close(info.pipeFdOut[1]);
-	// info.pipeFdOut[1] = -1;
-	//pollhup will notify tat clild is done
-	std::cout << "end of launchChild ----- child pid: " << info.childPid << std::endl;
-	int statusChild;
-	waitChild(statusChild, info.childPid);
+	
 	return info.childPid;
 }
 

@@ -28,28 +28,43 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 		}
 	}
 	std::vector<pollfd> socketsAll;
+	
 	while (true) {
 		socketsAll.clear();
 		size_t i = 0;
+		//size_t counterAll = 0;
 		for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
-
+			
 			std::vector<pollfd> vFds = it->getPollFdVector();
 			it->setPollFdVectorSize(vFds.size());
 			for (int i = 0; i < (int)vFds.size(); i++) {
 				socketsAll.push_back(vFds[i]);
+				//socketsAll[counterAll] = std::move(vFds[i]);
+				//counterAll++;
 			}
 			if (it->getCGIbool(i) == true){
 				std::vector<pollfd> vCGI = it->getCGIVector(i);
 				for (int i = 0; i < (int)vCGI.size(); i++) {
 					socketsAll.push_back(vCGI[i]);
+					//socketsAll[counterAll] = std::move(vCGI[i]);
+					//counterAll++;
 				}
 				i++;
 			}
 		}
+		//  for (std::vector<pollfd>::iterator it = socketsAll.begin(); it != socketsAll.end(); it++) {
+		//  	std::cout << "fd: " << it->fd << " events: " << it->events << " revents: " << it->revents << std::endl;
+		//  }
+
+
+
 		if (poll(&socketsAll[0], (unsigned int)socketsAll.size(), 0) < 0){
 			throw std::runtime_error("Socket : poll");
 		
 		} else {
+//			for (std::vector<pollfd>::iterator it = socketsAll.begin(); it != socketsAll.end(); it++) {
+//				std::cout << "fd: " << it->fd << " events: " << it->events << " revents: " << it->revents << std::endl;
+//			}
 			size_t iAll = 0;
 			for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
 				size_t nConnections = it->numberOfConnections(i);

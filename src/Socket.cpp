@@ -203,8 +203,7 @@ void	Socket::closeClientConnection(int i){
 
 	close(_vFds[i].fd);
 	_vFds.erase(_vFds.begin() + i);
-	//_clients[i].recvBytes = 0;
-	//_clients[i].receivedContent.clear();
+	_vFdsSize--;
 	_clients.erase(_clients.begin() + i);
 }
 
@@ -270,11 +269,11 @@ void	Socket::recvConnection(int i){
 	//std::cout << _vFds[i].fd << std::endl;
 	
 	res = (int)recv(_vFds[i].fd, buff, MAX_REQUEST_SIZE - 1, 0);
-	std::cout << "================================" << std::endl;
-	std::cout << "bites read : " << res << std::endl;
-	buff[res] = '\0';
-	std::cout << buff << std::endl;
-	std::cout << "================================" << std::endl;
+	// std::cout << "================================" << std::endl;
+	// std::cout << "bites read : " << res << std::endl;
+	// buff[res] = '\0';
+	// std::cout << buff << std::endl;
+	// std::cout << "================================" << std::endl;
 	if (res == -1){
 		return;
 	} else if (res < 0){
@@ -291,21 +290,25 @@ void	Socket::recvConnection(int i){
 		_clients[i].receivedContent.append(buff, res);
 		if (fullRequestReceived(_clients[i].receivedContent, _clients[i].recvBytes, res)){
 
-				std::cout << "---- before method ----" << std::endl;
-				std::cout << "Bytes: " << _clients[i].recvBytes << std::endl;
-				std::cout << "content: " << _clients[i].receivedContent << std::endl;
-				std::cout << "---------------------------" << std::endl;
+				// std::cout << "---- before method ----" << std::endl;
+				// std::cout << "Bytes: " << _clients[i].recvBytes << std::endl;
+				// std::cout << "content: " << _clients[i].receivedContent << std::endl;
+				// std::cout << "---------------------------" << std::endl;
 
 			//parsing part
 			try {
 				_clients[i].ClientRequest.parsBuff = _clients[i].receivedContent;
 				_clients[i].reply = methods(_clients[i].ClientRequest, *_servers, _portNumber, _hostName, _clients[i].isCGI);
-				if (_clients[i].isCGI == false)
+				if (_clients[i].isCGI == false){
+
 					_vFds[i].events |= POLLOUT;
+					std::cout << "no CGI" << std::endl;
+				}
+					
 				else{
 					_clients[i].cgiInfo.state = NO_PIPES;
 					_clients[i].CgiDone = false;
-					std::cout << _clients[i].ClientRequest.requestBody << std::endl;
+					_clients[i].cgiInfo.childPid = 0;
 
 					std::cout << "---- CGI request struct ----" << std::endl;
 					std::cout << "method: " << _clients[i].ClientRequest.method << std::endl;
@@ -347,22 +350,38 @@ void	Socket::CGIerrorReply(int i){
 
 void	Socket::startChild(int i){
 
-	std::cout << "-- startChild --" << std::endl;
+	std::cout << "============ startChild =============" << std::endl;
 	ClientInfo &client = _clients[i];
 	CGIInfo &cgiInf = client.cgiInfo;
+
+		// if (cgiInf.childPid != 0){
+		// 	try{
+		// 		_clients[i].cgiInfo.statusChild = 0;
+		// 		waitChild(_clients[i].cgiInfo.statusChild, _clients[i].cgiInfo.childPid); //waiting need to be done outside the poll loop
+		// 		std::cout << "waiting for child done, status : " << _clients[i].cgiInfo.statusChild << std::endl;
+		// 	}
+		// 		catch (std::exception &e) {
+		// 		std::cerr << "Caught exception TEST: " << e.what() << std::endl;
+		// 	}
+		// }
+		
+
 
 	try{
 		cgiInf.childPid = launchChild(cgiInf, client.ClientRequest, _portNumber, _hostName);
 		cgiInf.state = PIPES_INIT;
 		cgiInf.vCGIsize = 2;
 		cgiInf.vCGI[1].revents |= POLLOUT;
+		// std::cout << "trying to wait for child" << std::endl;
+		// waitChild(_clients[i].cgiInfo.statusChild, _clients[i].cgiInfo.childPid);
+		// std::cout << "wait end" << std::endl;
 	} catch (std::exception &e) { 
 		std::cerr << "Failed to init pipes: " << e.what() << std::endl;
 		cgiInf.state = ERROR;
 		CGIerrorReply(i);
 		//free+close is done in launchChild
 	}
-	std::cout << "-- done startChild --" << std::endl;
+	std::cout << "========= done startChild =========" << std::endl;
 }
 
 
@@ -443,34 +462,43 @@ void	Socket::readFromChild(int i){
 
 void Socket::pickCGIState(int i){
 
+	CGIInfo &cgiInf = _clients[i].cgiInfo;
+	pollfd &writeFd = cgiInf.vCGI[0]; //expect POLLOUT
+	pollfd &readFd = cgiInf.vCGI[1]; //expect POLLIN
+
 	//std::cout << "------- pickCGIState ---------" << std::endl;
 	//std::cout << "state: " << _clients[i].cgiInfo.state << std::endl;
 
-	if (_clients[i].cgiInfo.state == NO_PIPES){
+	if (cgiInf.state == NO_PIPES){
 		std::cout << "no pipes yet" << std::endl;
 	}
-	else if (_clients[i].cgiInfo.state == PIPES_INIT && (_clients[i].cgiInfo.vCGI[1].revents & POLLOUT) == POLLOUT){
-		_clients[i].cgiInfo.state = WRITE_READY;
-		std::cout << "write ready" << std::endl;
+
+
+
+	else if (cgiInf.state == PIPES_INIT && (writeFd.revents & POLLOUT) == POLLOUT){
+		cgiInf.state = WRITE_READY;
+		std::cout << "write ready, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
 	}
 
-	else if (_clients[i].cgiInfo.state == WRITE_READY && (_clients[i].cgiInfo.vCGI[1].revents & POLLHUP) == POLLHUP){
-		_clients[i].cgiInfo.state = WRITE_DONE;
-		_clients[i].cgiInfo.vCGI.erase(_clients[i].cgiInfo.vCGI.begin() + 1);
-		_clients[i].cgiInfo.vCGIsize = 1;
-		std::cout << "write done" << std::endl;
+
+
+	else if (cgiInf.state == WRITE_READY && (writeFd.revents & POLLHUP) == POLLHUP){
+		cgiInf.state = WRITE_DONE;
+		cgiInf.vCGI.erase(cgiInf.vCGI.begin()); //write is in vCGI[0]
+		cgiInf.vCGIsize = 1;
+		std::cout << "write done, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
 	}
 
-	else if (_clients[i].cgiInfo.state == WRITE_DONE && (_clients[i].cgiInfo.vCGI[0].revents & POLLIN)== POLLIN){
-		_clients[i].cgiInfo.state = READ_READY;
-		std::cout << "read ready" << std::endl;
+	else if (cgiInf.state == WRITE_DONE && (readFd.revents & POLLIN)== POLLIN){
+		cgiInf.state = READ_READY;
+		std::cout << "read ready, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
 	}
 
-	else if (_clients[i].cgiInfo.state == READ_READY && (_clients[i].cgiInfo.vCGI[0].revents & POLLHUP)== POLLHUP){
-		_clients[i].cgiInfo.state = READ_DONE;
-		_clients[i].cgiInfo.vCGI.erase(_clients[i].cgiInfo.vCGI.begin());
-		_clients[i].cgiInfo.vCGIsize = 0;
-		std::cout << "read done" << std::endl;
+	else if (cgiInf.state == READ_READY && (readFd.revents & POLLHUP)== POLLHUP){
+		cgiInf.state = READ_DONE;
+		cgiInf.vCGI.erase(cgiInf.vCGI.begin()); //read in vCGI[1] but write should be erased already NOT SURE
+		cgiInf.vCGIsize = 0;
+		std::cout << "read done, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
 	}
 }
 
@@ -489,12 +517,13 @@ void	Socket::checkCGIevens(int i){
 	if (_clients[i].cgiInfo.state == NO_PIPES && _clients[i].isCGI == true){ 
 		
 		startChild(i);
-		exit(0);
+		std::cout << "------- end of checkCGIevens : startChild done -------" << std::endl;
 		return ;
 
 	} else if (_clients[i].cgiInfo.state == WRITE_READY){ //write in child, wait for child
 		
 		writeInChild(i);
+		std::cout << "------- end of checkCGIevens : write in child is done -------" << std::endl;
 		return ;
 		
 	} else if (_clients[i].cgiInfo.state == READ_READY){ //read from child
@@ -513,7 +542,23 @@ void	Socket::checkCGIevens(int i){
 	}
 }
 
+void	Socket::printClientFds(){
+	
+	for (size_t i = 0; i < _vFds.size(); i++){
+		std::cout <<  "FD["<< i <<"] == " << _vFds[i].fd << " | event ==" << _vFds[i].events << " | revent ==" << _vFds[i].revents << std::endl;
+		std::cout << "does it has CG? " << _clients[i].isCGI << std::endl;
+		if (_clients[i].isCGI == true){
+			std::cout << "it has CGI" << std::endl;
+			std::cout << "CgiFd[0] == "<< _clients[i].cgiInfo.vCGI[0].fd << " | event ==" << _clients[i].cgiInfo.vCGI[0].events << " | revent ==" << _clients[i].cgiInfo.vCGI[0].events << std::endl;
+			std::cout << "CgiFd[1] == "<< _clients[i].cgiInfo.vCGI[1].fd << " | event ==" << _clients[i].cgiInfo.vCGI[1].events << " | revent ==" << _clients[i].cgiInfo.vCGI[1].events << std::endl;
+		}
+	}
+}
+
 void	Socket::checkEvents(){
+	
+	//test
+	//printClientFds();
 	for (int i = 0; i < (int)_vFds.size(); i++){
 		if ((_vFds[i].revents & POLLIN) == POLLIN){
 			
@@ -539,8 +584,6 @@ void	Socket::checkEvents(){
 		} else if ((_vFds[i].revents & POLLOUT) == POLLOUT){
 			std::cout << "try to send data" << std::endl;
 			sendData(i);
-			
-			
 			std::cout << "end send data" << std::endl;
 			
 		} else if ((_vFds[i].revents & POLLHUP) == POLLHUP){

@@ -115,6 +115,7 @@ std::string	methods(parsRequest &request, std::map<std::string, std::vector<Serv
 			// std::cout << "request.body: " << request.requestBody << std::endl;
 			// std::cout << "request.buff: " << request.parsBuff << std::endl;
 			CGI = true;
+			request.callCGI = true;
 			return "";
 		} else if (request.method == GET){
 			try {
