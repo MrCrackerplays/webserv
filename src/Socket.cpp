@@ -522,6 +522,7 @@ void	Socket::checkCGIevens(int i){
 
 	} else if (_clients[i].cgiInfo.state == WRITE_READY){ //write in child, wait for child
 		
+		std::cout << "------- end of checkCGIevens : write start -------" << std::endl;
 		writeInChild(i);
 		std::cout << "------- end of checkCGIevens : write in child is done -------" << std::endl;
 		return ;
@@ -597,8 +598,13 @@ void	Socket::checkEvents(){
 		}
 
 		if (i > 0 && _clients[i].isCGI == true){
+
 			//std::cout << "CGI events | i = " << i << std::endl;
 			checkCGIevens(i);
+			if (_clients[i].cgiInfo.vCGI[0].fd > 0)
+				std::cout << "CgiFd[0] == "<< _clients[i].cgiInfo.vCGI[0].fd << " | event ==" << _clients[i].cgiInfo.vCGI[0].events << " | revent ==" << _clients[i].cgiInfo.vCGI[0].revents << std::endl;
+			if (_clients[i].cgiInfo.vCGI[1].fd > 0)
+				std::cout << "CgiFd[1] == "<< _clients[i].cgiInfo.vCGI[1].fd << " | event ==" << _clients[i].cgiInfo.vCGI[1].events << " | revent ==" << _clients[i].cgiInfo.vCGI[1].revents << std::endl;
 		}
 	}
 	

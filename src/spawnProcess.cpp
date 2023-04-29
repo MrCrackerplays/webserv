@@ -366,9 +366,9 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		//in parent process
 		
 		close(info.pipeFdIn[0]);
-		info.pipeFdIn[0] = -1;
+		//info.pipeFdIn[0] = -1;
 		close(info.pipeFdOut[1]);
-		info.pipeFdOut[1] = -1;
+		//info.pipeFdOut[1] = -1;
 		
 	
 		// int statusChild;

@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3
-# import cgi, os
-# import sys
+import cgi, os
+import sys
 
 
 # <html>
@@ -14,6 +14,7 @@
 # </html>
 
 print("HELLO FROM CGI")
+sys.stderr.write("HELLO FROM CGI\n")
 # env = os.environ
 # print(env)
 
