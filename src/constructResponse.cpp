@@ -20,22 +20,21 @@ void	redirectionResponse(int code, std::string newlocation, response &response){
 }
 
 void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
-
-
-	//std::cout << "parseCorrectResponseCGI" << std::endl;
+	std::cout << "parseCorrectResponseCGI**************" << std::endl;
 	//std::cout << CGIbuff << std::endl;
 	std::string contentHeader = "Content-Type:";
 	size_t pos = CGIbuff.find("\r\n\r\n"); //end of header
 	if (pos == std::string::npos){
-		//std::cout << "pos == npos" << std::endl;
+		std::cout << "pos == npos" << std::endl;
 		response.body = CGIbuff;
 		response.contentLenght = CGIbuff.length();
 		//std::cout << "codes bfr" << std::endl;
 		codes(200, response.codeMessage);
-		//std::cout << "parseCorrectResponseCGI - end" << std::endl;
+		//std::cout << response.body << std::endl;
+		std::cout << "parseCorrectResponseCGI - end" << std::endl;
 		return;
 	}
-	//std::cout << "pos != npos" << std::endl;
+	std::cout << "pos != npos" << std::endl;
 	//header
 	std::string headerAfterCgi = CGIbuff.substr(0, pos);
 	size_t start = headerAfterCgi.find(contentHeader);
@@ -49,7 +48,7 @@ void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 	response.body = CGIbuff.substr(pos+4, CGIbuff.length());
 	response.contentLenght = response.body.length();
 	codes(200, response.codeMessage);
-	//std::cout << "parseCorrectResponseCGI - end" << std::endl;
+	std::cout << "parseCorrectResponseCGI - end *****************" << std::endl;
 }
 
 void constructResponseHeader(response& response) {

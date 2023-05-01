@@ -38,21 +38,19 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 			for (size_t i = 0; i < (int)vFds.size(); i++) {
 			//	std::cout << "vFds[i] put into SocketAll: " << vFds[i].fd << std::endl;
 				socketsAll.push_back(vFds[i]);
-				
-				
 				if (it->getCGIbool(i) == true){
 					//std::cout << "CGI put into ALL" << std::endl;
 					std::vector<pollfd> vCGI = it->getCGIVector(i);
 					for (size_t j = 0; j < (int)vCGI.size(); j++) {
-						std::cout << "vCGI[0].fd == " << vCGI[0].fd << std::endl;
-						std::cout << "vCGI[1].fd == " << vCGI[1].fd << std::endl;
-						std::cout << "j = " << j << " | vCGI[j] put into SocketAll: " << vCGI[j].fd << std::endl;
+						//std::cout << "vCGI[0].fd == " << vCGI[0].fd << std::endl;
+						//std::cout << "vCGI[1].fd == " << vCGI[1].fd << std::endl;
+						//std::cout << "j = " << j << " | vCGI[j] put into SocketAll: " << vCGI[j].fd << std::endl;
+						// std::cout << "vCGI[j].events = " << vCGI[j].events << std::endl;
+						// std::cout << "vCGI[j].revents = " << vCGI[j].revents << std::endl;
 						socketsAll.push_back(vCGI[j]);
 					}
 				}
-				
 			}
-			
 		}
 		if (poll(&socketsAll[0], (unsigned int)socketsAll.size(), 0) < 0){
 			throw std::runtime_error("Socket : poll");
@@ -61,9 +59,7 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 			size_t iAll = 0;
 			
 			for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
-				int clientIndex = 0;
 				size_t nConnections = it->numberOfConnections();
-				
 				for (size_t n = 0; n < nConnections; n++) {
 					it->unpackVectorintoSocket(iAll, n, socketsAll);
 				}

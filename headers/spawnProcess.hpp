@@ -18,18 +18,19 @@
 
 typedef enum {
 
-	NO_PIPES,
-	PIPES_INIT,
+	NO_PIPES = 0,
+	PIPES_INIT = 1,
 
-	WRITE_READY,
+	WRITE_READY = 2,
 	// WRITE,
-	WRITE_DONE,
+	WRITE_DONE = 3,
 
-	READ_READY,
+
+	READ_READY = 4,
 	// READ,
-	READ_DONE,
+	READ_DONE = 5,
 
-	ERROR,
+	ERROR = 6
 	//TIMEOUT // not used
 	
 } cgiState;
@@ -40,6 +41,7 @@ struct CGIInfo {
 	char **envp;
 	pid_t childPid;
 	int statusChild;
+	bool childExited;
 
 	std::vector<pollfd> vCGI; 
 	// vCGI[0] - pipeFdIn[1] 	POLLOUT - write-into-child end
@@ -51,7 +53,7 @@ struct CGIInfo {
 };
 
 
-void	freeEnvp(char **envp);
+//void	freeEnvp(char **envp);
 void	closePipes(int* pipeFdIn, int* pipeFdOut);
 char	**envpGenerate(parsRequest request, std::string portNumberSocket, std::string hostNameSocket);
 bool	makeNonBlocking(int fd);
@@ -64,7 +66,7 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 size_t	writeChild(const char* data, size_t dataLen, int* pipeFdIn);
 
 
-void	waitChild(int &statusChild, pid_t childPid);
+void	waitChild(int &statusChild, pid_t childPid, bool &childExited);
 
 
 size_t	readChild(int* pipeFdOut, std::string &reply);

@@ -106,7 +106,7 @@ public:
 
 	
 //old parts
-	void setPollFdVector(std::vector<pollfd> vFds);
+	void setPollFdVector(std::vector<pollfd> &vFds);
 
 
     // void setCGIVector(std::vector<pollfd> cgiFds) {
