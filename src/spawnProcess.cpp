@@ -313,12 +313,12 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 	// for (int i = 0; i < 18; i++){
 	// 	std::cerr << info.envp[i] << std::endl;
 	//  }
-	// std::cerr << "---- before fork pipes are:----" << std::endl;
-	// std::cerr << "pipeFdIn[0] = " << info.pipeFdIn[0] << std::endl;
-	// std::cerr << "pipeFdIn[1] = " << info.pipeFdIn[1] << std::endl;
-	// std::cerr << "pipeFdOut[0] = " << info.pipeFdOut[0] << std::endl;
-	// std::cerr << "pipeFdOut[1] = " << info.pipeFdOut[1] << std::endl;
-	// std::cerr << "------------------------------" << std::endl;
+	std::cerr << "---- before fork pipes are:----" << std::endl;
+	std::cerr << "pipeFdIn[0] = " << info.pipeFdIn[0] << std::endl;
+	std::cerr << "pipeFdIn[1] = " << info.pipeFdIn[1] << std::endl;
+	std::cerr << "pipeFdOut[0] = " << info.pipeFdOut[0] << std::endl;
+	std::cerr << "pipeFdOut[1] = " << info.pipeFdOut[1] << std::endl;
+	std::cerr << "------------------------------" << std::endl;
 
 	info.childPid = fork();
 	if (info.childPid < 0){ //fork failed
@@ -356,24 +356,24 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		close(info.pipeFdIn[1]);
 		close(info.pipeFdOut[0]);
 		close(info.pipeFdOut[1]);
-		std::cerr << "child execve now :" << std::endl;
+		//std::cerr << "child execve now :" << std::endl;
 		execve((char *)request.physicalPathCgi.c_str(), NULL, info.envp);
 		freeEnvp(info.envp);
 		std::cerr << "child execve failed" << std::endl;
 		exit(1);
 	} else {
-		std::cout << "--- in parent from launchChild---- " << std::endl;
+		//std::cout << "--- in parent from launchChild---- " << std::endl;
 		//in parent process
 		
 		close(info.pipeFdIn[0]);
 		//info.pipeFdIn[0] = -1;
-		close(info.pipeFdOut[1]);
+		close(info.pipeFdOut[1]); 
 		//info.pipeFdOut[1] = -1;
 		
 	
 		// int statusChild;
 		// waitChild(statusChild, info.childPid);
-		std::cout << "end of launchChild ----- child pid: " << info.childPid << std::endl;
+		//std::cout << "end of launchChild ----- child pid: " << info.childPid << std::endl;
 		//pollhup will notify tat clild is done
 	}
 	

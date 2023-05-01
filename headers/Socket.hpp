@@ -99,7 +99,7 @@ public:
 	std::vector<pollfd> &getCGIVector(int i);
 	size_t	getCGIVectorSize(int i);
 	bool	getCGIbool(int i);
-	size_t numberOfConnections(int i);
+	size_t numberOfConnections();
 	
 	//SETTRES________________________________________________________
 	void	setServers(std::map<std::string, std::vector<Server> > &servers);

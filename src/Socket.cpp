@@ -53,14 +53,17 @@
 
 	};
 
-	size_t Socket::numberOfConnections(int i){
+	size_t Socket::numberOfConnections(){
 
 		//std::cout << "numberOfConnections for i= "<< i << std::endl;
 		size_t totalCguFdSize = 0;
+		int clientIndex = 0;
 		for (std::vector<pollfd>::iterator it = _vFds.begin(); it != _vFds.end(); it++){
-			if (_clients[i].isCGI){
-				totalCguFdSize += _clients[i].cgiInfo.vCGI.size();
+			
+			if (_clients[clientIndex].isCGI){
+				totalCguFdSize += _clients[clientIndex].cgiInfo.vCGI.size();
 			}
+			clientIndex++;
 		}
 		return totalCguFdSize + _vFds.size();
 	};
@@ -86,16 +89,33 @@
 		_vFds[fdCounter] = std::move(socketsAll[allCounter]);
 		allCounter++;
 		if(isCGI){
+			//std::cout << "isCGI" << std::endl;
+			//std::cout << "FD is = "<< socketsAll[allCounter].fd << std::endl;
 			if (CGIinfo.vCGI.size() == 1) {
-				CGIinfo.vCGI[0] = std::move(socketsAll[allCounter]);
+
+				CGIinfo.vCGI[0].fd = socketsAll[allCounter].fd;
+				CGIinfo.vCGI[0].events = socketsAll[allCounter].events;
+				CGIinfo.vCGI[0].revents = socketsAll[allCounter].revents;
+
+				//CGIinfo.vCGI[0] = std::move(socketsAll[allCounter]);
 				allCounter++;
 			} else if (CGIinfo.vCGI.size() == 2) {
-				CGIinfo.vCGI[0] = std::move(socketsAll[allCounter]);
+				CGIinfo.vCGI[0].fd = socketsAll[allCounter].fd;
+				CGIinfo.vCGI[0].events = socketsAll[allCounter].events;
+				CGIinfo.vCGI[0].revents = socketsAll[allCounter].revents;
+				//CGIinfo.vCGI[0] = std::move(socketsAll[allCounter]);
 				allCounter++;
-				CGIinfo.vCGI[1] = std::move(socketsAll[allCounter]);
+				CGIinfo.vCGI[1].fd = socketsAll[allCounter].fd;
+				CGIinfo.vCGI[1].events = socketsAll[allCounter].events;
+				CGIinfo.vCGI[1].revents = socketsAll[allCounter].revents;
+				//CGIinfo.vCGI[1] = std::move(socketsAll[allCounter]);
 				allCounter++;
 			}
+			std::cout << "CGIinfo.vCGI[0].fd =" << CGIinfo.vCGI[0].fd << std::endl;
+			std::cout << "CGIinfo.vCGI[1].fd =" << CGIinfo.vCGI[1].fd << std::endl;
+			exit(0);
 		}
+		
 	};
 
 
@@ -219,7 +239,7 @@ void	Socket::sendData(int i){
 		_clients[i].biteToSend -= bitesend;
 	} else if (_clients[i].biteToSend == bitesend){
 		if (_clients[i].isCGI == true && _clients[i].CgiDone == true) {
-			std::cout << "_clients[i].isCGI == true && _clients[i].CgiDone == true | all sent" << std::endl;
+			//std::cout << "_clients[i].isCGI == true && _clients[i].CgiDone == true | all sent" << std::endl;
 			_clients[i].isCGI = false;
 			_clients[i].CgiDone = false;
 		}
@@ -295,6 +315,8 @@ void	Socket::recvConnection(int i){
 				// std::cout << "content: " << _clients[i].receivedContent << std::endl;
 				// std::cout << "---------------------------" << std::endl;
 
+
+
 			//parsing part
 			try {
 				_clients[i].ClientRequest.parsBuff = _clients[i].receivedContent;
@@ -302,7 +324,7 @@ void	Socket::recvConnection(int i){
 				if (_clients[i].isCGI == false){
 
 					_vFds[i].events |= POLLOUT;
-					std::cout << "no CGI" << std::endl;
+					//std::cout << "no CGI" << std::endl;
 				}
 					
 				else{
@@ -310,11 +332,11 @@ void	Socket::recvConnection(int i){
 					_clients[i].CgiDone = false;
 					_clients[i].cgiInfo.childPid = 0;
 
-					std::cout << "---- CGI request struct ----" << std::endl;
-					std::cout << "method: " << _clients[i].ClientRequest.method << std::endl;
-					std::cout << "body: " << _clients[i].ClientRequest.requestBody << std::endl;
-					std::cout << "bodyLen: " << _clients[i].ClientRequest.requestBodyLen << std::endl;
-					std::cout << "---------------------------" << std::endl;
+					// std::cout << "---- CGI request struct ----" << std::endl;
+					// std::cout << "method: " << _clients[i].ClientRequest.method << std::endl;
+					// std::cout << "body: " << _clients[i].ClientRequest.requestBody << std::endl;
+					// std::cout << "bodyLen: " << _clients[i].ClientRequest.requestBodyLen << std::endl;
+					// std::cout << "---------------------------" << std::endl;
 				}
 				//std::cout << "revent: " << _vFds[i].revents << std::endl;
 			} catch (std::exception &e) {
@@ -350,7 +372,7 @@ void	Socket::CGIerrorReply(int i){
 
 void	Socket::startChild(int i){
 
-	std::cout << "============ startChild =============" << std::endl;
+	//std::cout << "============ startChild =============" << std::endl;
 	ClientInfo &client = _clients[i];
 	CGIInfo &cgiInf = client.cgiInfo;
 
@@ -381,17 +403,17 @@ void	Socket::startChild(int i){
 		CGIerrorReply(i);
 		//free+close is done in launchChild
 	}
-	std::cout << "========= done startChild =========" << std::endl;
+	//std::cout << "========= done startChild =========" << std::endl;
 }
 
 
 void	Socket::writeInChild(int i){
 
-	std::cout << "-- writing in child --" << std::endl;
+	//std::cout << "-- writing in child --" << std::endl;
 	try{
-		std::cout << "---------------body: -----------------" << std::endl;
-		std::cout << _clients[i].ClientRequest.requestBody << std::endl;
-		std::cout << "---------------body end --------------" << std::endl;
+		//std::cout << "---------------body: -----------------" << std::endl;
+		//std::cout << _clients[i].ClientRequest.requestBody << std::endl;
+		//std::cout << "---------------body end --------------" << std::endl;
 
 		size_t wrote = writeChild(_clients[i].ClientRequest.requestBody.c_str(), _clients[i].ClientRequest.requestBody.length() , _clients[i].cgiInfo.pipeFdIn);
 		_clients[i].ClientRequest.requestBody.erase(0, wrote);
@@ -406,15 +428,15 @@ void	Socket::writeInChild(int i){
 		CGIerrorReply(i);
 		return ;
 	}
-	std::cout << "-- writing in child done --" << std::endl;
+	//std::cout << "-- writing in child done --" << std::endl;
 
 
 	//wait need to be done separately after pipes are done and till all reply received
-		std::cout << "-- waiting for child --" << std::endl;
+		//std::cout << "-- waiting for child --" << std::endl;
 	try{
 		_clients[i].cgiInfo.statusChild = 0;
 		waitChild(_clients[i].cgiInfo.statusChild, _clients[i].cgiInfo.childPid); //waiting need to be done outside the poll loop
-		std::cout << "waiting for child done, status : " << _clients[i].cgiInfo.statusChild << std::endl;
+		//std::cout << "waiting for child done, status : " << _clients[i].cgiInfo.statusChild << std::endl;
 	}
 	catch (std::exception &e) {
 		std::cerr << "Caught exception: " << e.what() << std::endl;
@@ -428,7 +450,7 @@ void	Socket::writeInChild(int i){
 		return ;
 	} else {
 		_clients[i].cgiInfo.vCGI[0].events |= POLLIN;
-		std::cout << "------- end of checkCGIevens : waiting done child -------" << std::endl;
+		//std::cout << "------- end of checkCGIevens : waiting done child -------" << std::endl;
 		return ;
 	}
 
@@ -438,7 +460,7 @@ void	Socket::writeInChild(int i){
 void	Socket::readFromChild(int i){
 
 
-	std::cout << "------- reading from child ---------" << std::endl;
+	//std::cout << "------- reading from child ---------" << std::endl;
 	if (_clients[i].cgiInfo.statusChild < 0){ //not sure if to check that here
 			std::cerr << "error in child : if statusChild < 0 | from POLLIN" << std::endl;
 			_clients[i].cgiInfo.state = ERROR; 
@@ -448,7 +470,7 @@ void	Socket::readFromChild(int i){
 
 	try{
 		readChild(_clients[i].cgiInfo.pipeFdOut, _clients[i].reply);
-		std::cout << "reply from child: " << _clients[i].reply << std::endl;
+		//std::cout << "reply from child: " << _clients[i].reply << std::endl;
 	}
 
 	catch (std::exception &e) {
@@ -457,7 +479,7 @@ void	Socket::readFromChild(int i){
 		CGIerrorReply(i);
 		return ;
 	}
-	std::cout << "------- reading from child done ---------" << std::endl;
+	//std::cout << "------- reading from child done ---------" << std::endl;
 }
 
 void Socket::pickCGIState(int i){
@@ -517,14 +539,14 @@ void	Socket::checkCGIevens(int i){
 	if (_clients[i].cgiInfo.state == NO_PIPES && _clients[i].isCGI == true){ 
 		
 		startChild(i);
-		std::cout << "------- end of checkCGIevens : startChild done -------" << std::endl;
+		//std::cout << "------- end of checkCGIevens : startChild done -------" << std::endl;
 		return ;
 
 	} else if (_clients[i].cgiInfo.state == WRITE_READY){ //write in child, wait for child
 		
-		std::cout << "------- end of checkCGIevens : write start -------" << std::endl;
+		//std::cout << "------- end of checkCGIevens : write start -------" << std::endl;
 		writeInChild(i);
-		std::cout << "------- end of checkCGIevens : write in child is done -------" << std::endl;
+		//std::cout << "------- end of checkCGIevens : write in child is done -------" << std::endl;
 		return ;
 		
 	} else if (_clients[i].cgiInfo.state == READ_READY){ //read from child
@@ -566,29 +588,29 @@ void	Socket::checkEvents(){
 			//listening socket event
 			if (_vFds[i].fd == _listenFd){
 				try {
-					std::cout << "try to accept new connection" << std::endl;
+					//std::cout << "try to accept new connection" << std::endl;
 					acceptNewConnect(i);
-					std::cout << "end of accept new connection" << std::endl;
+					//std::cout << "end of accept new connection" << std::endl;
 				} catch (std::exception &e) {
 					std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
 				}
 			//client's from listening socket event
 			} else {
 				try {
-					std::cout << "try to receive" << std::endl;
+					//std::cout << "try to receive" << std::endl;
 					recvConnection(i);
-					std::cout << "end of receive" << std::endl;
+					//std::cout << "end of receive" << std::endl;
 				} catch (std::exception &e) {
 					std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
 				}
 			}
 		} else if ((_vFds[i].revents & POLLOUT) == POLLOUT){
-			std::cout << "try to send data" << std::endl;
+			//std::cout << "try to send data" << std::endl;
 			sendData(i);
-			std::cout << "end send data" << std::endl;
+			//std::cout << "end send data" << std::endl;
 			
 		} else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
-			std::cout << "pollHUP" << std::endl;
+			//std::cout << "pollHUP" << std::endl;
 			try {
 				std::cerr << "close connection" << std::endl;
 				closeClientConnection(i);
@@ -601,10 +623,10 @@ void	Socket::checkEvents(){
 
 			//std::cout << "CGI events | i = " << i << std::endl;
 			checkCGIevens(i);
-			if (_clients[i].cgiInfo.vCGI[0].fd > 0)
-				std::cout << "CgiFd[0] == "<< _clients[i].cgiInfo.vCGI[0].fd << " | event ==" << _clients[i].cgiInfo.vCGI[0].events << " | revent ==" << _clients[i].cgiInfo.vCGI[0].revents << std::endl;
-			if (_clients[i].cgiInfo.vCGI[1].fd > 0)
-				std::cout << "CgiFd[1] == "<< _clients[i].cgiInfo.vCGI[1].fd << " | event ==" << _clients[i].cgiInfo.vCGI[1].events << " | revent ==" << _clients[i].cgiInfo.vCGI[1].revents << std::endl;
+			//if (_clients[i].cgiInfo.vCGI[0].fd > 0)
+				//std::cout << "CgiFd[0] == "<< _clients[i].cgiInfo.vCGI[0].fd << " | event ==" << _clients[i].cgiInfo.vCGI[0].events << " | revent ==" << _clients[i].cgiInfo.vCGI[0].revents << std::endl;
+			//if (_clients[i].cgiInfo.vCGI[1].fd > 0)
+				//std::cout << "CgiFd[1] == "<< _clients[i].cgiInfo.vCGI[1].fd << " | event ==" << _clients[i].cgiInfo.vCGI[1].events << " | revent ==" << _clients[i].cgiInfo.vCGI[1].revents << std::endl;
 		}
 	}
 	

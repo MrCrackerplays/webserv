@@ -31,43 +31,38 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 	
 	while (true) {
 		socketsAll.clear();
-		size_t i = 0;
-		//size_t counterAll = 0;
 		for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
 			
 			std::vector<pollfd> vFds = it->getPollFdVector();
 			it->setPollFdVectorSize(vFds.size());
-			for (int i = 0; i < (int)vFds.size(); i++) {
+			for (size_t i = 0; i < (int)vFds.size(); i++) {
+			//	std::cout << "vFds[i] put into SocketAll: " << vFds[i].fd << std::endl;
 				socketsAll.push_back(vFds[i]);
-				//socketsAll[counterAll] = std::move(vFds[i]);
-				//counterAll++;
-			}
-			if (it->getCGIbool(i) == true){
-				std::vector<pollfd> vCGI = it->getCGIVector(i);
-				for (int i = 0; i < (int)vCGI.size(); i++) {
-					socketsAll.push_back(vCGI[i]);
-					//socketsAll[counterAll] = std::move(vCGI[i]);
-					//counterAll++;
+				
+				
+				if (it->getCGIbool(i) == true){
+					//std::cout << "CGI put into ALL" << std::endl;
+					std::vector<pollfd> vCGI = it->getCGIVector(i);
+					for (size_t j = 0; j < (int)vCGI.size(); j++) {
+						std::cout << "vCGI[0].fd == " << vCGI[0].fd << std::endl;
+						std::cout << "vCGI[1].fd == " << vCGI[1].fd << std::endl;
+						std::cout << "j = " << j << " | vCGI[j] put into SocketAll: " << vCGI[j].fd << std::endl;
+						socketsAll.push_back(vCGI[j]);
+					}
 				}
-				i++;
+				
 			}
+			
 		}
-		//  for (std::vector<pollfd>::iterator it = socketsAll.begin(); it != socketsAll.end(); it++) {
-		//  	std::cout << "fd: " << it->fd << " events: " << it->events << " revents: " << it->revents << std::endl;
-		//  }
-
-
-
 		if (poll(&socketsAll[0], (unsigned int)socketsAll.size(), 0) < 0){
 			throw std::runtime_error("Socket : poll");
 		
-		} else {
-//			for (std::vector<pollfd>::iterator it = socketsAll.begin(); it != socketsAll.end(); it++) {
-//				std::cout << "fd: " << it->fd << " events: " << it->events << " revents: " << it->revents << std::endl;
-//			}
+		} else { 
 			size_t iAll = 0;
+			
 			for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
-				size_t nConnections = it->numberOfConnections(i);
+				int clientIndex = 0;
+				size_t nConnections = it->numberOfConnections();
 				
 				for (size_t n = 0; n < nConnections; n++) {
 					it->unpackVectorintoSocket(iAll, n, socketsAll);
