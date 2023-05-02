@@ -20,9 +20,9 @@ void	Socket::printClientFds(){
 	}
 }
 
-void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds){
+void	initiateVectPoll(int listenFd, std::vector<struct pollfd> &vFds){
 
-	pollfd deflt;
+	struct pollfd deflt;
 	deflt.fd = 0;
 	deflt.events = 0;
 	vFds.push_back(deflt);
@@ -49,7 +49,7 @@ void	setToNonBlocking(int listenFd){
 	}
 }
 
-void	bindToPort(int listenFd, addrinfo *addrinfo){
+void	bindToPort(int listenFd, struct addrinfo *addrinfo){
 
 	if (bind(listenFd, addrinfo->ai_addr, addrinfo->ai_addrlen) < 0){
 		close(listenFd);

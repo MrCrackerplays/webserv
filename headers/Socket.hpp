@@ -32,7 +32,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-struct ClientInfo {
+typedef struct {
 
 	std::string receivedContent;
 	size_t recvBytes;
@@ -45,7 +45,7 @@ struct ClientInfo {
 	bool isCGI;
 	bool CgiDone;
 	CGIInfo cgiInfo;
-};
+} ClientInfo;
 
 class Socket{
 	
@@ -59,7 +59,7 @@ protected:
 	std::string _portNumber;
 	int _listenFd;
 	
-	std::vector<pollfd> _vFds;
+	std::vector<struct pollfd> _vFds;
 	size_t _vFdsSize;
 	
 public:
@@ -92,11 +92,11 @@ public:
 	int		getSocketFd();
 	addrinfo *getAddrInfo();
 
-	std::vector<pollfd> &getPollFdVector();
+	std::vector<struct pollfd> &getPollFdVector();
 	size_t	getPollFdVectorSize();
 	
 
-	std::vector<pollfd> &getCGIVector(int i);
+	std::vector<struct pollfd> &getCGIVector(int i);
 	size_t	getCGIVectorSize(int i);
 	bool	getCGIbool(int i);
 	size_t numberOfConnections();
@@ -106,7 +106,7 @@ public:
 
 	
 //old parts
-	void setPollFdVector(std::vector<pollfd> &vFds);
+	void setPollFdVector(std::vector<struct pollfd> &vFds);
 
 
     // void setCGIVector(std::vector<pollfd> cgiFds) {
@@ -114,15 +114,15 @@ public:
     // }
 
 	void setPollFdVectorSize(size_t size);
-	void setPollFdVector1(int clientInd, const std::vector<pollfd>& pollFdVec);
-	void setCGIVector(int clientInd, const std::vector<pollfd>& cgiFdVec);
-	void unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::vector<pollfd> socketsAll);
+	void setPollFdVector1(int clientInd, const std::vector<struct pollfd>& pollFdVec);
+	void setCGIVector(int clientInd, const std::vector<struct pollfd>& cgiFdVec);
+	void unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::vector<struct pollfd> socketsAll);
 
 };
 
-void	initiateVectPoll(int listenFd, std::vector<pollfd> &vFds);
+void	initiateVectPoll(int listenFd, std::vector<struct pollfd> &vFds);
 void	setToNonBlocking(int listenFd);
-void	bindToPort(int listenFd, addrinfo *addrinfo);
+void	bindToPort(int listenFd, struct addrinfo *addrinfo);
 void	setToListen(int listenFd);
 
 

@@ -35,7 +35,7 @@ typedef enum {
 	
 } cgiState;
 
-struct CGIInfo {
+typedef struct {
 
 	int code;
 	char **envp;
@@ -43,21 +43,21 @@ struct CGIInfo {
 	int statusChild;
 	bool childExited;
 
-	std::vector<pollfd> vCGI; 
+	std::vector<struct pollfd> vCGI; 
 	// vCGI[0] - pipeFdIn[1] 	POLLOUT - write-into-child end
 	// vCGI[1] - pipeFdOut[0]	POLLIN  - read-from-child end
 	int vCGIsize;
 	int pipeFdIn[2];
 	int pipeFdOut[2];
 	cgiState state;
-};
+} CGIInfo;
 
 
 //void	freeEnvp(char **envp);
 void	closePipes(int* pipeFdIn, int* pipeFdOut);
 char	**envpGenerate(parsRequest request, std::string portNumberSocket, std::string hostNameSocket);
 bool	makeNonBlocking(int fd);
-void	initPipesCreatePollFDstruct(std::vector<pollfd> &vPipesCGI, int* pipeFdIn, int* pipeFdOut);
+void	initPipesCreatePollFDstruct(std::vector<struct pollfd> &vPipesCGI, int* pipeFdIn, int* pipeFdOut);
 
 
 

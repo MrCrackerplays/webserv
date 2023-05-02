@@ -152,7 +152,7 @@ bool	makeNonBlocking(int fd){
 	return true;
 }
 
-void	initPipesCreatePollFDstruct(std::vector<pollfd> &vPipesCGI, int* pipeFdIn, int* pipeFdOut){ //socket pick
+void	initPipesCreatePollFDstruct(std::vector<struct pollfd> &vPipesCGI, int* pipeFdIn, int* pipeFdOut){ //socket pick
 
 	//set pipes to -1 by default at the start of the function
 	pipeFdIn[0] = -1;
@@ -167,13 +167,13 @@ void	initPipesCreatePollFDstruct(std::vector<pollfd> &vPipesCGI, int* pipeFdIn, 
 	}
 	//put pipes in vector for vCGI in Socket
 	//write into pipe child
-	pollfd pollWrite;
+	struct pollfd pollWrite;
 	pollWrite.fd = pipeFdIn[1];
 	pollWrite.events = POLLOUT | POLLHUP;
 	pollWrite.revents = 0;
 	vPipesCGI.push_back(pollWrite);
 	//read from pipe clild
-	pollfd pollRead; 
+	struct pollfd pollRead; 
 	pollRead.fd = pipeFdOut[0];
 	pollRead.events = POLLIN | POLLHUP;
 	pollRead.revents = 0;

@@ -27,20 +27,20 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 			std::cerr << e.what() << std::endl;
 		}
 	}
-	std::vector<pollfd> socketsAll;
+	std::vector<struct pollfd> socketsAll;
 	
 	while (true) {
 		socketsAll.clear();
 		for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
 			
-			std::vector<pollfd> vFds = it->getPollFdVector();
+			std::vector<struct pollfd> vFds = it->getPollFdVector();
 			it->setPollFdVectorSize(vFds.size());
 			for (size_t i = 0; i < (int)vFds.size(); i++) {
 			//	std::cout << "vFds[i] put into SocketAll: " << vFds[i].fd << std::endl;
 				socketsAll.push_back(vFds[i]);
 				if (it->getCGIbool(i) == true){
 					//std::cout << "CGI put into ALL" << std::endl;
-					std::vector<pollfd> vCGI = it->getCGIVector(i);
+					std::vector<struct pollfd> vCGI = it->getCGIVector(i);
 					for (size_t j = 0; j < (int)vCGI.size(); j++) {
 						//std::cout << "vCGI[0].fd == " << vCGI[0].fd << std::endl;
 						//std::cout << "vCGI[1].fd == " << vCGI[1].fd << std::endl;
