@@ -35,7 +35,7 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 			
 			std::vector<struct pollfd> vFds = it->getPollFdVector();
 			it->setPollFdVectorSize(vFds.size());
-			for (size_t i = 0; i < (int)vFds.size(); i++) {
+			for (size_t i = 0; i < vFds.size(); i++) {
 			//	std::cout << "vFds[i] put into SocketAll: " << vFds[i].fd << std::endl;
 				socketsAll.push_back(vFds[i]);
 				if (it->getCGIbool(i) == true){
@@ -60,13 +60,13 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 			
 			for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
 				size_t nConnections = it->numberOfConnections();
+				//std::cout << "nConnections = " << nConnections << std::endl;
 				for (size_t n = 0; n < nConnections; n++) {
 					it->unpackVectorintoSocket(iAll, n, socketsAll);
 				}
 				it->checkEvents();
 			}
 		}
-
 	}
 
 }
@@ -87,7 +87,7 @@ int	main(int argc, char **argv) {
 		config_file = argv[1];
 
 	//ignore SIGPIPE which sometimes happens when client closes connection
-	std::signal(SIGPIPE, SIG_IGN);
+	//std::signal(SIGPIPE, SIG_IGN);
 
 	//test yuliia // comment if not needed :
 	//config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
@@ -100,6 +100,7 @@ int	main(int argc, char **argv) {
 		std::map<std::string, std::vector<Server> >::iterator it;
 		for (it = servers.begin(); it != servers.end(); it++) {
 			vectSockets.push_back(Socket((char*)it->second[0].getHost().c_str(), (char*)it->second[0].getPort().c_str()));
+			vectSockets.back().createAddrinfo();
 		}
 		pollLoop(vectSockets, servers);
 	} catch(const std::exception& e) {

@@ -279,23 +279,24 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 
 	info.childPid = fork();
 	if (info.childPid < 0){ //fork failed
+		std::cerr << "spawnProcess : fork" << std::endl;
+		std::cout << "fork failed" << std::endl;
 		closePipes(info.pipeFdIn, info.pipeFdOut);
 		//freeEnvp(info.envp);
-		std::cerr << "spawnProcess : fork" << std::endl;
 		throw std::runtime_error("spawnProcess : fork");
 	}
 	if (info.childPid == 0){		//in child process
 			std::cout << "--- in child ---- " << std::endl;
 		if (dup2(info.pipeFdIn[0], STDIN_FILENO) < 0){
-			//freeEnvp(info.envp);
-			closePipes(info.pipeFdIn, info.pipeFdOut);
 			std::cerr << "child dup2 1" << std::endl;
+			freeEnvp(info.envp);
+			closePipes(info.pipeFdIn, info.pipeFdOut);
 			exit(1);
 		}
 		if (dup2(info.pipeFdOut[1], STDOUT_FILENO) < 0){
-			//freeEnvp(info.envp);
-			closePipes(info.pipeFdIn, info.pipeFdOut);
 			std::cerr << "child dup2 2" << std::endl;
+			freeEnvp(info.envp);
+			closePipes(info.pipeFdIn, info.pipeFdOut);
 			exit(1);
 		}
 
@@ -316,8 +317,8 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		//std::cerr << "child execve now :" << std::endl;
 		//std::cout << "before execve: path : " << request.physicalPathCgi << std::endl;
 		execve((char *)request.physicalPathCgi.c_str(), NULL, info.envp);
-		//freeEnvp(info.envp);
 		std::cerr << "child execve failed" << std::endl;
+		freeEnvp(info.envp);
 		exit(1);
 	} else {
 		//std::cout << "--- in parent from launchChild---- " << std::endl;

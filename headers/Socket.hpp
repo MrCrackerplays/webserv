@@ -65,10 +65,12 @@ protected:
 public:
 	
 	void	printClientFds();
-	
+	void	createAddrinfo(); //NEW
 	
 	Socket(char * hostName, char * portNumber);
+	//Socket(Socket const &src);
 	~Socket();
+	//Socket &operator=(Socket const &src);
 	
 	//EVENTS_METHODS_________________________________________________
 	void	checkEvents();
@@ -114,9 +116,7 @@ public:
     // }
 
 	void setPollFdVectorSize(size_t size);
-	void setPollFdVector1(int clientInd, const std::vector<struct pollfd>& pollFdVec);
-	void setCGIVector(int clientInd, const std::vector<struct pollfd>& cgiFdVec);
-	void unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::vector<struct pollfd> socketsAll);
+	void unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::vector<struct pollfd> &socketsAll);
 
 };
 

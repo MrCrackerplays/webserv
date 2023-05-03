@@ -33,12 +33,13 @@ void	initiateVectPoll(int listenFd, std::vector<struct pollfd> &vFds){
 void	setToNonBlocking(int listenFd){
 
 /* Make socket non-blockable  */
+
 	int flagsForFd = fcntl(listenFd, F_GETFL, 0);
 	if (flagsForFd < 0){
-		throw std::runtime_error("Socket : fcntl");
+		throw std::runtime_error("Socket : fcntl1");
 	}
 	if (fcntl(listenFd, F_SETFL, flagsForFd | O_NONBLOCK) < 0){
-		throw std::runtime_error("Socket : fcntl");
+		throw std::runtime_error("Socket : fcntl2");
 	}
 
 /* Allow socket descriptor to be reuseable  */
