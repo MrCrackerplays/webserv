@@ -404,29 +404,15 @@ void	Socket::startChild(int i){
 void Socket::pickCGIState(int i){
 
 	CGIInfo &cgiInf = _clients[i].cgiInfo;
-	if (cgiInf.vCGI.size() == 2){
-		struct pollfd &writeFd = cgiInf.vCGI[0]; //expect POLLOUT
-		struct pollfd &readFd = cgiInf.vCGI[1]; //expect POLLIN
-	} else {
-		struct pollfd &readFd = cgiInf.vCGI[0]; //expect POLLIN
-	}
-	
-
 	if (cgiInf.state == NO_PIPES){
 		std::cout << "no pipes yet" << std::endl;
-	}
-	else if (cgiInf.state == PIPES_INIT && (writeFd.revents & POLLOUT) == POLLOUT){
-		cgiInf.state = WRITE_READY;
-		std::cout << "write ready, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
-	}
-	if (cgiInf.state == WRITE_DONE){
+		return ;
+	} else if (cgiInf.state == WRITE_DONE){
 		try {
 			int stChild;
 			waitChild(stChild, cgiInf.childPid, cgiInf.childExited);
-			//std::cout << stChild << " | " << cgiInf.childExited << " | " << cgiInf.childPid<< std::endl;
 			if (cgiInf.childExited == true){ // && stChild > 0
 				cgiInf.state = READ_READY;
-				//readFd = cgiInf.vCGI[0];
 				std::cout << "read ready, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
 			}
 		} catch (std::exception &e) {
@@ -435,17 +421,30 @@ void Socket::pickCGIState(int i){
 			CGIerrorReply(i);
 			return ;
 		}
+	} else {
+		
+		if (cgiInf.vCGI.size() == 2){
+			struct pollfd &writeFd = cgiInf.vCGI[0]; //expect POLLOUT
+			if (cgiInf.state == PIPES_INIT && (writeFd.revents & POLLOUT) == POLLOUT){
+				cgiInf.state = WRITE_READY;
+				std::cout << "write ready, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
+			}
+		} else if (cgiInf.vCGI.size() == 1) {
+			struct pollfd &readFd = cgiInf.vCGI[0]; //expect POLLIN
+			if (cgiInf.state == WRITE_DONE && (readFd.revents & POLLIN)== POLLIN){ // && (readFd.revents & POLLIN)== POLLIN)
+				cgiInf.state = READ_READY;
+				std::cout << "READ_READY, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
+			} else if (cgiInf.state == READ_READY && (readFd.revents & POLLHUP)== POLLHUP){
+				cgiInf.state = READ_DONE;
+				cgiInf.vCGI.erase(cgiInf.vCGI.begin()); //read in vCGI[1] but write should be erased already NOT SURE
+				cgiInf.vCGIsize = 0;
+				std::cout << "READ_DONE, vCGi size is expected 0 and is: " << cgiInf.vCGI.size() <<  std::endl;
+			}
+		}
+
+
 	}
-	if (cgiInf.state == WRITE_DONE && (readFd.revents & POLLIN)== POLLIN){ // && (readFd.revents & POLLIN)== POLLIN)
-		cgiInf.state = READ_READY;
-		std::cout << "READ_READY, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
-	}
-	else if (cgiInf.state == READ_READY && (readFd.revents & POLLHUP)== POLLHUP){
-		cgiInf.state = READ_DONE;
-		cgiInf.vCGI.erase(cgiInf.vCGI.begin()); //read in vCGI[1] but write should be erased already NOT SURE
-		cgiInf.vCGIsize = 0;
-		std::cout << "READ_DONE, vCGi size is expected 0 and is: " << cgiInf.vCGI.size() <<  std::endl;
-	}
+
 }
 
 void	Socket::checkCGIevens(int i){ 
