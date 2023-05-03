@@ -16,16 +16,16 @@ void	Socket::setServers(std::map<std::string, std::vector<Server> > &servers){ _
 	
 std::vector<struct pollfd> &Socket::getCGIVector(int i){
 	//std::cout << "getCGIVector for i= "<< i << std::endl;
+	// if (_clients.size() < i)
+	// 	return _clients[0].cgiInfo.vCGI;
 	return _clients[i].cgiInfo.vCGI;
 };
 
 size_t	Socket::getCGIVectorSize(int i){
-	//std::cout << "getCGIVectorSize for i= "<< i << " : " << _clients[i].cgiInfo.vCGI.size() << std::endl;
 	return _clients[i].cgiInfo.vCGI.size();
 };
 
 bool	Socket::getCGIbool(int i){
-	//std::cout << "getCGIbool for i= "<< i << std::endl;
 	if (_vFdsSize < i){
 		return false;
 	}
@@ -34,19 +34,6 @@ bool	Socket::getCGIbool(int i){
 	}
 	return _clients[i].isCGI;
 };
-// void Socket::setPollFdVector(std::vector<struct pollfd> &vFds) {
-//     // _vFds = std::move(vFds);
-// 	_vFds.clear();
-// 	size_t i=0;
-// 	for (std::vector<struct pollfd>::iterator it = vFds.begin(); it != vFds.end(); it++){
-// 		_vFds[i].fd = it->fd;
-// 		_vFds[i].events = it->events;
-// 		_vFds[i].revents = it->revents;
-// 		i++;
-// 	}
-// 	_vFdsSize = i;
-// 	std::cout << "setPollFdVector size: " << _vFds.size() << std::endl;
-// }
 
 void Socket::setPollFdVectorSize(size_t size) { _vFdsSize = size; }
 
@@ -72,60 +59,55 @@ size_t Socket::numberOfConnections(){
 void Socket::unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::vector<struct pollfd> &socketsAll) {
 	
 	// std::cout << "=====unpackVectorintoSocket======" << std::endl;
-
-
 	// std::cout << "allCounter = " << allCounter << std::endl;
 	// std::cout << "fdCounter = " << fdCounter << std::endl;
 	// std::cout << "socketsAll.size() = " << socketsAll.size() << std::endl;
 	// std::cout << "_vFds.size() = " << _vFds.size() << std::endl;
-	// std::cout << "_clients.size() = " << _clients.size() << std::endl;
-	// std::cout << "_clients[0].cgiInfo.vCGI.size() = " << _clients[0].cgiInfo.vCGI.size() << std::endl;
-	// std::cout << "_clients[1].cgiInfo.vCGI.size() = " << _clients[1].cgiInfo.vCGI.size() << std::endl;	
+	
 
 	if (_vFds.size() < fdCounter){
 		std::cout << "_vFds.size() < fdCounter but this should not happen" << std::endl;
 		return;
 	}
-
 	_vFds[fdCounter].fd = socketsAll[allCounter].fd;
 	_vFds[fdCounter].events = socketsAll[allCounter].events;
 	_vFds[fdCounter].revents = socketsAll[allCounter].revents;
 	allCounter++;
 
-	if (_clients.size() < fdCounter){
-		std::cout << "_clients.size() < fdCounter" << std::endl;
-		return;
-	}
-	CGIInfo &CGIinfo = _clients[fdCounter].cgiInfo;
-	bool isCGI = _clients[fdCounter].isCGI;
-	if(isCGI){
-		//std::cout << "isCGI" << std::endl;
-		//std::cout << "FD is = "<< socketsAll[allCounter].fd << std::endl;
-		if (CGIinfo.vCGI.size() == 1) {
-			if (socketsAll.size() < allCounter + 1){
-				std::cout << "socketsAll.size() < allCounter" << std::endl;
+	if (_clients.size() > fdCounter && _clients[fdCounter].isCGI){
+		CGIInfo &CGIinfo = _clients[fdCounter].cgiInfo;
+			//std::cout << "_clients[fdConter].cgiInfo.vCGISize = " << _clients[fdCounter].cgiInfo.vCGIsize<< std::endl;	
+			//std::cout << "FD is = "<< socketsAll[allCounter].fd << std::endl;
+			if (CGIinfo.vCGI.size() == 1) {
+				if (socketsAll.size() < allCounter + 1){
+					std::cout << "socketsAll.size() < allCounter" << std::endl;
+					return;
+				}
+			//	std::cout << "CGIinfo.vCGI.size() == 1 ONE" << std::endl;
+				CGIinfo.vCGI[0].fd = socketsAll[allCounter].fd;
+				CGIinfo.vCGI[0].events = socketsAll[allCounter].events;
+				CGIinfo.vCGI[0].revents = socketsAll[allCounter].revents;
+				allCounter++;
+			//	std::cout << "CGIinfo.vCGI[0].fd = " << CGIinfo.vCGI[0].fd << std::endl;
+			} else if (CGIinfo.vCGI.size() == 2) {
+				if (socketsAll.size() < allCounter + 2){
+			//		std::cout << "socketsAll.size() < allCounter" << std::endl;
+					return;
+				}
+			//	std::cout << "CGIinfo.vCGI.size() == 2 TWO" << std::endl;
+				CGIinfo.vCGI[0].fd = socketsAll[allCounter].fd;
+				CGIinfo.vCGI[0].events = socketsAll[allCounter].events;
+				CGIinfo.vCGI[0].revents = socketsAll[allCounter].revents;
+				allCounter++;
+				CGIinfo.vCGI[1].fd = socketsAll[allCounter].fd;
+				CGIinfo.vCGI[1].events = socketsAll[allCounter].events;
+				CGIinfo.vCGI[1].revents = socketsAll[allCounter].revents;
+				allCounter++;
+			//	std::cout << "CGIinfo.vCGI[1].fd = " << CGIinfo.vCGI[1].fd << std::endl;
 			}
-			CGIinfo.vCGI[0].fd = socketsAll[allCounter].fd;
-			CGIinfo.vCGI[0].events = socketsAll[allCounter].events;
-			CGIinfo.vCGI[0].revents = socketsAll[allCounter].revents;
-			allCounter++;
-		} else if (CGIinfo.vCGI.size() == 2) {
-			if (socketsAll.size() < allCounter + 2){
-				std::cout << "socketsAll.size() < allCounter" << std::endl;
-			}
-			CGIinfo.vCGI[0].fd = socketsAll[allCounter].fd;
-			CGIinfo.vCGI[0].events = socketsAll[allCounter].events;
-			CGIinfo.vCGI[0].revents = socketsAll[allCounter].revents;
-			allCounter++;
-			CGIinfo.vCGI[1].fd = socketsAll[allCounter].fd;
-			CGIinfo.vCGI[1].events = socketsAll[allCounter].events;
-			CGIinfo.vCGI[1].revents = socketsAll[allCounter].revents;
-			allCounter++;
-			
-			
-		}
+				
 	}
-	//std::cout << "=================================" << std::endl;
+	
 };
 
 void	printVectPollFd(std::vector<struct pollfd> vect){
@@ -409,7 +391,10 @@ void	Socket::startChild(int i){
 		cgiInf.state = PIPES_INIT;
 		cgiInf.vCGIsize = 2;
 		cgiInf.childExited = false;
-	} catch (std::exception &e) { 
+		// std::cout << "vCGI size: " << cgiInf.vCGI.size() << std::endl;
+		// std::cout << "vCGI[0].fd: " << cgiInf.vCGI[0].fd << std::endl;
+		// std::cout << "vCGI[1].fd: " << cgiInf.vCGI[1].fd << std::endl;
+	} catch (std::exception &e) {
 		std::cerr << "Failed to init pipes: " << e.what() << std::endl;
 		cgiInf.state = ERROR;
 		CGIerrorReply(i);
@@ -419,8 +404,13 @@ void	Socket::startChild(int i){
 void Socket::pickCGIState(int i){
 
 	CGIInfo &cgiInf = _clients[i].cgiInfo;
-	struct pollfd &writeFd = cgiInf.vCGI[0]; //expect POLLOUT
-	struct pollfd &readFd = cgiInf.vCGI[1]; //expect POLLIN
+	if (cgiInf.vCGI.size() == 2){
+		struct pollfd &writeFd = cgiInf.vCGI[0]; //expect POLLOUT
+		struct pollfd &readFd = cgiInf.vCGI[1]; //expect POLLIN
+	} else {
+		struct pollfd &readFd = cgiInf.vCGI[0]; //expect POLLIN
+	}
+	
 
 	if (cgiInf.state == NO_PIPES){
 		std::cout << "no pipes yet" << std::endl;
@@ -435,9 +425,9 @@ void Socket::pickCGIState(int i){
 			waitChild(stChild, cgiInf.childPid, cgiInf.childExited);
 			//std::cout << stChild << " | " << cgiInf.childExited << " | " << cgiInf.childPid<< std::endl;
 			if (cgiInf.childExited == true){ // && stChild > 0
-				//cgiInf.state = READ_READY;
-				readFd = cgiInf.vCGI[0];
-				//std::cout << "read ready, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
+				cgiInf.state = READ_READY;
+				//readFd = cgiInf.vCGI[0];
+				std::cout << "read ready, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
 			}
 		} catch (std::exception &e) {
 			std::cerr << "Failed to wait for child: " << e.what() << std::endl;

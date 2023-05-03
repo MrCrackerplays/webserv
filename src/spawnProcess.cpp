@@ -286,7 +286,7 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		throw std::runtime_error("spawnProcess : fork");
 	}
 	if (info.childPid == 0){		//in child process
-			std::cout << "--- in child ---- " << std::endl;
+			//std::cout << "--- in child ---- " << std::endl;
 		if (dup2(info.pipeFdIn[0], STDIN_FILENO) < 0){
 			std::cerr << "child dup2 1" << std::endl;
 			freeEnvp(info.envp);

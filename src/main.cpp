@@ -35,20 +35,21 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 		//std::cout << "socketsAll.size()BEFORE = " << socketsAll.size() << std::endl;
 		for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
 			
-			std::vector<struct pollfd> vFds = it->getPollFdVector();
+			std::vector<struct pollfd> &vFds = it->getPollFdVector();
 			it->setPollFdVectorSize(vFds.size());
 			for (size_t i = 0; i < vFds.size(); i++) {
 			//	std::cout << "vFds[i] put into SocketAll: " << vFds[i].fd << std::endl;
 				socketsAll.push_back(vFds[i]);
 				if (it->getCGIbool(i) == true){
 					//std::cout << "CGI put into ALL" << std::endl;
-					std::vector<struct pollfd> vCGI = it->getCGIVector(i);
-					for (size_t j = 0; j < (int)vCGI.size(); j++) {
-						//std::cout << "vCGI[0].fd == " << vCGI[0].fd << std::endl;
-						//std::cout << "vCGI[1].fd == " << vCGI[1].fd << std::endl;
-						//std::cout << "j = " << j << " | vCGI[j] put into SocketAll: " << vCGI[j].fd << std::endl;
+					std::vector<struct pollfd> &vCGI = it->getCGIVector(i);
+					for (size_t j = 0; j < vCGI.size(); j++) {
+						// std::cout << "vCGI[0].fd == " << vCGI[0].fd << std::endl;
+						// std::cout << "vCGI[1].fd == " << vCGI[1].fd << std::endl;
+						// std::cout << "j = " << j << " | vCGI[j] put into SocketAll: " << vCGI[j].fd << std::endl;
 						// std::cout << "vCGI[j].events = " << vCGI[j].events << std::endl;
 						// std::cout << "vCGI[j].revents = " << vCGI[j].revents << std::endl;
+						
 						socketsAll.push_back(vCGI[j]);
 					}
 				}
@@ -63,9 +64,10 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 			size_t iAll = 0;
 			
 			for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
-				size_t nConnections = it->numberOfConnections();
-				//std::cout << "nConnections = " << nConnections << std::endl;
-				for (size_t n = 0; n < nConnections; n++) {
+				// size_t nClients = it->numberOfConnections();
+				size_t nClients = it->getPollFdVectorSize();
+				for (size_t n = 0; n < nClients; n++) {
+					//std::cout <<  nClients = " << nClients << " and n = " << n << std::endl;
 					it->unpackVectorintoSocket(iAll, n, socketsAll);
 				}
 				it->checkEvents();
