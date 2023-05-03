@@ -272,10 +272,7 @@ void	Socket::recvConnection(int i){
 			//parsing part
 			try {
 				_clients[i].ClientRequest.parsBuff = _clients[i].receivedContent;
-				// std::cout << "before methods" << std::endl;
 				_clients[i].reply = methods(_clients[i].ClientRequest, *_servers, _portNumber, _hostName, _clients[i].isCGI);
-				// std::cout << "after methods" << std::endl;
-				// std::cout << "reply: " << _clients[i].reply << std::endl;
 				if (_clients[i].isCGI == false){
 					_vFds[i].events |= POLLOUT;
 					_clients[i].biteToSend = _clients[i].reply.size();
@@ -307,8 +304,19 @@ void	Socket::closeClientConnection(int i){
 
 void	Socket::sendData(int i){
 
+	// if (i > 0 && _clients.size() > i && _clients[i].isCGI == true){	
+	// 	std::cout << "biteToSend: " << _clients[i].biteToSend << std::endl;
+	// 	std::cout << "reply: " << _clients[i].reply << std::endl;
+	// }
+
 	ssize_t biteSent = send(_vFds[i].fd, _clients[i].reply.c_str(), _clients[i].reply.length(), 0);
+	if (i > 0 && _clients.size() > i && _clients[i].isCGI == true){
+		std::cout << "biteSent for cgi reply: " << biteSent << std::endl;
+		std::cout << "reply: " << _clients[i].reply << std::endl;
+		std::cout << "send to fd =" << _vFds[i].fd << std::endl; // ->> check if I do not close it somewhere previously
+	}
 	if (biteSent == -1){
+		std::cerr << "biteSent == -1" << std::endl;
 		throw std::runtime_error("Socket : send");
 	} else if (biteSent < _clients[i].biteToSend){
 		std::string rest = _clients[i].reply.substr(biteSent, _clients[i].reply.length());
@@ -344,6 +352,7 @@ void	Socket::readFromChild(int i){
 	try{
 		readChild(_clients[i].cgiInfo.pipeFdOut, _clients[i].reply);
 		//std::cout << "reply from child: " << _clients[i].reply << std::endl;
+		//std::cout << "---- read from child end----" << std::endl;
 	}
 	catch (std::exception &e) {
 		std::cerr << "Failed to read from child: " << e.what() << std::endl;
@@ -422,7 +431,6 @@ void Socket::pickCGIState(int i){
 			return ;
 		}
 	} else {
-		
 		if (cgiInf.vCGI.size() == 2){
 			struct pollfd &writeFd = cgiInf.vCGI[0]; //expect POLLOUT
 			if (cgiInf.state == PIPES_INIT && (writeFd.revents & POLLOUT) == POLLOUT){
@@ -441,7 +449,6 @@ void Socket::pickCGIState(int i){
 				std::cout << "READ_DONE, vCGi size is expected 0 and is: " << cgiInf.vCGI.size() <<  std::endl;
 			}
 		}
-
 
 	}
 
@@ -469,6 +476,13 @@ void	Socket::checkCGIevens(int i){
 		//freeEnvp(_clients[i].cgiInfo.envp);
 		//closePipes(_clients[i].cgiInfo.pipeFdIn, _clients[i].cgiInfo.pipeFdOut);
 		_vFds[i].events |= POLLOUT; // &= ~POLLOUT;
+		_clients[i].biteToSend = _clients[i].reply.length();
+		std::cout << "***************************************************************" << std::endl;
+		std::cout << "***************************************************************" << std::endl;
+		std::cout << "***************************************************************" << std::endl;
+		std::cout << "!!! after cgi POLLOUT added to fd " << _vFds[i].fd << " and i = " << i << std::endl;
+		std::cout << "vFds size = " << _vFds.size() << std::endl;
+		std::cout << _clients[i].reply << std::endl;
 	}
 }
 
@@ -484,6 +498,7 @@ void	Socket::checkEvents(){
 	// }
 	// std::cout << "==================" << std::endl;
 	for (int i = 0; i < (int)_vFds.size(); i++){
+		
 		if ((_vFds[i].revents & POLLIN) == POLLIN){
 			if (_vFds[i].fd == _listenFd){
 				try {
@@ -499,6 +514,7 @@ void	Socket::checkEvents(){
 				}
 			}
 		} else if ((_vFds[i].revents & POLLOUT) == POLLOUT){
+			//std::cout << "after cgi POLLOUT added to fd " << _vFds[i].fd << " and i = " << i << std::endl;
 			try {
 				sendData(i);
 			} catch (std::exception &e) {
@@ -509,6 +525,7 @@ void	Socket::checkEvents(){
 				closeClientConnection(i);
 		}
 		if (i > 0 && _clients.size() > i && _clients[i].isCGI == true){
+			
 			checkCGIevens(i);
 		}
 	}

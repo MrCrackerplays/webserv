@@ -205,12 +205,13 @@ size_t	writeChild(const char* data, size_t dataLen, int* pipeFdIn){ //have to do
 
 size_t	readChild(int* pipeFdOut, std::string &reply){ //have to do it in multiple calls
 
-	size_t res = 1;
+//std::cout << "---- read from child ----" << std::endl;
+	ssize_t res = 1;
 	char buff[1024];
 	memset(buff, 0, 1024);
 
 	res = read(pipeFdOut[0], buff, 1023);
-	if (res < 0){
+	if (res == -1){
 		//handle error
 		throw std::runtime_error("SpawnProcess: readFromChild : read");
 	}
