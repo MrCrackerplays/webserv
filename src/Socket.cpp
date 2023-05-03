@@ -70,62 +70,62 @@ size_t Socket::numberOfConnections(){
 
 
 void Socket::unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::vector<struct pollfd> &socketsAll) {
+	
+	// std::cout << "=====unpackVectorintoSocket======" << std::endl;
 
-// The error occurs in the Socket::unpackVectorintoSocket function, where it is trying to read a single byte at the address 0x61e000000ae8. 
-// You should check the code that accesses this address and make sure that it does not exceed the bounds of the array or container.
 
-// One way to prevent container-overflow errors is to use bounds-checking tools or libraries, such as the AddressSanitizer that you seem to be using. 
-// This tool can help you identify the location and cause of container-overflow errors by detecting out-of-bounds memory access at runtime.
+	// std::cout << "allCounter = " << allCounter << std::endl;
+	// std::cout << "fdCounter = " << fdCounter << std::endl;
+	// std::cout << "socketsAll.size() = " << socketsAll.size() << std::endl;
+	// std::cout << "_vFds.size() = " << _vFds.size() << std::endl;
+	// std::cout << "_clients.size() = " << _clients.size() << std::endl;
+	// std::cout << "_clients[0].cgiInfo.vCGI.size() = " << _clients[0].cgiInfo.vCGI.size() << std::endl;
+	// std::cout << "_clients[1].cgiInfo.vCGI.size() = " << _clients[1].cgiInfo.vCGI.size() << std::endl;	
 
-// In this particular case, you may want to check if the pollfd vector that is being passed to the unpackVectorintoSocket function is the correct size. 
-// You should also make sure that the vector is not being accessed beyond its bounds inside the function.
+	if (_vFds.size() < fdCounter){
+		std::cout << "_vFds.size() < fdCounter but this should not happen" << std::endl;
+		return;
+	}
 
-// In the unpackVectorintoSocket function, there is no bounds checking on CGIinfo.vCGI. 
-// If _clients[fdCounter].isCGI is true but CGIinfo.vCGI is empty, or has fewer than two elements, it can result in out-of-bounds access. 
-// To avoid this, you should check the size of CGIinfo.vCGI before accessing its elements.
-	CGIInfo &CGIinfo = _clients[fdCounter].cgiInfo;
-	bool isCGI = _clients[fdCounter].isCGI;
-
-	std::cout << "unpackVectorintoSocket for fdCounter= "<< fdCounter << std::endl;
-	std::cout << _vFds.size() << std::endl;
-	//_vFds[fdCounter] = std::move(socketsAll[allCounter]); //change for a deep copy
 	_vFds[fdCounter].fd = socketsAll[allCounter].fd;
 	_vFds[fdCounter].events = socketsAll[allCounter].events;
 	_vFds[fdCounter].revents = socketsAll[allCounter].revents;
 	allCounter++;
-	//std::cout << "now cgi" << std::endl;
-	if(isCGI){
-		std::cout << "isCGI" << std::endl;
-		std::cout << "FD is = "<< socketsAll[allCounter].fd << std::endl;
-		if (CGIinfo.vCGI.size() == 1) {
 
+	if (_clients.size() < fdCounter){
+		std::cout << "_clients.size() < fdCounter" << std::endl;
+		return;
+	}
+	CGIInfo &CGIinfo = _clients[fdCounter].cgiInfo;
+	bool isCGI = _clients[fdCounter].isCGI;
+	if(isCGI){
+		//std::cout << "isCGI" << std::endl;
+		//std::cout << "FD is = "<< socketsAll[allCounter].fd << std::endl;
+		if (CGIinfo.vCGI.size() == 1) {
+			if (socketsAll.size() < allCounter + 1){
+				std::cout << "socketsAll.size() < allCounter" << std::endl;
+			}
 			CGIinfo.vCGI[0].fd = socketsAll[allCounter].fd;
 			CGIinfo.vCGI[0].events = socketsAll[allCounter].events;
 			CGIinfo.vCGI[0].revents = socketsAll[allCounter].revents;
-
-			//CGIinfo.vCGI[0] = std::move(socketsAll[allCounter]);
 			allCounter++;
 		} else if (CGIinfo.vCGI.size() == 2) {
-			//std::cout << "CGIinfo.vCGI.size() == 2" << std::endl;
+			if (socketsAll.size() < allCounter + 2){
+				std::cout << "socketsAll.size() < allCounter" << std::endl;
+			}
 			CGIinfo.vCGI[0].fd = socketsAll[allCounter].fd;
 			CGIinfo.vCGI[0].events = socketsAll[allCounter].events;
 			CGIinfo.vCGI[0].revents = socketsAll[allCounter].revents;
-			//CGIinfo.vCGI[0] = std::move(socketsAll[allCounter]);
 			allCounter++;
 			CGIinfo.vCGI[1].fd = socketsAll[allCounter].fd;
 			CGIinfo.vCGI[1].events = socketsAll[allCounter].events;
 			CGIinfo.vCGI[1].revents = socketsAll[allCounter].revents;
-			//CGIinfo.vCGI[1] = std::move(socketsAll[allCounter]);
 			allCounter++;
 			
 			
 		}
-		//std::cout << "CGIinfo.vCGI[0].fd =" << CGIinfo.vCGI[0].fd << std::endl;
-		//std::cout << "CGIinfo.vCGI[1].fd =" << CGIinfo.vCGI[1].fd << std::endl;
-		
 	}
-	// std::cout << "all counter = " << allCounter << std::endl;
-	// std::cout << "socketAll size = "<< socketsAll.size() << std::endl;
+	//std::cout << "=================================" << std::endl;
 };
 
 void	printVectPollFd(std::vector<struct pollfd> vect){
@@ -166,27 +166,12 @@ void	Socket::createAddrinfo(){
 }
 
 Socket::Socket(char * hostName, char * portNumber){
+	
 	_addrinfo = NULL;
-	// int status;
-	// struct addrinfo hints;
-	
-	// std::memset(&hints, 0, sizeof(hints));
-	// hints.ai_family = AF_INET;
-	// hints.ai_socktype = SOCK_STREAM;
-	// hints.ai_flags = AI_PASSIVE;
-	
-	// // _addrinfo = new struct addrinfo;
-	// _addrinfo = new struct addrinfo;
-	// status = getaddrinfo(hostName, portNumber, &hints, &_addrinfo);
-	// if (status < 0){
-	// 	throw std::runtime_error("Port : getaddrinfo");
-	// }
+
 	_portNumber = portNumber;
 	_hostName = hostName;
-	// _listenFd = socket(PF_INET, SOCK_STREAM, 0);
-	// if (_listenFd < 0){
-	// 	throw std::runtime_error("Socket : socket");
-	// }
+	_listenFd = 0;
 
 	ClientInfo clientStruct;
 	_clients.push_back(clientStruct);
@@ -199,12 +184,6 @@ Socket::Socket(char * hostName, char * portNumber){
 	_clients[0].cgiInfo.vCGI.clear();
 }
 
-// Socket::Socket(Socket const &src) {
-// 	*this = src;
-// 	std::cout << "Socket copy constructor" << std::endl;
-// 	std::cout << _listenFd << std::endl;
-// }
-
 Socket::~Socket(){
 	//UNFINISHED
 	//std::cout << "Socket destructor DESTRUCTIONNNNN" << std::endl;
@@ -213,31 +192,6 @@ Socket::~Socket(){
 		delete _addrinfo;
 	}
 }
-
-// Socket &Socket::operator=(Socket const &src) {
-// 	if (this == &src)
-// 		return *this;
-// 	_addrinfo = new struct addrinfo;
-// 	_addrinfo->ai_flags = src._addrinfo->ai_flags;
-// 	_addrinfo->ai_family = src._addrinfo->ai_family;
-// 	_addrinfo->ai_socktype = src._addrinfo->ai_socktype;
-// 	_addrinfo->ai_protocol = src._addrinfo->ai_protocol;
-// 	_addrinfo->ai_addrlen = src._addrinfo->ai_addrlen;
-// 	_addrinfo->ai_addr = src._addrinfo->ai_addr;
-// 	_addrinfo->ai_canonname = src._addrinfo->ai_canonname;
-// 	_addrinfo->ai_next = src._addrinfo->ai_next;
-
-// 	_listenFd = src._listenFd;
-// 	_portNumber = src._portNumber;
-// 	_hostName = src._hostName;
-// 	_clients = src._clients;
-// 	_servers = src._servers;
-// 	_vFds = src._vFds;
-// 	_vFdsSize = src._vFdsSize;
-
-
-// 	return *this;
-// }
 
 size_t	findContentLenght(std::string buffer){
 	
@@ -292,10 +246,12 @@ void	Socket::acceptNewConnect(int i){
 		newPollfd.events = POLLIN | POLLHUP; //added POLLHUP though it may be not proper place to add both
 		_vFds.push_back(newPollfd);
 		_vFdsSize = _vFds.size();
+		std::cout << "new connection accepted, _vFds.size = " << _vFdsSize << std::endl;
 		
 		//initiate client.struct
 		ClientInfo clientStruct;
 		clientStruct.biteToSend = 0;
+		clientStruct.biteSentInt = 0;
 		clientStruct.recvBytes = 0;
 		clientStruct.receivedContent.clear();
 		clientStruct.reply.clear();
@@ -306,29 +262,27 @@ void	Socket::acceptNewConnect(int i){
 
 void	Socket::recvConnection(int i){
 	
-	int res = 0;
+	ssize_t res = 0;
 	char buff[MAX_REQUEST_SIZE];
 	std::string buffer;
-	//std::cout << _vFds[i].fd << std::endl;
 	
-	res = (int)recv(_vFds[i].fd, buff, MAX_REQUEST_SIZE - 1, 0);
+	res = recv(_vFds[i].fd, buff, MAX_REQUEST_SIZE - 1, 0);
+	if (res == -1){
+		std::cout << "res == -1 we go on" << std::endl;
+		return;
+	}
 	// std::cout << "================================" << std::endl;
 	// std::cout << "bites read : " << res << std::endl;
 	// buff[res] = '\0';
 	// std::cout << buff << std::endl;
 	// std::cout << "================================" << std::endl;
-	if (res == -1){
-		std::cout << "res == -1 we go on" << std::endl;
-		return;
-	} else if (res < 0){
-		std::cout << "recv failed on i = " << i << "FD: " << _vFds[i].fd << strerror(errno) << std::endl;
+	else if (res < 0){
 		closeClientConnection(i);
-		std::cerr << "recv failed on i = " << i << "FD: " << _vFds[i].fd << strerror(errno) << std::endl;
-		// std::cout << "1fd I have after close connection: " << _vFds[0].fd << " , " << _vFds[1].fd << " , " << _vFds[2].fd << std::endl;
+		//std::cerr << "recv failed on i = " << i << "FD: " << _vFds[i].fd << std::endl;
 		throw std::runtime_error("SockedLoop : recv");
 	} else if (res > 0) {
 		//add on to buffer
-		std::cout << "res > 0" << std::endl;
+		//std::cout << "res > 0" << std::endl;
 		buff[res] = '\0';
 		_clients[i].recvBytes += res;
 		_clients[i].receivedContent.append(buff, res);
@@ -336,14 +290,13 @@ void	Socket::recvConnection(int i){
 			//parsing part
 			try {
 				_clients[i].ClientRequest.parsBuff = _clients[i].receivedContent;
-				std::cout << "before methods" << std::endl;
+				// std::cout << "before methods" << std::endl;
 				_clients[i].reply = methods(_clients[i].ClientRequest, *_servers, _portNumber, _hostName, _clients[i].isCGI);
-				std::cout << "after methods" << std::endl;
-				std::cout << "reply: " << _clients[i].reply << std::endl;
+				// std::cout << "after methods" << std::endl;
+				// std::cout << "reply: " << _clients[i].reply << std::endl;
 				if (_clients[i].isCGI == false){
-
 					_vFds[i].events |= POLLOUT;
-					//std::cout << "no CGI" << std::endl;
+					_clients[i].biteToSend = _clients[i].reply.size();
 				}
 				else {
 					_clients[i].cgiInfo.state = NO_PIPES;
@@ -360,46 +313,27 @@ void	Socket::recvConnection(int i){
 				std::cerr << "Caught exception: " << e.what() << std::endl;
 			}
 		}
-	}// else if (res == 0){ //was else if (res == 0) before
-	// 	// std::cerr << "connection was closed by client   " << "for fd " << _vFds[i].fd << std::endl; //unfinished, check for POLLHUP
-	// 	std::cout << "res == 0" << std::endl;
-	// 	closeClientConnection(i);
-	// 	std::cout << "connection was closed by client for fd = " << _vFds[i].fd << std::endl;
-	// 	//std::cout << "res == 0, fd == " << _vFds[i].fd << std::endl << " | events: " << _vFds[i].events << " | revents: " << _vFds[i].revents << std::endl;
-	// 	//_vFds[i].revents = POLLHUP;
-	// }
+	}
 }
 
 void	Socket::closeClientConnection(int i){
-
 	close(_vFds[i].fd);
 	_vFds.erase(_vFds.begin() + i, _vFds.begin() + i + 1);
 	_vFdsSize--;
-	_clients.erase(_clients.begin() + i);
+	_clients.erase(_clients.begin() + i, _clients.begin() + i + 1);
 }
 
 void	Socket::sendData(int i){
-	// std::cout << "------sendData starts------" << std::endl;
-	// std::cout << "fd I have: " << _vFds[0].fd << " , " << _vFds[1].fd << " , " << _vFds[2].fd << std::endl;
-	// std::cout << "fd I want to send: " << _vFds[i].fd << std::endl;
-	// std::cout << _clients[i].reply << std::endl;
-	// std::cout << "---------------------------" << std::endl;
 
-	size_t bitesend = send(_vFds[i].fd, _clients[i].reply.c_str(), _clients[i].reply.length(), 0);
-	if (bitesend < 0){
+	ssize_t biteSent = send(_vFds[i].fd, _clients[i].reply.c_str(), _clients[i].reply.length(), 0);
+	if (biteSent == -1){
 		throw std::runtime_error("Socket : send");
-	} else if (bitesend < _clients[i].biteToSend){
-		std::string rest = _clients[i].reply.substr(bitesend, _clients[i].reply.length());
+	} else if (biteSent < _clients[i].biteToSend){
+		std::string rest = _clients[i].reply.substr(biteSent, _clients[i].reply.length());
 		_clients[i].reply = rest;
-		_clients[i].biteToSend -= bitesend;
-		std::cout << "bites to send left: " << _clients[i].biteToSend << std::endl;
-	} else if (_clients[i].biteToSend == bitesend){
-		std::cout << "sendData ends" << std::endl;
-		if (_clients[i].isCGI == true && _clients[i].CgiDone == true) {
-			std::cout << "_clients[i].isCGI == true && _clients[i].CgiDone == true | all sent" << std::endl;
-			_clients[i].isCGI = false;
-			_clients[i].CgiDone = false;
-		}
+		_clients[i].biteToSend -= biteSent;
+	} else if (_clients[i].biteToSend == biteSent){
+		closeClientConnection(i);
 	}
 }
 
@@ -550,7 +484,16 @@ void	Socket::checkCGIevens(int i){
 }
 
 void	Socket::checkEvents(){
+	// std::cout << "====checkEvents===" << std::endl;
 	
+	// std::cout << "vFds size = " << _vFds.size() << std::endl;
+	// std::cout << "_listenFd = " << _listenFd << std::endl;
+	// int i = 0;
+	// for (std::vector<struct pollfd>::iterator it = _vFds.begin(); it != _vFds.end(); it++){
+	// 	std::cout << "fd[" << i << "] = " << it->fd << std::endl;
+	// 	i++;
+	// }
+	// std::cout << "==================" << std::endl;
 	for (int i = 0; i < (int)_vFds.size(); i++){
 		if ((_vFds[i].revents & POLLIN) == POLLIN){
 			if (_vFds[i].fd == _listenFd){
@@ -567,18 +510,16 @@ void	Socket::checkEvents(){
 				}
 			}
 		} else if ((_vFds[i].revents & POLLOUT) == POLLOUT){
-			sendData(i);
-			
-		} else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
 			try {
-				std::cerr << "close connection" << std::endl;
-				closeClientConnection(i);
+				sendData(i);
 			} catch (std::exception &e) {
-				std::cerr << "failed to close client with FD: " << _vFds[i].fd << " err message: " << e.what() << std::endl;
+				std::cerr << "failed to send data with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
 			}
+		} else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
+				std::cout << "lost connection POLLHUP for fd = " << _vFds[i].fd << std::endl;
+				closeClientConnection(i);
 		}
-
-		if (i > 0 && _clients[i].isCGI == true){
+		if (i > 0 && _clients.size() > i && _clients[i].isCGI == true){
 			checkCGIevens(i);
 		}
 	}

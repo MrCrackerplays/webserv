@@ -31,6 +31,8 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 	
 	while (true) {
 		socketsAll.clear();
+		//std::cout << "------make socketAll------" << std::endl;
+		//std::cout << "socketsAll.size()BEFORE = " << socketsAll.size() << std::endl;
 		for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
 			
 			std::vector<struct pollfd> vFds = it->getPollFdVector();
@@ -52,6 +54,8 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 				}
 			}
 		}
+		//std::cout << "socketsAll.size() AFTER = " << socketsAll.size() << std::endl;
+		//std::cout << "--------------------------" << std::endl;
 		if (poll(&socketsAll[0], (unsigned int)socketsAll.size(), 0) < 0){
 			throw std::runtime_error("Socket : poll");
 		

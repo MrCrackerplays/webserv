@@ -35,9 +35,10 @@
 typedef struct {
 
 	std::string receivedContent;
-	size_t recvBytes;
+	ssize_t recvBytes;
 	std::string reply;
-	size_t biteToSend;
+	ssize_t biteToSend;
+	long int biteSentInt;
 
 	parsRequest ClientRequest;
 	response ClientResponse;
