@@ -375,13 +375,21 @@ void	Socket::writeInChild(int i){
 		// std::cout << "body end " << std::endl;
 
 		ssize_t wrote = writeChild(client.ClientRequest.requestBody.c_str(), client.ClientRequest.requestBody.length(), cgiInf.pipeFdIn);
+		if (wrote == -1){
+			//std::cout << "wrote == -1" << std::endl;
+			return ;
+		}
+			
+		// } else if (wrote < client.ClientRequest.requestBody.length()){
+		// 	std::cout << "wrote < body length" << std::endl;
+		
 		client.ClientRequest.requestBody.erase(0, wrote);
-		//std::cout << "wrote: " << wrote << std::endl;
+
 		if (client.ClientRequest.requestBody.empty() || wrote == 0){
+			std::cout << "write done" << std::endl;
 			cgiInf.state = WRITE_DONE;
 			cgiInf.vCGI.erase(cgiInf.vCGI.begin()); //write is in vCGI[0]
 			cgiInf.vCGIsize = 1;
-			//std::cout << "write done, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
 		}
 	}
 	catch (std::exception &e) {
@@ -469,25 +477,13 @@ void	Socket::checkCGIevens(int i){
 	} else if (_clients[i].cgiInfo.state == READ_READY){ //read from child
 		readFromChild(i);
 
-	} else if (_clients[i].cgiInfo.state == READ_DONE){ //read done, close pipes, wait for child
-		//std::cout << "------- //read done, close pipes, wait for child -------" << std::endl;
+	} else if (_clients[i].cgiInfo.state == READ_DONE){ 
 
-
-		// reply and response are misgiven to function
 		parseCorrectResponseCGI(_clients[i].cgiReply, _clients[i].ClientResponse);
 		_clients[i].CgiDone = true;
-		//freeEnvp(_clients[i].cgiInfo.envp);
-		//closePipes(_clients[i].cgiInfo.pipeFdIn, _clients[i].cgiInfo.pipeFdOut);
 		_vFds[i].events |= POLLOUT; // &= ~POLLOUT;
-		
 		_clients[i].reply = _clients[i].ClientResponse.header + _clients[i].ClientResponse.body;
 		_clients[i].biteToSend = _clients[i].reply.length();
-		// std::cout << "***************************************************************" << std::endl;
-		// std::cout << "***************************************************************" << std::endl;
-		// std::cout << "***************************************************************" << std::endl;
-		// std::cout << "!!! after cgi POLLOUT added to fd " << _vFds[i].fd << " and i = " << i << std::endl;
-		// std::cout << "vFds size = " << _vFds.size() << std::endl;
-		// std::cout << _clients[i].reply << std::endl;
 	}
 }
 

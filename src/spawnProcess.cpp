@@ -220,11 +220,12 @@ ssize_t	writeChild(const char* data, size_t dataLen, int* pipeFdIn){ //have to d
 		} else {
 			n = write(pipeFdIn[1], data, dataLen);
 		}
-		if (n < 0) {
+		if (n < 0 && n != -1) {
 			throw std::runtime_error("SpawnProcess: writeInChild : write");
 		}
 	}
-	if (dataLen == 0){
+	if (dataLen - n == 0){
+		std::cout << "dataLen == 0, closing pipe" << std::endl;
 		close(pipeFdIn[1]);
 		return 0;
 	}

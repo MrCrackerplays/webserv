@@ -60,7 +60,7 @@ void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 	//body
 	response.body = CGIbuff.substr(pos+4, CGIbuff.length());
 	response.contentLenght = response.body.length();
-	std::cout << response.body << std::endl;
+	//std::cout << response.body << std::endl;
 	codes(200, response.codeMessage);
 	constructResponseHeader(response);
 
