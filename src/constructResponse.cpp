@@ -19,6 +19,18 @@ void	redirectionResponse(int code, std::string newlocation, response &response){
 	response.body = "";
 }
 
+void constructResponseHeader(response& response) {
+
+	//with redirect no cont len or type, but another parts
+	response.header = "HTTP/1.1 " + response.codeMessage + "\r\n";
+	response.header  += "Content-Type: " + response.contentType + "\r\n";
+	response.header += "Content-Length: " + std::to_string(response.contentLenght) + "\r\n";
+	if (response.setCookie != "")
+		response.header += "Set-Cookie: " + response.setCookie + "\r\n";
+	response.header  += "\r\n";
+	//std::cout << "constructResponseHeader end" << std::endl;
+}
+
 void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 	std::cout << "parseCorrectResponseCGI**************" << std::endl;
 	//std::cout << CGIbuff << std::endl;
@@ -38,7 +50,7 @@ void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 	//header
 	std::string headerAfterCgi = CGIbuff.substr(0, pos);
 	size_t start = headerAfterCgi.find(contentHeader);
-	size_t end = headerAfterCgi.find("\r\n");
+	size_t end = headerAfterCgi.find("\r\n\r\n");
 	if (start != end){
 		response.contentType = headerAfterCgi.substr(start + contentHeader.length(), end);
 	} else {
@@ -47,21 +59,16 @@ void	parseCorrectResponseCGI(std::string& CGIbuff, response& response){
 	//body
 	response.body = CGIbuff.substr(pos+4, CGIbuff.length());
 	response.contentLenght = response.body.length();
+	std::cout << response.body << std::endl;
 	codes(200, response.codeMessage);
+
+	constructResponseHeader(response);
+	response.body = response.header + response.body;
+
 	std::cout << "parseCorrectResponseCGI - end *****************" << std::endl;
 }
 
-void constructResponseHeader(response& response) {
 
-	//with redirect no cont len or type, but another parts
-	response.header = "HTTP/1.1 " + response.codeMessage + "\r\n";
-	response.header  += "Content-Type: " + response.contentType + "\r\n";
-	response.header += "Content-Length: " + std::to_string(response.contentLenght) + "\r\n";
-	if (response.setCookie != "")
-		response.header += "Set-Cookie: " + response.setCookie + "\r\n";
-	response.header  += "\r\n";
-	//std::cout << "constructResponseHeader end" << std::endl;
-}
 
 std::string	formResponseString(response response){
 	
