@@ -38,7 +38,6 @@ typedef enum {
 typedef struct {
 
 	int code;
-	char **envp;
 	pid_t childPid;
 	int statusChild;
 	bool childExited;
@@ -53,9 +52,7 @@ typedef struct {
 } CGIInfo;
 
 
-//void	freeEnvp(char **envp);
 void	closePipes(int* pipeFdIn, int* pipeFdOut);
-char	**envpGenerate(parsRequest request, std::string portNumberSocket, std::string hostNameSocket);
 bool	makeNonBlocking(int fd);
 void	initPipesCreatePollFDstruct(std::vector<struct pollfd> &vPipesCGI, int* pipeFdIn, int* pipeFdOut);
 
