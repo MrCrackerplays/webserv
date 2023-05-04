@@ -15,16 +15,22 @@ static void generate_table(std::ostringstream & index, std::string & path, std::
 	struct dirent *	ent = readdir(dir);
 	while (ent != NULL) {
 		if (std::string(ent->d_name) != "." && (display_path != "/" || std::string(ent->d_name) != "..")) {
-		index << "<tr>";
-		index << "<td>";
-		index << "<a href=\"" << display_path;
-		if (display_path[display_path.size() - 1] != '/')
-			index << "/";
-		index << ent->d_name << "\">" << ent->d_name << "</a>";
-		{
 			struct stat	attributes;
 			if (stat((path + "/" + ent->d_name).c_str(), &attributes) != 0)
 				throw AutoindexGenerationException();
+			bool	is_dir = attributes.st_mode & S_IFDIR;
+			index << "<tr>";
+			index << "<td>";
+			index << "<a href=\"" << display_path;
+			if (display_path[display_path.size() - 1] != '/')
+				index << "/";
+			index << ent->d_name;
+			if (is_dir)
+				index << "/";
+			index << "\">" << ent->d_name;
+			if (is_dir)
+				index << "/";
+			index << "</a>";
 			//file last modified
 			char	date[20];
 			tm *	time = localtime(&attributes.st_ctime);
@@ -35,9 +41,8 @@ static void generate_table(std::ostringstream & index, std::string & path, std::
 			index << "<td>" << date << "</td>";
 			//file size
 			index << "<td>" << attributes.st_size << "</td>";
-		}
-		index << "</td>";
-		index << "</tr>";
+			index << "</td>";
+			index << "</tr>";
 		}
 		ent = readdir(dir);
 	}
