@@ -92,16 +92,16 @@ method	getMethodFromRequest(std::string& method){
 	return NOTSUPPORTED;
 }
 
-void	physicalPathMagic(std::string& physicalPathCgi, bool& autoindex, std::string& path, const Location& closestLocation) {
+void	physicalPathMagic(std::string& physicalPathCgi, bool& autoindex, std::string& display_path, const Location& closestLocation, method method) {
 	if (physicalPathCgi[physicalPathCgi.length() - 1] == '/') {
 		if (closestLocation.getDirectoryListing()) {
 			autoindex = true;
 			try {
-				physicalPathCgi = generate_autoindex(physicalPathCgi, path);
+				physicalPathCgi = generate_autoindex(physicalPathCgi, display_path);
 			} catch(const std::exception& e) {
 				physicalPathCgi = "";
 			}
-		} else {
+		} else if (method == GET) {
 			physicalPathCgi += closestLocation.getDefaultFile();
 		}
 	}
@@ -123,14 +123,14 @@ static Server& getCorrectServer(std::string& hostNameHeader, std::vector<Server>
 	return (serversVect.at(0));
 }
 
-std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& servers, std::string& hostPort, std::string& hostNameHeader, std::string& url, bool &autoindex) {
+std::string getFileFromAnyServer(std::map<std::string, std::vector<Server> >& servers, std::string& hostPort, std::string& hostNameHeader, std::string& url, bool &autoindex, method method) {
 	std::vector<Server> serversVect = servers[hostPort];
 	Server & correctServer = getCorrectServer(hostNameHeader, serversVect);
 	const Location & closestLocation = correctServer.getClosestLocation(url);
 	std::string root = closestLocation.getRoot();
 	std::string path = closestLocation.getPath();
 	std::string physicalPathCgi = root + url.substr(path.length());
-	physicalPathMagic(physicalPathCgi, autoindex, path, closestLocation);
+	physicalPathMagic(physicalPathCgi, autoindex, url, closestLocation, method);
 	return physicalPathCgi;
 }
 
@@ -309,7 +309,7 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 			return request;
 		}
 		
-		request.physicalPathCgi = getFileFromAnyServer(servers, hostPort, request.hostNameHeader, request.urlPath, request.autoindex);
+		request.physicalPathCgi = getFileFromAnyServer(servers, hostPort, request.hostNameHeader, request.urlPath, request.autoindex, request.method);
 		if (request.autoindex == true) {
 			request.requestBody = request.physicalPathCgi;
 			if (request.requestBody == "") {
