@@ -181,7 +181,36 @@ void	initPipesCreatePollFDstruct(std::vector<struct pollfd> &vPipesCGI, int* pip
 }
 
 
-size_t	writeChild(const char* data, size_t dataLen, int* pipeFdIn){ //have to do it in multiple calls
+ssize_t	writeChild(const char* data, size_t dataLen, int* pipeFdIn){ //have to do it in multiple calls
+
+	// const char* data;
+	// ssize_t maxWrite = 8200;
+	// std::string	part;
+	// size_t dataLen = toWriteStr.length();
+
+	// if (toWriteStr.length() <= maxWrite){
+	// 	std::cout << "toWriteStr.length() < maxWrite" << std::endl;
+	// 	data = toWriteStr.c_str();
+	// 	maxWrite = dataLen;
+	// 	toWriteStr.clear();
+	// } else {
+	// 	part = toWriteStr.substr(0, maxWrite);
+	// 	data = part.c_str();
+	// 	toWriteStr.erase(0, maxWrite);
+	// }
+
+
+	// ssize_t n = 0;
+	// n = write(pipeFdIn[1], data, maxWrite);
+	// if (n < 0 && n != -1) 
+	// 	throw std::runtime_error("SpawnProcess: writeInChild : write");
+
+	// if (dataLen == 0){
+	// 	//std::cout << "dataLen == 0" << std::endl;
+	// 	close(pipeFdIn[1]);
+	// 	return 0;
+	// }
+
 
 	ssize_t n = 0;
 
@@ -203,7 +232,7 @@ size_t	writeChild(const char* data, size_t dataLen, int* pipeFdIn){ //have to do
 }
 
 
-size_t	readChild(int* pipeFdOut, std::string &reply){ //have to do it in multiple calls
+ssize_t	readChild(int* pipeFdOut, std::string &reply){ //have to do it in multiple calls
 
 //std::cout << "---- read from child ----" << std::endl;
 	ssize_t res = 1;

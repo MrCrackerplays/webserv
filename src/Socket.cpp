@@ -350,7 +350,7 @@ void	Socket::readFromChild(int i){
 
 	//std::cout << "========read from child========" << std::endl;
 	try{
-		readChild(_clients[i].cgiInfo.pipeFdOut, _clients[i].reply);
+		readChild(_clients[i].cgiInfo.pipeFdOut, _clients[i].cgiReply);
 		//std::cout << "reply from child: " << _clients[i].reply << std::endl;
 		//std::cout << "---- read from child end----" << std::endl;
 	}
@@ -374,7 +374,7 @@ void	Socket::writeInChild(int i){
 		// std::cout << _clients[i].ClientRequest.requestBody << std::endl;
 		// std::cout << "body end " << std::endl;
 
-		size_t wrote = writeChild(client.ClientRequest.requestBody.c_str(), client.ClientRequest.requestBody.length(), cgiInf.pipeFdIn);
+		ssize_t wrote = writeChild(client.ClientRequest.requestBody.c_str(), client.ClientRequest.requestBody.length(), cgiInf.pipeFdIn);
 		client.ClientRequest.requestBody.erase(0, wrote);
 		//std::cout << "wrote: " << wrote << std::endl;
 		if (client.ClientRequest.requestBody.empty() || wrote == 0){
@@ -474,11 +474,13 @@ void	Socket::checkCGIevens(int i){
 
 
 		// reply and response are misgiven to function
-		parseCorrectResponseCGI(_clients[i].reply, _clients[i].ClientResponse);
+		parseCorrectResponseCGI(_clients[i].cgiReply, _clients[i].ClientResponse);
 		_clients[i].CgiDone = true;
 		//freeEnvp(_clients[i].cgiInfo.envp);
 		//closePipes(_clients[i].cgiInfo.pipeFdIn, _clients[i].cgiInfo.pipeFdOut);
 		_vFds[i].events |= POLLOUT; // &= ~POLLOUT;
+		
+		_clients[i].reply = _clients[i].ClientResponse.header + _clients[i].ClientResponse.body;
 		_clients[i].biteToSend = _clients[i].reply.length();
 		// std::cout << "***************************************************************" << std::endl;
 		// std::cout << "***************************************************************" << std::endl;

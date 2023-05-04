@@ -45,6 +45,7 @@ typedef struct {
 
 	bool isCGI;
 	bool CgiDone;
+	std::string cgiReply;
 	CGIInfo cgiInfo;
 } ClientInfo;
 
