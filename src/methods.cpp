@@ -97,6 +97,11 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 	return response;
 }
 
+void	prepRequestForCgi(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string body, parsRequest& request){
+
+
+}
+
 std::string	methods(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string &port, std::string &host, bool &CGI){
 	
 	response response;
@@ -122,8 +127,12 @@ std::string	methods(parsRequest &request, std::map<std::string, std::vector<Serv
 	} else {
 		
 		if (request.callCGI == true){
-			std::cout << "CGI is not in method.cpp, in case of issue stand by until it work from Socket.cpp" << std::endl;
+			// std::cout << "CGI is not in method.cpp, in case of issue stand by until it work from Socket.cpp" << std::endl;
+			// std::cout << request.physicalPathCgi << std::endl;
+			// std::cout << "request.body: " << request.requestBody << std::endl;
+			// std::cout << "request.buff: " << request.parsBuff << std::endl;
 			CGI = true;
+			request.callCGI = true;
 			return "";
 		} else if (request.method == GET){
 			try {

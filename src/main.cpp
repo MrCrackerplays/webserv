@@ -13,14 +13,13 @@ void	setupSocket(std::map<std::string, std::vector<Server> > &servers, Socket &s
 	setToListen(socket.getSocketFd());
 	initiateVectPoll(socket.getSocketFd(), socket.getPollFdVector());
 	socket.setServers(servers);
-	//socket.setCGIbool(false); need to be done in client struct
-	socket.setCGIVectorSize(0);
 	socket.setPollFdVectorSize(0);
 }
 
 void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vector<Server> > &servers){
-	
+
 	std::vector<Socket>::iterator it;
+
 	for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
 		try {
 			setupSocket(servers, *it);
@@ -28,51 +27,54 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 			std::cerr << e.what() << std::endl;
 		}
 	}
-
+	std::vector<struct pollfd> socketsAll;
+	
 	while (true) {
-		std::vector<pollfd> socketsAll;
+		socketsAll.clear();
+		//std::cout << "------make socketAll------" << std::endl;
+		//std::cout << "socketsAll.size()BEFORE = " << socketsAll.size() << std::endl;
 		for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
-			//collect all FD and SD in one vector, save the size of each vector
-			std::vector<pollfd> vFds = it->getPollFdVector();
+			
+			std::vector<struct pollfd> &vFds = it->getPollFdVector();
 			it->setPollFdVectorSize(vFds.size());
-			for (int i = 0; i < (int)vFds.size(); i++) {
+			for (size_t i = 0; i < vFds.size(); i++) {
+			//	std::cout << "vFds[i] put into SocketAll: " << vFds[i].fd << std::endl;
 				socketsAll.push_back(vFds[i]);
-			}
-			std::vector<pollfd> vCGI = it->getCGIVector();
-			it->setCGIVectorSize(vCGI.size());
-			for (int i = 0; i < (int)vCGI.size(); i++) {
-				socketsAll.push_back(vCGI[i]);
+				if (it->getCGIbool(i) == true){
+					//std::cout << "CGI put into ALL" << std::endl;
+					std::vector<struct pollfd> &vCGI = it->getCGIVector(i);
+					for (size_t j = 0; j < vCGI.size(); j++) {
+						// std::cout << "vCGI[0].fd == " << vCGI[0].fd << std::endl;
+						// std::cout << "vCGI[1].fd == " << vCGI[1].fd << std::endl;
+						// std::cout << "j = " << j << " | vCGI[j] put into SocketAll: " << vCGI[j].fd << std::endl;
+						// std::cout << "vCGI[j].events = " << vCGI[j].events << std::endl;
+						// std::cout << "vCGI[j].revents = " << vCGI[j].revents << std::endl;
+						
+						socketsAll.push_back(vCGI[j]);
+					}
+				}
 			}
 		}
-
-
+		//std::cout << "socketsAll.size() AFTER = " << socketsAll.size() << std::endl;
+		//std::cout << "--------------------------" << std::endl;
 		if (poll(&socketsAll[0], (unsigned int)socketsAll.size(), 0) < 0){
 			throw std::runtime_error("Socket : poll");
 		
-		
-		} else {
-			//I need to pack FD and SD back in different sockets
-			size_t i = 0;
+		} else { 
+			size_t iAll = 0;
+			
 			for (it = vectSockets.begin(); it != vectSockets.end(); it++) {
-    			//get the size of the original pollfd vectors
-    			size_t pollFdSize = it->getPollFdVectorSize();
-   				size_t cgiSize = it->getCGIVectorSize();
-
-    			//copy the corresponding number of pollfd structures back into their respective vectors
-   				it->setPollFdVector(std::vector<pollfd>(socketsAll.begin() + i, socketsAll.begin() + i + pollFdSize));
-    			it->setCGIVector(std::vector<pollfd>(socketsAll.begin() + i + pollFdSize, socketsAll.begin() + i + pollFdSize + cgiSize));
-
-    			//increment the iterator by the total number of pollfd structures
-    			i += pollFdSize + cgiSize;
-
-				//check events for this socket
-				//test: only one test case to test child:
-				it->setClientCGI(1);
+				// size_t nClients = it->numberOfConnections();
+				size_t nClients = it->getPollFdVectorSize();
+				for (size_t n = 0; n < nClients; n++) {
+					//std::cout <<  nClients = " << nClients << " and n = " << n << std::endl;
+					it->unpackVectorintoSocket(iAll, n, socketsAll);
+				}
 				it->checkEvents();
 			}
 		}
-
 	}
+
 }
 
 
@@ -91,11 +93,11 @@ int	main(int argc, char **argv) {
 		config_file = argv[1];
 
 	//ignore SIGPIPE which sometimes happens when client closes connection
-	std::signal(SIGPIPE, SIG_IGN);
+	//std::signal(SIGPIPE, SIG_IGN);
 
 	//test yuliia // comment if not needed :
-	config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
-	//config_file = "/Users/yuliia/Codam/webserv/configs/iframes.conf";
+	//config_file = "/Users/yuliia/Codam/webserv/configs/postuploadtest.conf";
+	//config_file = "/Users/ydemura/Desktop/webserv_tests/configs/postuploadtest.conf";
 	
 	std::map<std::string, std::vector<Server> > servers;
 	std::vector<Socket> vectSockets;
@@ -104,6 +106,7 @@ int	main(int argc, char **argv) {
 		std::map<std::string, std::vector<Server> >::iterator it;
 		for (it = servers.begin(); it != servers.end(); it++) {
 			vectSockets.push_back(Socket((char*)it->second[0].getHost().c_str(), (char*)it->second[0].getPort().c_str()));
+			vectSockets.back().createAddrinfo();
 		}
 		pollLoop(vectSockets, servers);
 	} catch(const std::exception& e) {

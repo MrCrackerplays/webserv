@@ -1,6 +1,5 @@
-#!/usr/local/bin/python3
+#!/usr/bin/env python3
 import cgi, os
-import sys
 
 
 # <html>
@@ -13,8 +12,10 @@ import sys
 # </body>
 # </html>
 
-env = os.environ
 
+
+env = os.environ
+#  print(env)
 form = cgi.FieldStorage()
 
 # Get filename here.
