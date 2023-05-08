@@ -154,25 +154,31 @@ void	initPipesCreatePollFDstruct(std::vector<struct pollfd> &vPipesCGI, int* pip
 
 ssize_t writeChild(const std::vector<char>& rowData, size_t& offset, int* pipeFdIn) {
     
+	//std::cout << "=======writeInChild======================" << std::endl;
+	//std::cout << "writeChild: offset = " << offset << std::endl;
+
 	ssize_t n = 0;
     size_t remainingDataLen = rowData.size() - offset;
+	//std::cout << "writeChild: remainingDataLen = " << remainingDataLen << std::endl;
     size_t chunkSize = (remainingDataLen > 8192) ? 8192 : remainingDataLen;
-
+	//std::cout << "writeChild: chunkSize = " << chunkSize << std::endl;
     if (chunkSize > 0) {
         n = write(pipeFdIn[1], rowData.data() + offset, chunkSize);
         if (n < 0 && n != -1) {
             throw std::runtime_error("SpawnProcess: writeInChild: write");
         }
-    }
-
-    offset += n;
-
-    if (offset == rowData.size()) {
-        std::cout << "All data written, closing pipe" << std::endl;
-        close(pipeFdIn[1]);
-        return 0;
-    }
-
+	}
+	if (n >= 0){
+		offset += n;
+		//std::cout << "writeChild: offset after += n = " << offset << std::endl;
+   		if (offset == rowData.size()) {
+       		//std::cout << "All data written, closing pipe" << std::endl;
+        	close(pipeFdIn[1]);
+			// std::cout << "========================================" << std::endl;
+        	// return 0;
+    	}
+	}
+   // std::cout << "========================================" << std::endl;
     return n;
 }
 
@@ -269,7 +275,8 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		throw std::runtime_error("spawnProcess : generatePipes");
 	}
 
-
+	char *envp[20];
+	envpGenerate(envp, request, portNumSocket, hostNameSocket);
 	info.childPid = fork();
 	if (info.childPid < 0){ //fork failed
 		std::cerr << "spawnProcess : fork" << std::endl;
@@ -307,8 +314,8 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		//std::cerr << "child execve now :" << std::endl;
 		//std::cout << "before execve: path : " << request.physicalPathCgi << std::endl;
 
-		char *envp[20];
-		envpGenerate(envp, request, portNumSocket, hostNameSocket);
+		// char *envp[20];
+		// envpGenerate(envp, request, portNumSocket, hostNameSocket);
 		execve((char *)request.physicalPathCgi.c_str(), NULL, envp);
 		std::cerr << "child execve failed" << std::endl;
 		exit(1);
