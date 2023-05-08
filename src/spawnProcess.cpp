@@ -7,23 +7,6 @@
 
 #include "spawnProcess.hpp"
 
-void freeEnvp(char **envp) {
-	//std::cout << "=====free envp here====" << std::endl;
-	if (envp == NULL) {
-		return;
-	}
-	for (int i = 0; i < 19; ++i) {
-		//std::cout << i << std::endl;
-		if (envp[i] == NULL)
-			i++;
-		else
-			delete[] envp[i];
-	}
-	//std::cout << "deleted parts" << std::endl;
-	delete[] envp;
-	//std::cout << "deleted envp" << std::endl;
-}
-
 void	closePipes(int* pipeFdIn, int* pipeFdOut){
 	// if (pipeFdIn == nullptr || pipeFdOut == nullptr)
 	// 	return;
@@ -38,11 +21,7 @@ void	closePipes(int* pipeFdIn, int* pipeFdOut){
 }
 
 
-char **envpGenerate(parsRequest request, std::string portNumberSocket, std::string hostNameSocket){
-	char **envp = new char*[20];
-	if (envp == nullptr)
-		return nullptr;
-	
+void	envpGenerate(char** envp, parsRequest request, std::string portNumberSocket, std::string hostNameSocket) {
 	std::string str0 = "SERVER_SOFTWARE=webserv/1.0";
 	envp[0] = new char[str0.length() + 1];
 	strcpy(envp[0], str0.c_str());
@@ -50,11 +29,6 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	std::string str1 = "GATEWAY_INTERFACE=CGI/1.1";
 	envp[1] = new char[str1.length() + 1];
 	strcpy(envp[1], str1.c_str());
-	
-	size_t pos = request.urlPath.find('/');
-	if (pos == std::string::npos){
-		pos = 0;
-	}
 	
 	std::string str2 = "SERVER_NAME=" + hostNameSocket;
 	envp[2] = new char[str2.length() + 1];
@@ -85,8 +59,8 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	envp[8] = new char[str8.length() + 1];
 	strcpy(envp[8], str8.c_str());
 	
-	pos = request.urlPath.find('/');
-	if (pos == std::string::npos){
+	size_t	pos = request.urlPath.find('/');
+	if (pos == std::string::npos) {
 		pos = 0;
 	}
 
@@ -137,8 +111,6 @@ char **envpGenerate(parsRequest request, std::string portNumberSocket, std::stri
 	envp[18] = new char[str18.length() + 1];
 	strcpy(envp[18], str18.c_str());
 	envp[19] = NULL;
-
-	return envp;
 }
 
 bool	makeNonBlocking(int fd){
@@ -271,32 +243,23 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		throw std::runtime_error("spawnProcess : generatePipes");
 	}
 
-	info.envp = envpGenerate(request, portNumSocket, hostNameSocket);
-	if (info.envp == NULL){
-		closePipes(info.pipeFdIn, info.pipeFdOut);
-		std::cerr << "spawnProcess : new" << std::endl;
-		throw std::runtime_error("spawnProcess : new");
-	}
 
 	info.childPid = fork();
 	if (info.childPid < 0){ //fork failed
 		std::cerr << "spawnProcess : fork" << std::endl;
 		std::cout << "fork failed" << std::endl;
 		closePipes(info.pipeFdIn, info.pipeFdOut);
-		//freeEnvp(info.envp);
 		throw std::runtime_error("spawnProcess : fork");
 	}
 	if (info.childPid == 0){		//in child process
 			//std::cout << "--- in child ---- " << std::endl;
 		if (dup2(info.pipeFdIn[0], STDIN_FILENO) < 0){
 			std::cerr << "child dup2 1" << std::endl;
-			freeEnvp(info.envp);
 			closePipes(info.pipeFdIn, info.pipeFdOut);
 			exit(1);
 		}
 		if (dup2(info.pipeFdOut[1], STDOUT_FILENO) < 0){
 			std::cerr << "child dup2 2" << std::endl;
-			freeEnvp(info.envp);
 			closePipes(info.pipeFdIn, info.pipeFdOut);
 			exit(1);
 		}
@@ -317,9 +280,11 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		close(info.pipeFdOut[1]);
 		//std::cerr << "child execve now :" << std::endl;
 		//std::cout << "before execve: path : " << request.physicalPathCgi << std::endl;
-		execve((char *)request.physicalPathCgi.c_str(), NULL, info.envp);
+
+		char *envp[20];
+		envpGenerate(envp, request, portNumSocket, hostNameSocket);
+		execve((char *)request.physicalPathCgi.c_str(), NULL, envp);
 		std::cerr << "child execve failed" << std::endl;
-		freeEnvp(info.envp);
 		exit(1);
 	} else {
 		//std::cout << "--- in parent from launchChild---- " << std::endl;
@@ -355,18 +320,15 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 // void	inChildProcess(int* pipeFdIn, int* pipeFdOut, char **envp, char *path){
 
 // 	if (dup2(pipeFdIn[0], STDIN_FILENO) < 0){
-// 			freeEnvp(envp);
 // 			std::cerr << "child dup2 1" << std::endl;
 // 			exit(1);
 // 		}
 // 		if (dup2(pipeFdOut[1], STDOUT_FILENO) < 0){
-// 			freeEnvp(envp);
 // 			std::cerr << "child dup2 2" << std::endl;
 // 			exit(1);
 // 		}
 // 		closePipes(pipeFdIn, pipeFdOut);
 // 		execve(path, NULL, envp);
-// 		freeEnvp(envp);
 // 		std::cerr << "child execve failed" << std::endl;
 // 		exit(1);
 // }
