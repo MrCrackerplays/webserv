@@ -90,7 +90,7 @@ static std::string	get_server_value(std::istringstream & serv, std::string key) 
 	throw ConfigFormatException();
 }
 
-static void	add_server(std::map<std::string, std::vector<Server> > & servers, std::string & block) {
+static void	add_server(std::map<std::string, std::vector<Server> > & servers, std::string & block, std::map<int, std::string> & ports) {
 	std::istringstream	serv(block);
 	std::string	host = get_server_value(serv, "host");
 	std::string	port_str = get_server_value(serv, "port");
@@ -106,6 +106,12 @@ static void	add_server(std::map<std::string, std::vector<Server> > & servers, st
 	if (port < 1 || port > 65535) {
 		std::cerr << "port out of range " << port << " from '" << port_str << "'" << std::endl;
 		throw ConfigPortFormatException();
+	}
+	if (ports.find(port) != ports.end() && ports[port] != host) {
+		std::cerr << "port " << port << " can't be used for host '" << host << "' as it's already in use by '" << ports[port] << "'" << std::endl;
+		throw ConfigPortFormatException();
+	} else {
+		ports[port] = host;
 	}
 	std::vector<Server> & vec = servers[host + ":" + port_str];
 	vec.push_back(Server(port_str, host));
@@ -141,10 +147,11 @@ void	initialize_servers(std::map<std::string, std::vector<Server> > & servers, s
 	size_t		i = 0;
 	std::string	block;
 
+	std::map<int, std::string> ports;
 	std::string	config = read_file(config_file);
 	while (i < config.size()) {
 		block = extract_server_block(config, i);
-		add_server(servers, block);
+		add_server(servers, block, ports);
 	}
 	if (servers.size() == 0)
 		throw std::exception();
