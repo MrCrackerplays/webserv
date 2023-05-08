@@ -12,6 +12,10 @@
 #include <cstdio>
 #include <fstream>
 
+std::string vectorToString(const std::vector<char>& rowData) {
+   		return std::string(rowData.begin(), rowData.end());
+	}
+
 void	readFileBinary(std::string path, std::string &body){
 	
 	std::ifstream file(path, std::ios::binary);

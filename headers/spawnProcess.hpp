@@ -41,6 +41,7 @@ typedef struct {
 	pid_t childPid;
 	int statusChild;
 	bool childExited;
+	size_t offset;
 
 	std::vector<struct pollfd> vCGI; 
 	// vCGI[0] - pipeFdIn[1] 	POLLOUT - write-into-child end
@@ -60,12 +61,13 @@ void	initPipesCreatePollFDstruct(std::vector<struct pollfd> &vPipesCGI, int* pip
 
 pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket);
 
-size_t	writeChild(const char* data, size_t dataLen, int* pipeFdIn);
-
+// ssize_t	writeChild(const char* data, size_t dataLen, int* pipeFdIn);
+// ssize_t writeChild(const std::vector<char>& rowData, size_t &offset, int* pipeFdIn);
+ssize_t writeChild(const std::vector<char>& rowData, size_t& offset, int* pipeFdIn);
 
 void	waitChild(int &statusChild, pid_t childPid, bool &childExited);
 
 
-size_t	readChild(int* pipeFdOut, std::string &reply);
+ssize_t	readChild(int* pipeFdOut, std::string &reply);
 
 #endif /* spawnProcess_hpp */

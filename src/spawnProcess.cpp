@@ -152,30 +152,56 @@ void	initPipesCreatePollFDstruct(std::vector<struct pollfd> &vPipesCGI, int* pip
 	vPipesCGI.push_back(pollRead);
 }
 
-
-size_t	writeChild(const char* data, size_t dataLen, int* pipeFdIn){ //have to do it in multiple calls
-
+ssize_t writeChild(const std::vector<char>& rowData, size_t& offset, int* pipeFdIn) {
+    
 	ssize_t n = 0;
+    size_t remainingDataLen = rowData.size() - offset;
+    size_t chunkSize = (remainingDataLen > 8192) ? 8192 : remainingDataLen;
 
-	if (dataLen > 0) {
-		if (dataLen > 8192){
-			n = write(pipeFdIn[1], data, 8192);
-		} else {
-			n = write(pipeFdIn[1], data, dataLen);
-		}
-		if (n < 0) {
-			throw std::runtime_error("SpawnProcess: writeInChild : write");
-		}
-	}
-	if (dataLen == 0){
-		close(pipeFdIn[1]);
-		return 0;
-	}
-	return n;
+    if (chunkSize > 0) {
+        n = write(pipeFdIn[1], rowData.data() + offset, chunkSize);
+        if (n < 0 && n != -1) {
+            throw std::runtime_error("SpawnProcess: writeInChild: write");
+        }
+    }
+
+    offset += n;
+
+    if (offset == rowData.size()) {
+        std::cout << "All data written, closing pipe" << std::endl;
+        close(pipeFdIn[1]);
+        return 0;
+    }
+
+    return n;
 }
 
 
-size_t	readChild(int* pipeFdOut, std::string &reply){ //have to do it in multiple calls
+
+// ssize_t	writeChild(const char* data, size_t dataLen, int* pipeFdIn){ //have to do it in multiple calls
+
+// 	ssize_t n = 0;
+
+// 	if (dataLen > 0) {
+// 		if (dataLen > 8192){
+// 			n = write(pipeFdIn[1], data, 8192);
+// 		} else {
+// 			n = write(pipeFdIn[1], data, dataLen);
+// 		}
+// 		if (n < 0 && n != -1) {
+// 			throw std::runtime_error("SpawnProcess: writeInChild : write");
+// 		}
+// 	}
+// 	if (dataLen - n == 0){
+// 		std::cout << "dataLen == 0, closing pipe" << std::endl;
+// 		close(pipeFdIn[1]);
+// 		return 0;
+// 	}
+// 	return n;
+// }
+
+
+ssize_t	readChild(int* pipeFdOut, std::string &reply){ //have to do it in multiple calls
 
 //std::cout << "---- read from child ----" << std::endl;
 	ssize_t res = 1;
@@ -332,3 +358,31 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 // 		std::cerr << "child execve failed" << std::endl;
 // 		exit(1);
 // }
+
+	// const char* data;
+	// ssize_t maxWrite = 8200;
+	// std::string	part;
+	// size_t dataLen = toWriteStr.length();
+
+	// if (toWriteStr.length() <= maxWrite){
+	// 	std::cout << "toWriteStr.length() < maxWrite" << std::endl;
+	// 	data = toWriteStr.c_str();
+	// 	maxWrite = dataLen;
+	// 	toWriteStr.clear();
+	// } else {
+	// 	part = toWriteStr.substr(0, maxWrite);
+	// 	data = part.c_str();
+	// 	toWriteStr.erase(0, maxWrite);
+	// }
+
+
+	// ssize_t n = 0;
+	// n = write(pipeFdIn[1], data, maxWrite);
+	// if (n < 0 && n != -1) 
+	// 	throw std::runtime_error("SpawnProcess: writeInChild : write");
+
+	// if (dataLen == 0){
+	// 	//std::cout << "dataLen == 0" << std::endl;
+	// 	close(pipeFdIn[1]);
+	// 	return 0;
+	// }
