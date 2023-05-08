@@ -35,6 +35,7 @@
 typedef struct {
 
 	std::string receivedContent;
+	std::vector<char> receivedContentVector;
 	ssize_t recvBytes;
 	std::string reply;
 	ssize_t biteToSend;
@@ -110,8 +111,7 @@ public:
 
 	
 //old parts
-	void setPollFdVector(std::vector<struct pollfd> &vFds);
-
+	//void setPollFdVector(std::vector<struct pollfd> &vFds);
 
     // void setCGIVector(std::vector<pollfd> cgiFds) {
     //     _vCGITemp = std::move(cgiFds);
@@ -119,6 +119,7 @@ public:
 
 	void setPollFdVectorSize(size_t size);
 	void unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::vector<struct pollfd> &socketsAll);
+
 
 };
 

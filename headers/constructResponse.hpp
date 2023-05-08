@@ -15,6 +15,7 @@
 #include <sys/socket.h>
 
 typedef struct {
+	std::vector<char> receivedContentVector;
 	method method;
 	size_t contentLenght;
 	std::string contentType;

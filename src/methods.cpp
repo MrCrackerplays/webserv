@@ -97,11 +97,6 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 	return response;
 }
 
-void	prepRequestForCgi(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string body, parsRequest& request){
-
-
-}
-
 std::string	methods(parsRequest &request, std::map<std::string, std::vector<Server> > &servers, std::string &port, std::string &host, bool &CGI){
 	
 	response response;
