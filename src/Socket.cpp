@@ -195,6 +195,7 @@ bool	fullRequestReceived(std::string buffer, size_t recvBites, size_t res){
 	if (headrSize != std::string::npos){
 		headrSize += 4;
 		contentLen = findContentLenght(buffer);
+		std::cout << "contentLen = " << contentLen << std::endl;
 		if (contentLen != 0) {
 			if (contentLen + headrSize > recvBites){
 				return false;
@@ -256,21 +257,8 @@ void removeHeaderFromRowData(std::vector<char>& rowData) {
     size_t headerEndPos = rowDataStr.find(doubleCRLF);
 
     if (headerEndPos != std::string::npos) {
-		//std::cout << "headerEnd != rowData.end()***************************************************" << std::endl;
         size_t headerLength = headerEndPos + doubleCRLF.length();
-
-		//std::cout << "-------------header------------" << std::endl;
-		// for(auto it = rowData.begin(); it != rowData.begin() + headerLength; ++it){
-		// 	std::cout << *it;
-		// }
-		//std::cout << std::endl;
         rowData.erase(rowData.begin(), rowData.begin() + headerLength);
-		//std::cout << "-------------body------------" << std::endl;
-		// for(auto it = rowData.begin(); it != rowData.end(); ++it){
-		// 	std::cout << *it;
-		// }
-		// std::cout << std::endl;
-		// std::cout << "-----------------------------" << std::endl;
     }
 }
 
@@ -282,10 +270,9 @@ void	Socket::recvConnection(int i){
 	
 	res = recv(_vFds[i].fd, buff, MAX_REQUEST_SIZE - 1, 0);
 	if (res == -1){
-		std::cout << "res == -1 we go on" << std::endl;
+		//std::cout << "res == -1 we go on" << std::endl;
 		return;
-	}
-	else if (res < 0){
+	} else if (res < 0){
 		closeClientConnection(i);
 		throw std::runtime_error("SockedLoop : recv");
 	} else if (res > 0) {
