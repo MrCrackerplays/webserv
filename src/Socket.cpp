@@ -195,6 +195,7 @@ bool	fullRequestReceived(std::string buffer, size_t recvBites, size_t res){
 	if (headrSize != std::string::npos){
 		headrSize += 4;
 		contentLen = findContentLenght(buffer);
+		//std::cout << "contentLen = " << contentLen << std::endl;
 		if (contentLen != 0) {
 			if (contentLen + headrSize > recvBites){
 				return false;
@@ -244,21 +245,28 @@ void	Socket::acceptNewConnect(int i){
 }
 
 void transferBufferToVector(const char* buff, ssize_t buffSize, std::vector<char>& rowData) {
-    rowData.insert(rowData.end(), buff, buff + buffSize);
+
+	// for (ssize_t i = 0; i < buffSize; i++) {
+	// 	rowData.push_back(buff[i]);
+	// }
+	//std::cout << "res = " << buffSize << std::endl;
+	//std::cout << "vector size after receive = " << rowData.size() << std::endl;
+   	rowData.insert(rowData.end(), buff, buff + buffSize);
 }
 
 void removeHeaderFromRowData(std::vector<char>& rowData) {
-	std::cout << "removeHeaderFromRowData" << std::endl;
-	std::cout << "receivedContentVector.size() = " << rowData.size() << std::endl;
+	//std::cout << "removeHeaderFromRowData" << std::endl;
+	//std::cout << "receivedContentVector.size() = " << rowData.size() << std::endl;
     const std::string doubleCRLF = "\r\n\r\n";
 
     std::string rowDataStr(rowData.begin(), rowData.end());
     size_t headerEndPos = rowDataStr.find(doubleCRLF);
 
     if (headerEndPos != std::string::npos) {
-		std::cout << "headerEnd != rowData.end()***************************************************" << std::endl;
+		//std::cout << "header size = " << headerEndPos + doubleCRLF.length() << std::endl;
         size_t headerLength = headerEndPos + doubleCRLF.length();
         rowData.erase(rowData.begin(), rowData.begin() + headerLength);
+	//	std::cout << "receivedContentVector.size() after erase = " << rowData.size() << std::endl;
     }
 }
 
@@ -270,16 +278,14 @@ void	Socket::recvConnection(int i){
 	
 	res = recv(_vFds[i].fd, buff, MAX_REQUEST_SIZE - 1, 0);
 	if (res == -1){
-		std::cout << "res == -1 we go on" << std::endl;
+		//std::cout << "res == -1 we go on" << std::endl;
 		return;
-	}
-	else if (res < 0){
+	} else if (res < 0){
 		closeClientConnection(i);
 		throw std::runtime_error("SockedLoop : recv");
-	} else if (res > 0) {
+	} else if (res >= 0) {
+		//std::cout << "res >= 0" << std::endl;
 		transferBufferToVector(buff, res, _clients[i].receivedContentVector);
-		std::cout << "receivedContentVector = " << _clients[i].receivedContentVector.size() << std::endl;
-		//std::cout << _clients[i].receivedContentVector.size() << std::endl;
 		//old approach used to check if request is full
 		buff[res] = '\0';
 		_clients[i].recvBytes += res;
@@ -288,20 +294,23 @@ void	Socket::recvConnection(int i){
 			//parsing part
 			try {
 				_clients[i].ClientRequest.parsBuff = _clients[i].receivedContent;
-				std::cout << "before methods , receivedContentVector = " << _clients[i].receivedContentVector.size() << std::endl;
 				_clients[i].reply = methods(_clients[i].ClientRequest, *_servers, _portNumber, _hostName, _clients[i].isCGI);
-				std::cout << "after methods, receivedContentVector = " << _clients[i].receivedContentVector.size() << std::endl;
 				if (_clients[i].isCGI == false){
 					_vFds[i].events |= POLLOUT;
 					_clients[i].biteToSend = _clients[i].reply.size();
 				}
 				else {
-					std::cout << "vector before header removal , receivedContentVector = " << _clients[i].receivedContentVector.size() << std::endl;
 					removeHeaderFromRowData(_clients[i].receivedContentVector);
-					std::cout << "vector after header removal , receivedContentVector = " << _clients[i].receivedContentVector.size() << std::endl;
 					_clients[i].cgiInfo.state = NO_PIPES;
 					_clients[i].CgiDone = false;
 					_clients[i].cgiInfo.childPid = 0;
+					_clients[i].cgiInfo.contentLenghtCGI = _clients[i].receivedContentVector.size();
+					
+					if (_clients[i].cgiInfo.contentLenghtCGI > _clients[i].ClientRequest.allowedContLen){
+						_clients[i].receivedContentVector.erase(_clients[i].receivedContentVector.begin() + _clients[i].ClientRequest.allowedContLen, _clients[i].receivedContentVector.end()); //maybe +1
+						std::cout << "contentLenghtCGI > allowedContLen" << std::endl;
+					}
+
 				}
 			} catch (std::exception &e) {
 				std::cerr << "Caught exception: " << e.what() << std::endl;
@@ -391,25 +400,16 @@ void	Socket::writeInChild(int i){
 
 	//std::cout << "========writing in child========" << std::endl;
 	try{
-		//ssize_t wrote = writeChild(client.ClientRequest.requestBody.c_str(), client.ClientRequest.requestBody.length(), cgiInf.pipeFdIn);
-		// if (wrote == -1){
-		// 	return ;
-		// }
-
-		//client.ClientRequest.requestBody.erase(0, wrote);
 		std::vector<char> &rowData = client.receivedContentVector;
 		ssize_t wrote = writeChild(rowData, client.cgiInfo.offset, cgiInf.pipeFdIn);
+	
 		if (wrote == -1) {
     		return;
 		}
-
-		rowData.erase(rowData.begin(), rowData.begin() + wrote);
-
-
-
-		if (client.ClientRequest.requestBody.empty() || wrote == 0){
+		if (rowData.size() == client.cgiInfo.offset){
 			std::cout << "write done" << std::endl;
 			cgiInf.state = WRITE_DONE;
+			cgiInf.contentLenghtCGI = rowData.size();
 			cgiInf.vCGI.erase(cgiInf.vCGI.begin()); //write is in vCGI[0]
 			cgiInf.vCGIsize = 1;
 		}
@@ -430,6 +430,7 @@ void	Socket::startChild(int i){
 		cgiInf.state = PIPES_INIT;
 		cgiInf.vCGIsize = 2;
 		cgiInf.childExited = false;
+		cgiInf.offset = 0;
 	} catch (std::exception &e) {
 		std::cerr << "Failed to init pipes: " << e.what() << std::endl;
 		cgiInf.state = ERROR;
@@ -507,16 +508,7 @@ void	Socket::checkCGIevens(int i){
 }
 
 void	Socket::checkEvents(){
-	// std::cout << "====checkEvents===" << std::endl;
-	
-	// std::cout << "vFds size = " << _vFds.size() << std::endl;
-	// std::cout << "_listenFd = " << _listenFd << std::endl;
-	// int i = 0;
-	// for (std::vector<struct pollfd>::iterator it = _vFds.begin(); it != _vFds.end(); it++){
-	// 	std::cout << "fd[" << i << "] = " << it->fd << std::endl;
-	// 	i++;
-	// }
-	// std::cout << "==================" << std::endl;
+
 	for (int i = 0; i < (int)_vFds.size(); i++){
 		
 		if ((_vFds[i].revents & POLLIN) == POLLIN){
@@ -551,3 +543,5 @@ void	Socket::checkEvents(){
 	}
 	
 }
+
+

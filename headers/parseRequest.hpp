@@ -29,6 +29,7 @@ typedef struct {
 	std::string httpVers;
 	std::string requestBody;
 	size_t requestBodyLen;
+	ssize_t allowedContLen;
 	
 	//from location:
 	std::string save_location;

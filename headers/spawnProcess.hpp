@@ -44,6 +44,7 @@ typedef struct {
 	size_t offset;
 
 	std::vector<struct pollfd> vCGI; 
+	size_t contentLenghtCGI;
 	// vCGI[0] - pipeFdIn[1] 	POLLOUT - write-into-child end
 	// vCGI[1] - pipeFdOut[0]	POLLIN  - read-from-child end
 	int vCGIsize;
