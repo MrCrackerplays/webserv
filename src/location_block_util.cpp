@@ -176,7 +176,13 @@ static void	handle_client_body_limit(size_t & i, std::string & line, Location & 
 		std::cerr << "too many arguments for max_body" << std::endl;
 		throw ConfigFormatException();
 	}
-	loc.setClientBodyLimit(std::atoi(line.substr(cbl_start, cbl_end - cbl_start).c_str()));
+	int	size = std::atoi(line.substr(cbl_start, cbl_end - cbl_start).c_str());
+	if (size < 0 || size > MAX_BODY_LIMIT) {
+		std::cerr << "'" << line << "'" << std::endl;
+		std::cerr << "max_body not within valid range" << std::endl;
+		throw ConfigFormatException();
+	}
+	loc.setClientBodyLimit(size);
 }
 
 static void	handle_methods(size_t & i, std::string & line, Location & loc) {
