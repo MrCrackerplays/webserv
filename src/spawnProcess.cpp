@@ -5,6 +5,7 @@
 //  Created by Julia Demura on 05/03/2023.
 //
 
+
 #include "spawnProcess.hpp"
 
 void	closePipes(int* pipeFdIn, int* pipeFdOut){
@@ -21,7 +22,7 @@ void	closePipes(int* pipeFdIn, int* pipeFdOut){
 }
 
 
-void	envpGenerate(char** envp, parsRequest request, std::string portNumberSocket, std::string hostNameSocket) {
+void	envpGenerate(char** envp, parsRequest request, std::string portNumberSocket, std::string hostNameSocket, size_t contentLenghtCGI) {
 	std::string str0 = "SERVER_SOFTWARE=webserv/1.0";
 	envp[0] = new char[str0.length() + 1];
 	strcpy(envp[0], str0.c_str());
@@ -55,7 +56,7 @@ void	envpGenerate(char** envp, parsRequest request, std::string portNumberSocket
 	envp[7] = new char[str7.length() + 1];
 	strcpy(envp[7], str7.c_str());
 	
-	std::string str8 = "CONTENT_LENGTH=" + std::to_string(request.requestBodyLen);
+	std::string str8 = "CONTENT_LENGTH=" + std::to_string(contentLenghtCGI);
 	envp[8] = new char[str8.length() + 1];
 	strcpy(envp[8], str8.c_str());
 	
@@ -100,16 +101,10 @@ void	envpGenerate(char** envp, parsRequest request, std::string portNumberSocket
 	envp[17] = new char[str17.length() + 1];
 	strcpy(envp[17], str17.c_str());
 
-	// std::string str18 = "SCRIPT_FILENAME=";
-	// envp[18] = new char[str18.length() + 1];
-	// strcpy(envp[18], str18.c_str());
-
-	// std::string str19 = "SCRIPT_URI=" + request.urlPath;
-	// envp[19] = new char[str19.length() + 1];
-	// strcpy(envp[19], str19.c_str());
 	std::string str18 = request.save_location;
 	envp[18] = new char[str18.length() + 1];
 	strcpy(envp[18], str18.c_str());
+	
 	envp[19] = NULL;
 }
 
@@ -154,51 +149,33 @@ void	initPipesCreatePollFDstruct(std::vector<struct pollfd> &vPipesCGI, int* pip
 
 ssize_t writeChild(const std::vector<char>& rowData, size_t& offset, int* pipeFdIn) {
     
+	//std::cout << "=======writeInChild======================" << std::endl;
+	//std::cout << "writeChild: offset = " << offset << std::endl;
+	
 	ssize_t n = 0;
     size_t remainingDataLen = rowData.size() - offset;
+	//std::cout << "writeChild: remainingDataLen = " << remainingDataLen << std::endl;
     size_t chunkSize = (remainingDataLen > 8192) ? 8192 : remainingDataLen;
-
+	//std::cout << "writeChild: chunkSize = " << chunkSize << std::endl;
     if (chunkSize > 0) {
         n = write(pipeFdIn[1], rowData.data() + offset, chunkSize);
         if (n < 0 && n != -1) {
             throw std::runtime_error("SpawnProcess: writeInChild: write");
         }
-    }
-
-    offset += n;
-
-    if (offset == rowData.size()) {
-        std::cout << "All data written, closing pipe" << std::endl;
-        close(pipeFdIn[1]);
-        return 0;
-    }
-
+	}
+	if (n >= 0){
+		offset += n;
+		//std::cout << "writeChild: offset after += n = " << offset << std::endl;
+   		if (offset == rowData.size()) {
+       		//std::cout << "All data written, closing pipe" << std::endl;
+        	close(pipeFdIn[1]);
+			// std::cout << "========================================" << std::endl;
+        	// return 0;
+    	}
+	}
+   // std::cout << "========================================" << std::endl;
     return n;
 }
-
-
-
-// ssize_t	writeChild(const char* data, size_t dataLen, int* pipeFdIn){ //have to do it in multiple calls
-
-// 	ssize_t n = 0;
-
-// 	if (dataLen > 0) {
-// 		if (dataLen > 8192){
-// 			n = write(pipeFdIn[1], data, 8192);
-// 		} else {
-// 			n = write(pipeFdIn[1], data, dataLen);
-// 		}
-// 		if (n < 0 && n != -1) {
-// 			throw std::runtime_error("SpawnProcess: writeInChild : write");
-// 		}
-// 	}
-// 	if (dataLen - n == 0){
-// 		std::cout << "dataLen == 0, closing pipe" << std::endl;
-// 		close(pipeFdIn[1]);
-// 		return 0;
-// 	}
-// 	return n;
-// }
 
 
 ssize_t	readChild(int* pipeFdOut, std::string &reply){ //have to do it in multiple calls
@@ -269,7 +246,6 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		throw std::runtime_error("spawnProcess : generatePipes");
 	}
 
-
 	info.childPid = fork();
 	if (info.childPid < 0){ //fork failed
 		std::cerr << "spawnProcess : fork" << std::endl;
@@ -289,26 +265,13 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 			closePipes(info.pipeFdIn, info.pipeFdOut);
 			exit(1);
 		}
-
-	
-
-		// closePipes(info.pipeFdIn, info.pipeFdOut);
-
-		// std::cout << "---- before execve:----" << std::endl;
-		// std::cerr << "pipeFdIn[0] = " << info.pipeFdIn[0] << std::endl;
-		// std::cerr << "pipeFdIn[1] = " << info.pipeFdIn[1] << std::endl;
-		// std::cerr << "pipeFdOut[0] = " << info.pipeFdOut[0] << std::endl;
-		// std::cerr << "pipeFdOut[1] = " << info.pipeFdOut[1] << std::endl;
-		// std::cout << "------------------------------" << std::endl;
 		close(info.pipeFdIn[0]);
 		close(info.pipeFdIn[1]);
 		close(info.pipeFdOut[0]);
 		close(info.pipeFdOut[1]);
-		//std::cerr << "child execve now :" << std::endl;
-		//std::cout << "before execve: path : " << request.physicalPathCgi << std::endl;
 
 		char *envp[20];
-		envpGenerate(envp, request, portNumSocket, hostNameSocket);
+		envpGenerate(envp, request, portNumSocket, hostNameSocket, info.contentLenghtCGI);
 		execve((char *)request.physicalPathCgi.c_str(), NULL, envp);
 		std::cerr << "child execve failed" << std::endl;
 		exit(1);
@@ -329,6 +292,14 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 	
 	return info.childPid;
 }
+
+
+
+
+
+
+
+
 
 
 

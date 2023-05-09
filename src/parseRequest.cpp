@@ -47,7 +47,7 @@ void	packHeaderInMap(std::string& headerName, std::string& headerBody, std::map<
 		}
 }
 
-std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, std::vector<std::string> >& headers){
+std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, std::vector<std::string> >& headers, ssize_t& allowedContentLength){
 	
 	std::string hostNameHeader;
 	std::string line;
@@ -68,6 +68,10 @@ std::string	getHeaders(std::istringstream& requestStream, std::map<std::string, 
 			}
 			if (headerName == "Host") {
 				hostNameHeader = headerBody;
+			}
+			//add cont len check
+			if (headerName == "Content-Length") {
+				allowedContentLength = std::stoi(headerBody);
 			}
 			packHeaderInMap(headerName, headerBody, headers);
 		}
@@ -172,7 +176,7 @@ void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<
 
 //check code list in codes.cpp
 bool	isBadRequest(parsRequest& request){
-	
+
 	if (request.method == NOTSUPPORTED) {
 		request.code = 501;//Not Implemented
 		return true;
@@ -277,16 +281,18 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 	
 	std::istringstream requestStream(requestBuff);
 	request.autoindex = false;
+	request.allowedContLen = -1; //by default
 	
 	request.code = 200;
 	requestStream >> request.methodString;
 	request.method = getMethodFromRequest(request.methodString);
 	requestStream >> request.urlPath >> request.httpVers;
+
 	if (isBadRequest(request)){
 		return request;
 	} else {
 		request.queryString = getQueryParams(request.urlPath, request.query);
-		request.hostNameHeader = getHeaders(requestStream, request.headers);
+		request.hostNameHeader = getHeaders(requestStream, request.headers, request.allowedContLen);
 
 		bool isDecoded = true;
 		std::string urlPathDecoded = urlDecode(request.urlPath, isDecoded);
@@ -329,12 +335,17 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 				request.requestBody += line;
 			}
 		}
+		request.requestBodyLen = request.requestBody.length();
+		if (request.requestBodyLen > getServer(servers, hostPort, request.hostNameHeader).getClientBodyLimit(request.urlPath)) {
+			request.code = 413;
+			return request;
+		}
+
 		findMethodInServer(request, servers, hostPort);
 		if (request.method != GET && request.autoindex == true){ //? not sure
 			request.code = 405;
 		}
 	}
-	request.requestBodyLen = request.requestBody.length();
 	return request;
 }
 
