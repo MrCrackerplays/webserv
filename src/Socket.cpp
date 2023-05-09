@@ -15,7 +15,6 @@ size_t	Socket::getPollFdVectorSize(){return _vFds.size();};
 void	Socket::setServers(std::map<std::string, std::vector<Server> > &servers){ _servers = &servers;};
 	
 std::vector<struct pollfd> &Socket::getCGIVector(int i){
-	//std::cout << "getCGIVector for i= "<< i << std::endl;
 	// if (_clients.size() < i)
 	// 	return _clients[0].cgiInfo.vCGI;
 	return _clients[i].cgiInfo.vCGI;
@@ -44,7 +43,6 @@ size_t Socket::numberOfConnections(){
 	size_t clientvectSize = _clients.size();
 	for (std::vector<struct pollfd>::iterator it = _vFds.begin(); it != _vFds.end(); it++){
 		if (clientIndex > clientvectSize){
-			std::cout << "clientIndex > clientvectSize" << std::endl;
 			break;
 		}
 		else if (_clients[clientIndex].isCGI){
@@ -55,18 +53,10 @@ size_t Socket::numberOfConnections(){
 	return totalCguFdSize + _vFds.size();
 };
 
-
 void Socket::unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::vector<struct pollfd> &socketsAll) {
-	
-	// std::cout << "=====unpackVectorintoSocket======" << std::endl;
-	// std::cout << "allCounter = " << allCounter << std::endl;
-	// std::cout << "fdCounter = " << fdCounter << std::endl;
-	// std::cout << "socketsAll.size() = " << socketsAll.size() << std::endl;
-	// std::cout << "_vFds.size() = " << _vFds.size() << std::endl;
-	
 
 	if (_vFds.size() < fdCounter){
-		std::cout << "_vFds.size() < fdCounter but this should not happen" << std::endl;
+		//std::cout << "_vFds.size() < fdCounter but this should not happen" << std::endl;
 		return;
 	}
 	_vFds[fdCounter].fd = socketsAll[allCounter].fd;
@@ -76,25 +66,19 @@ void Socket::unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::v
 
 	if (_clients.size() > fdCounter && _clients[fdCounter].isCGI){
 		CGIInfo &CGIinfo = _clients[fdCounter].cgiInfo;
-			//std::cout << "_clients[fdConter].cgiInfo.vCGISize = " << _clients[fdCounter].cgiInfo.vCGIsize<< std::endl;	
-			//std::cout << "FD is = "<< socketsAll[allCounter].fd << std::endl;
 			if (CGIinfo.vCGI.size() == 1) {
 				if (socketsAll.size() < allCounter + 1){
-					std::cout << "socketsAll.size() < allCounter" << std::endl;
+					//std::cout << "socketsAll.size() < allCounter" << std::endl;
 					return;
 				}
-			//	std::cout << "CGIinfo.vCGI.size() == 1 ONE" << std::endl;
 				CGIinfo.vCGI[0].fd = socketsAll[allCounter].fd;
 				CGIinfo.vCGI[0].events = socketsAll[allCounter].events;
 				CGIinfo.vCGI[0].revents = socketsAll[allCounter].revents;
 				allCounter++;
-			//	std::cout << "CGIinfo.vCGI[0].fd = " << CGIinfo.vCGI[0].fd << std::endl;
 			} else if (CGIinfo.vCGI.size() == 2) {
 				if (socketsAll.size() < allCounter + 2){
-			//		std::cout << "socketsAll.size() < allCounter" << std::endl;
 					return;
 				}
-			//	std::cout << "CGIinfo.vCGI.size() == 2 TWO" << std::endl;
 				CGIinfo.vCGI[0].fd = socketsAll[allCounter].fd;
 				CGIinfo.vCGI[0].events = socketsAll[allCounter].events;
 				CGIinfo.vCGI[0].revents = socketsAll[allCounter].revents;
@@ -103,7 +87,6 @@ void Socket::unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::v
 				CGIinfo.vCGI[1].events = socketsAll[allCounter].events;
 				CGIinfo.vCGI[1].revents = socketsAll[allCounter].revents;
 				allCounter++;
-			//	std::cout << "CGIinfo.vCGI[1].fd = " << CGIinfo.vCGI[1].fd << std::endl;
 			}
 				
 	}
@@ -135,7 +118,6 @@ void	Socket::createAddrinfo(){
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 	
-	// _addrinfo = new struct addrinfo;
 	_addrinfo = new struct addrinfo;
 	status = getaddrinfo(_hostName.c_str(), _portNumber.c_str(), &hints, &_addrinfo);
 	if (status < 0){
@@ -167,11 +149,12 @@ Socket::Socket(char * hostName, char * portNumber){
 }
 
 Socket::~Socket(){
-	//UNFINISHED
-	//std::cout << "Socket destructor DESTRUCTIONNNNN" << std::endl;
 	if (_addrinfo) {
-		freeaddrinfo(_addrinfo); //pointer being freed after allocating with new - check needed
+		freeaddrinfo(_addrinfo);
 		delete _addrinfo;
+	}
+	if (_listenFd > 0){
+		close(_listenFd);
 	}
 }
 
@@ -195,7 +178,6 @@ bool	fullRequestReceived(std::string buffer, size_t recvBites, size_t res){
 	if (headrSize != std::string::npos){
 		headrSize += 4;
 		contentLen = findContentLenght(buffer);
-		//std::cout << "contentLen = " << contentLen << std::endl;
 		if (contentLen != 0) {
 			if (contentLen + headrSize > recvBites){
 				return false;
@@ -212,7 +194,6 @@ bool	fullRequestReceived(std::string buffer, size_t recvBites, size_t res){
 	return false;
 }
 
-//work with listening socket
 void	Socket::acceptNewConnect(int i){
 	
 	for (int j = i+1; ; j++) {
@@ -229,7 +210,7 @@ void	Socket::acceptNewConnect(int i){
 		newPollfd.events = POLLIN | POLLHUP; //added POLLHUP though it may be not proper place to add both
 		_vFds.push_back(newPollfd);
 		_vFdsSize = _vFds.size();
-		std::cout << "new connection accepted, _vFds.size = " << _vFdsSize << std::endl;
+		//std::cout << "new connection accepted, _vFds.size = " << _vFdsSize << std::endl;
 		
 		//initiate client.struct
 		ClientInfo clientStruct;
@@ -240,7 +221,7 @@ void	Socket::acceptNewConnect(int i){
 		clientStruct.receivedContentVector.clear();
 		clientStruct.reply.clear();
 		clientStruct.isCGI = false;
-		_clients.push_back(clientStruct); //erase it when time comes UNFINISHED
+		_clients.push_back(clientStruct);
 	}
 }
 
@@ -255,18 +236,14 @@ void transferBufferToVector(const char* buff, ssize_t buffSize, std::vector<char
 }
 
 void removeHeaderFromRowData(std::vector<char>& rowData) {
-	//std::cout << "removeHeaderFromRowData" << std::endl;
-	//std::cout << "receivedContentVector.size() = " << rowData.size() << std::endl;
-    const std::string doubleCRLF = "\r\n\r\n";
 
+    const std::string doubleCRLF = "\r\n\r\n";
     std::string rowDataStr(rowData.begin(), rowData.end());
     size_t headerEndPos = rowDataStr.find(doubleCRLF);
 
     if (headerEndPos != std::string::npos) {
-		//std::cout << "header size = " << headerEndPos + doubleCRLF.length() << std::endl;
         size_t headerLength = headerEndPos + doubleCRLF.length();
         rowData.erase(rowData.begin(), rowData.begin() + headerLength);
-	//	std::cout << "receivedContentVector.size() after erase = " << rowData.size() << std::endl;
     }
 }
 
@@ -278,15 +255,12 @@ void	Socket::recvConnection(int i){
 	
 	res = recv(_vFds[i].fd, buff, MAX_REQUEST_SIZE - 1, 0);
 	if (res == -1){
-		//std::cout << "res == -1 we go on" << std::endl;
 		return;
 	} else if (res < 0){
 		closeClientConnection(i);
 		throw std::runtime_error("SockedLoop : recv");
 	} else if (res >= 0) {
-		//std::cout << "res >= 0" << std::endl;
 		transferBufferToVector(buff, res, _clients[i].receivedContentVector);
-		//old approach used to check if request is full
 		buff[res] = '\0';
 		_clients[i].recvBytes += res;
 		_clients[i].receivedContent.append(buff, res);
@@ -308,9 +282,8 @@ void	Socket::recvConnection(int i){
 					
 					if (_clients[i].cgiInfo.contentLenghtCGI > _clients[i].ClientRequest.allowedContLen){
 						_clients[i].receivedContentVector.erase(_clients[i].receivedContentVector.begin() + _clients[i].ClientRequest.allowedContLen, _clients[i].receivedContentVector.end()); //maybe +1
-						std::cout << "contentLenghtCGI > allowedContLen" << std::endl;
+						std::cout << "contentLenghtCGI > allowedContLen, cgi body was adjusted" << std::endl; //CORRECT?
 					}
-
 				}
 			} catch (std::exception &e) {
 				std::cerr << "Caught exception: " << e.what() << std::endl;
@@ -320,7 +293,7 @@ void	Socket::recvConnection(int i){
 }
 
 void	Socket::closeClientConnection(int i){
-	std::cout << "closeClientConnection for fd = " << _vFds[i].fd << std::endl;
+	//std::cout << "closeClientConnection for fd = " << _vFds[i].fd << std::endl;
 	close(_vFds[i].fd);
 	_vFds.erase(_vFds.begin() + i, _vFds.begin() + i + 1);
 	_vFdsSize--;
@@ -331,17 +304,12 @@ void	Socket::closeClientConnection(int i){
 
 void	Socket::sendData(int i){
 
-	// if (i > 0 && _clients.size() > i && _clients[i].isCGI == true){	
-	// 	std::cout << "biteToSend: " << _clients[i].biteToSend << std::endl;
-	// 	std::cout << "reply: " << _clients[i].reply << std::endl;
-	// }
-
 	ssize_t biteSent = send(_vFds[i].fd, _clients[i].reply.c_str(), _clients[i].reply.length(), 0);
-	if (i > 0 && _clients.size() > i && _clients[i].isCGI == true){
-		// std::cout << "biteSent for cgi reply: " << biteSent << std::endl;
-		// std::cout << "reply: " << _clients[i].reply << std::endl;
-		// std::cout << "send to fd =" << _vFds[i].fd << std::endl; // ->> check if I do not close it somewhere previously
-	}
+	// if (i > 0 && _clients.size() > i && _clients[i].isCGI == true){
+	// 	// std::cout << "biteSent for cgi reply: " << biteSent << std::endl;
+	// 	// std::cout << "reply: " << _clients[i].reply << std::endl;
+	// 	// std::cout << "send to fd =" << _vFds[i].fd << std::endl; // ->> check if I do not close it somewhere previously
+	// }
 	if (biteSent == -1){
 		std::cerr << "biteSent == -1" << std::endl;
 		throw std::runtime_error("Socket : send");
@@ -364,10 +332,6 @@ void	Socket::CGIerrorReply(int i){
 	client.reply = formResponseString(client.ClientResponse);
 	client.CgiDone = true;
 	_vFds[i].events |= POLLOUT;
-	// if (client.cgiInfo.envp != NULL){
-	// 	freeEnvp(client.cgiInfo.envp);
-	// 	closePipes(client.cgiInfo.pipeFdIn, client.cgiInfo.pipeFdOut);
-	// }
 	client.isCGI = false;
 	client.cgiInfo.vCGI.clear();
 	client.cgiInfo.vCGIsize = 0;
@@ -375,11 +339,8 @@ void	Socket::CGIerrorReply(int i){
 
 void	Socket::readFromChild(int i){
 
-	//std::cout << "========read from child========" << std::endl;
 	try{
 		readChild(_clients[i].cgiInfo.pipeFdOut, _clients[i].cgiReply);
-		//std::cout << "reply from child: " << _clients[i].reply << std::endl;
-		//std::cout << "---- read from child end----" << std::endl;
 	}
 	catch (std::exception &e) {
 		std::cerr << "Failed to read from child: " << e.what() << std::endl;
@@ -387,18 +348,12 @@ void	Socket::readFromChild(int i){
 		CGIerrorReply(i);
 		return ;
 	}
-	//std::cout << "========read child done========" << std::endl;
 }
-
-
-
 
 void	Socket::writeInChild(int i){
 
 	ClientInfo &client = _clients[i];
 	CGIInfo &cgiInf = client.cgiInfo;
-
-	//std::cout << "========writing in child========" << std::endl;
 	try{
 		std::vector<char> &rowData = client.receivedContentVector;
 		ssize_t wrote = writeChild(rowData, client.cgiInfo.offset, cgiInf.pipeFdIn);
@@ -448,7 +403,7 @@ void Socket::pickCGIState(int i){
 		try {
 			int stChild;
 			waitChild(stChild, cgiInf.childPid, cgiInf.childExited);
-			if (cgiInf.childExited == true){ // && stChild > 0
+			if (cgiInf.childExited == true){
 				cgiInf.state = READ_READY;
 				std::cout << "read ready, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
 			}
@@ -463,18 +418,18 @@ void Socket::pickCGIState(int i){
 			struct pollfd &writeFd = cgiInf.vCGI[0]; //expect POLLOUT
 			if (cgiInf.state == PIPES_INIT && (writeFd.revents & POLLOUT) == POLLOUT){
 				cgiInf.state = WRITE_READY;
-				std::cout << "write ready, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
+				//std::cout << "write ready, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
 			}
 		} else if (cgiInf.vCGI.size() == 1) {
 			struct pollfd &readFd = cgiInf.vCGI[0]; //expect POLLIN
 			if (cgiInf.state == WRITE_DONE && (readFd.revents & POLLIN)== POLLIN){ // && (readFd.revents & POLLIN)== POLLIN)
 				cgiInf.state = READ_READY;
-				std::cout << "READ_READY, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
+				//std::cout << "READ_READY, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
 			} else if (cgiInf.state == READ_READY && (readFd.revents & POLLHUP)== POLLHUP){
 				cgiInf.state = READ_DONE;
 				cgiInf.vCGI.erase(cgiInf.vCGI.begin()); //read in vCGI[1] but write should be erased already NOT SURE
 				cgiInf.vCGIsize = 0;
-				std::cout << "READ_DONE, vCGi size is expected 0 and is: " << cgiInf.vCGI.size() <<  std::endl;
+				//std::cout << "READ_DONE, vCGi size is expected 0 and is: " << cgiInf.vCGI.size() <<  std::endl;
 			}
 		}
 
@@ -526,7 +481,6 @@ void	Socket::checkEvents(){
 				}
 			}
 		} else if ((_vFds[i].revents & POLLOUT) == POLLOUT){
-			//std::cout << "after cgi POLLOUT added to fd " << _vFds[i].fd << " and i = " << i << std::endl;
 			try {
 				sendData(i);
 			} catch (std::exception &e) {
@@ -537,11 +491,7 @@ void	Socket::checkEvents(){
 				closeClientConnection(i);
 		}
 		if (i > 0 && _clients.size() > i && _clients[i].isCGI == true){
-			
 			checkCGIevens(i);
 		}
 	}
-	
 }
-
-

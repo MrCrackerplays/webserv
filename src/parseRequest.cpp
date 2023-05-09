@@ -10,13 +10,11 @@
 #include <iostream>
 #include <sstream>
 #include "autoindex.hpp"
-
 //https://cplusplus.com/reference/sstream/istringstream/
 
 std::string	getQueryParams(std::string &path, std::map<std::string, std::vector<std::string> >& requestQuery){
 	
 	std::string queryString;
-	
 	std::string::size_type pos = path.find('?');
 	std::string extractedQueryParams;
 	if (pos != std::string::npos){
@@ -158,6 +156,11 @@ void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<
 	Location location = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath);
 	std::vector<std::string> methods = location.getMethods();
 	std::vector<std::string> cgis = location.getCGIs();
+
+
+	//********body limit check
+	size_t maxBodySize = location.getClientBodyLimit();
+	std::cout << "maxBodySize: " << maxBodySize << std::endl;
 
 	if (std::find(methods.begin(), methods.end(), request.methodString) == methods.end()){
 		request.code = 405;// Method Not Allowed
@@ -336,10 +339,14 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 			}
 		}
 		request.requestBodyLen = request.requestBody.length();
-		if (request.requestBodyLen > getServer(servers, hostPort, request.hostNameHeader).getClientBodyLimit(request.urlPath)) {
-			request.code = 413;
-			return request;
-		}
+		std::cout << "request body len: " << request.requestBodyLen << std::endl;
+		std::cout << "server content len: " << getServer(servers, hostPort, request.hostNameHeader).getClientBodyLimit(request.urlPath) << std::endl;
+		// if (request.requestBodyLen > getServer(servers, hostPort, request.hostNameHeader).getClientBodyLimit(request.urlPath)) {
+		// 	std::cout << "request body too big" << std::endl;
+		// 	request.code = 413;
+		// 	return request;
+		// }
+		
 
 		findMethodInServer(request, servers, hostPort);
 		if (request.method != GET && request.autoindex == true){ //? not sure

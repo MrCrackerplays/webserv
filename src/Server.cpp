@@ -37,12 +37,15 @@ void	Server::addError(std::string error_code, std::string path) {
 	this->_error_pages.insert(std::pair<std::string, std::string>(error_code, path));
 }
 
+//#include <iostream>
 size_t Server::getClientBodyLimit(std::string path) const
 {
 	size_t result = this->_client_body_limit;
 	try
 	{
 		result = getClosestLocation(path).getClientBodyLimit();
+		// std::cout << "client body limit: " << result << std::endl;
+		// std::cout << "path: " << path << std::endl;
 	}
 	catch(const std::exception& e)
 	{}

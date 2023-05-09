@@ -26,9 +26,7 @@ void	readFileBinary(std::string path, std::string &body){
 	body = responseBody;
 }
 
-//https://www.geeksforgeeks.org/http-headers-content-type/
 std::string getContentType(std::string& filename){
-	//can be upper case - added
 	std::map<std::string, std::string> extensionsMap;
 	extensionsMap.insert(std::make_pair("html", "text/html"));
 	extensionsMap.insert(std::make_pair("htm", "text/html"));
@@ -42,7 +40,7 @@ std::string getContentType(std::string& filename){
 	std::string contentType;
 	size_t pos = filename.rfind(".");
 	if (pos != std::string::npos){
-		std::string extension = filename.substr(pos + 1); //compare with lower case - added
+		std::string extension = filename.substr(pos + 1);
 		for (size_t i = 0; i < extension.length(); i++){
 			extension[i] = std::tolower(extension[i]);
 		}
@@ -51,7 +49,7 @@ std::string getContentType(std::string& filename){
 			return it->second;
 		}
 	}
-	return "text/plain"; //default
+	return "text/plain";
 }
 
 std::string getHeaderByKey(std::map<std::string, std::vector<std::string> >& headers, const std::string& key){
@@ -71,7 +69,6 @@ std::string getHeaderByKey(std::map<std::string, std::vector<std::string> >& hea
 		}
 	}
 	return result;
-	
 }
 
 bool isDirectory(std::string& path) {
