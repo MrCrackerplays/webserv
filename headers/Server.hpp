@@ -5,6 +5,8 @@
 # include <map>
 # include "Location.hpp"
 
+# define MAX_BODY_LIMIT 1000000000 //1GB
+
 class Server {
 protected:
 	std::string	_port;
@@ -15,7 +17,7 @@ protected:
 	std::map<std::string, Location>		_paths;
 public:
 	Server(std::string port, std::string host,
-			size_t client_body_limit = 0,
+			size_t client_body_limit = MAX_BODY_LIMIT,
 			std::vector<std::string> names = std::vector<std::string>());
 	Server(Server const & src);
 
