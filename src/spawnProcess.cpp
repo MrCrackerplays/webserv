@@ -156,7 +156,7 @@ ssize_t writeChild(const std::vector<char>& rowData, size_t& offset, int* pipeFd
     
 	//std::cout << "=======writeInChild======================" << std::endl;
 	//std::cout << "writeChild: offset = " << offset << std::endl;
-
+	
 	ssize_t n = 0;
     size_t remainingDataLen = rowData.size() - offset;
 	//std::cout << "writeChild: remainingDataLen = " << remainingDataLen << std::endl;

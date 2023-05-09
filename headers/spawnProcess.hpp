@@ -42,6 +42,7 @@ typedef struct {
 	int statusChild;
 	bool childExited;
 	size_t offset;
+	size_t contentLenghtCGI;
 
 	std::vector<struct pollfd> vCGI; 
 	// vCGI[0] - pipeFdIn[1] 	POLLOUT - write-into-child end
