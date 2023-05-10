@@ -347,6 +347,7 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 		// 	return request;
 		// }
 		
+		
 
 		findMethodInServer(request, servers, hostPort);
 		if (request.method != GET && request.autoindex == true){ //? not sure
