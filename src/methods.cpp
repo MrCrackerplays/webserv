@@ -106,7 +106,6 @@ std::string	methods(parsRequest &request, std::map<std::string, std::vector<Serv
 	std::string hostPort = host + ":" + port;
 	
 	request = parseRequest(request.parsBuff, servers, hostPort);
-	//response.method = request.method;
 	if (request.autoindex == true){
 		if (request.code == 200){
 			response = responseStructConstruct(servers, hostPort, request.requestBody, request);
@@ -143,7 +142,6 @@ std::string	methods(parsRequest &request, std::map<std::string, std::vector<Serv
 			response = responseStructConstruct(servers, hostPort, "", request);
 		}
 	}
-	
 	//reply
 	if (request.code / 100 == 3){
 		replyString = response.header;

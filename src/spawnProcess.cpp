@@ -149,14 +149,9 @@ void	initPipesCreatePollFDstruct(std::vector<struct pollfd> &vPipesCGI, int* pip
 
 ssize_t writeChild(const std::vector<char>& rowData, size_t& offset, int* pipeFdIn) {
     
-	//std::cout << "=======writeInChild======================" << std::endl;
-	//std::cout << "writeChild: offset = " << offset << std::endl;
-	
 	ssize_t n = 0;
     size_t remainingDataLen = rowData.size() - offset;
-	//std::cout << "writeChild: remainingDataLen = " << remainingDataLen << std::endl;
     size_t chunkSize = (remainingDataLen > 8192) ? 8192 : remainingDataLen;
-	//std::cout << "writeChild: chunkSize = " << chunkSize << std::endl;
     if (chunkSize > 0) {
         n = write(pipeFdIn[1], rowData.data() + offset, chunkSize);
         if (n < 0 && n != -1) {
@@ -165,33 +160,26 @@ ssize_t writeChild(const std::vector<char>& rowData, size_t& offset, int* pipeFd
 	}
 	if (n >= 0){
 		offset += n;
-		//std::cout << "writeChild: offset after += n = " << offset << std::endl;
    		if (offset == rowData.size()) {
-       		//std::cout << "All data written, closing pipe" << std::endl;
         	close(pipeFdIn[1]);
-			// std::cout << "========================================" << std::endl;
-        	// return 0;
     	}
 	}
-   // std::cout << "========================================" << std::endl;
     return n;
 }
 
 
-ssize_t	readChild(int* pipeFdOut, std::string &reply){ //have to do it in multiple calls
+ssize_t	readChild(int* pipeFdOut, std::string &reply){
 
-//std::cout << "---- read from child ----" << std::endl;
 	ssize_t res = 1;
 	char buff[1024];
 	memset(buff, 0, 1024);
 
 	res = read(pipeFdOut[0], buff, 1023);
 	if (res == -1){
-		//handle error
+		//DO WE NEED error
 		throw std::runtime_error("SpawnProcess: readFromChild : read");
 	}
 	buff[res] = '\0';
-	//std::cout << "************buff from child: " << buff << std::endl;
 	if (res == 0){
 		reply.append(buff, res);
 		close(pipeFdOut[0]);
@@ -204,12 +192,10 @@ ssize_t	readChild(int* pipeFdOut, std::string &reply){ //have to do it in multip
 }
 
 void	waitChild(int &statusChild, pid_t childPid, bool &childExited){
-	//std::cout << "---- wait for child ----" << std::endl;
 	int status;
 	pid_t wpidRes = waitpid(childPid, &status, WNOHANG);
 	if (wpidRes == 0){
 		childExited = false;
-		//std::cout << "child is still running" << std::endl;
 	} else if (wpidRes < 0){ 
 		if (wpidRes != -1){ //if this is -1 continue WNOHANG
 			std::cerr << "spawnProcess: waitpid" << std::endl;
@@ -237,7 +223,6 @@ void	waitChild(int &statusChild, pid_t childPid, bool &childExited){
 
 pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket){
 
-	//std::cout << request.physicalPathCgi << std::endl;
 	try{
 		initPipesCreatePollFDstruct(info.vCGI, info.pipeFdIn, info.pipeFdOut);
 		info.vCGIsize = 2;
@@ -249,12 +234,10 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 	info.childPid = fork();
 	if (info.childPid < 0){ //fork failed
 		std::cerr << "spawnProcess : fork" << std::endl;
-		std::cout << "fork failed" << std::endl;
 		closePipes(info.pipeFdIn, info.pipeFdOut);
 		throw std::runtime_error("spawnProcess : fork");
 	}
 	if (info.childPid == 0){		//in child process
-			//std::cout << "--- in child ---- " << std::endl;
 		if (dup2(info.pipeFdIn[0], STDIN_FILENO) < 0){
 			std::cerr << "child dup2 1" << std::endl;
 			closePipes(info.pipeFdIn, info.pipeFdOut);
@@ -276,84 +259,8 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		std::cerr << "child execve failed" << std::endl;
 		exit(1);
 	} else {
-		//std::cout << "--- in parent from launchChild---- " << std::endl;
-		//in parent process
-		
 		close(info.pipeFdIn[0]);
-		//info.pipeFdIn[0] = -1;
 		close(info.pipeFdOut[1]); 
-		//info.pipeFdOut[1] = -1;
-		
-		// int statusChild;
-		// waitChild(statusChild, info.childPid);
-		//std::cout << "end of launchChild ----- child pid: " << info.childPid << std::endl;
-		//pollhup will notify tat clild is done
 	}
-	
 	return info.childPid;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// void	inChildProcess(int* pipeFdIn, int* pipeFdOut, char **envp, char *path){
-
-// 	if (dup2(pipeFdIn[0], STDIN_FILENO) < 0){
-// 			std::cerr << "child dup2 1" << std::endl;
-// 			exit(1);
-// 		}
-// 		if (dup2(pipeFdOut[1], STDOUT_FILENO) < 0){
-// 			std::cerr << "child dup2 2" << std::endl;
-// 			exit(1);
-// 		}
-// 		closePipes(pipeFdIn, pipeFdOut);
-// 		execve(path, NULL, envp);
-// 		std::cerr << "child execve failed" << std::endl;
-// 		exit(1);
-// }
-
-	// const char* data;
-	// ssize_t maxWrite = 8200;
-	// std::string	part;
-	// size_t dataLen = toWriteStr.length();
-
-	// if (toWriteStr.length() <= maxWrite){
-	// 	std::cout << "toWriteStr.length() < maxWrite" << std::endl;
-	// 	data = toWriteStr.c_str();
-	// 	maxWrite = dataLen;
-	// 	toWriteStr.clear();
-	// } else {
-	// 	part = toWriteStr.substr(0, maxWrite);
-	// 	data = part.c_str();
-	// 	toWriteStr.erase(0, maxWrite);
-	// }
-
-
-	// ssize_t n = 0;
-	// n = write(pipeFdIn[1], data, maxWrite);
-	// if (n < 0 && n != -1) 
-	// 	throw std::runtime_error("SpawnProcess: writeInChild : write");
-
-	// if (dataLen == 0){
-	// 	//std::cout << "dataLen == 0" << std::endl;
-	// 	close(pipeFdIn[1]);
-	// 	return 0;
-	// }
