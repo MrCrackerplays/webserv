@@ -10,7 +10,7 @@
 
 #define EVENTS_NUM 5
 #define MAX_REQUEST_SIZE 8192
-#define TIMEOUT_CGI 1
+#define TIMEOUT_CGI 5
 #define TIMEOUT_CLIENT 2
 
 //#include "Sockadrs.hpp"
