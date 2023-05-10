@@ -339,16 +339,11 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 			}
 		}
 		request.requestBodyLen = request.requestBody.length();
-		std::cout << "request body len: " << request.requestBodyLen << std::endl;
-		std::cout << "server content len: " << getServer(servers, hostPort, request.hostNameHeader).getClientBodyLimit(request.urlPath) << std::endl;
-		// if (request.requestBodyLen > getServer(servers, hostPort, request.hostNameHeader).getClientBodyLimit(request.urlPath)) {
-		// 	std::cout << "request body too big" << std::endl;
-		// 	request.code = 413;
-		// 	return request;
-		// }
-		
-		
-
+		if (request.requestBodyLen > getServer(servers, hostPort, request.hostNameHeader).getClientBodyLimit(request.urlPath)) {
+			std::cerr << "request body too big" << std::endl;
+			request.code = 413;
+			return request;
+		}
 		findMethodInServer(request, servers, hostPort);
 		if (request.method != GET && request.autoindex == true){ //? not sure
 			request.code = 405;

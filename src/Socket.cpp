@@ -210,8 +210,7 @@ void	Socket::acceptNewConnect(int i){
 		newPollfd.events = POLLIN | POLLHUP; //added POLLHUP though it may be not proper place to add both
 		_vFds.push_back(newPollfd);
 		_vFdsSize = _vFds.size();
-		//std::cout << "new connection accepted, _vFds.size = " << _vFdsSize << std::endl;
-		
+
 		//initiate client.struct
 		ClientInfo clientStruct;
 		clientStruct.biteToSend = 0;
@@ -226,12 +225,6 @@ void	Socket::acceptNewConnect(int i){
 }
 
 void transferBufferToVector(const char* buff, ssize_t buffSize, std::vector<char>& rowData) {
-
-	// for (ssize_t i = 0; i < buffSize; i++) {
-	// 	rowData.push_back(buff[i]);
-	// }
-	//std::cout << "res = " << buffSize << std::endl;
-	//std::cout << "vector size after receive = " << rowData.size() << std::endl;
    	rowData.insert(rowData.end(), buff, buff + buffSize);
 }
 
@@ -293,7 +286,6 @@ void	Socket::recvConnection(int i){
 }
 
 void	Socket::closeClientConnection(int i){
-	//std::cout << "closeClientConnection for fd = " << _vFds[i].fd << std::endl;
 	close(_vFds[i].fd);
 	_vFds.erase(_vFds.begin() + i, _vFds.begin() + i + 1);
 	_vFdsSize--;
@@ -305,11 +297,6 @@ void	Socket::closeClientConnection(int i){
 void	Socket::sendData(int i){
 
 	ssize_t biteSent = send(_vFds[i].fd, _clients[i].reply.c_str(), _clients[i].reply.length(), 0);
-	// if (i > 0 && _clients.size() > i && _clients[i].isCGI == true){
-	// 	// std::cout << "biteSent for cgi reply: " << biteSent << std::endl;
-	// 	// std::cout << "reply: " << _clients[i].reply << std::endl;
-	// 	// std::cout << "send to fd =" << _vFds[i].fd << std::endl; // ->> check if I do not close it somewhere previously
-	// }
 	if (biteSent == -1){
 		std::cerr << "biteSent == -1" << std::endl;
 		throw std::runtime_error("Socket : send");
@@ -418,18 +405,15 @@ void Socket::pickCGIState(int i){
 			struct pollfd &writeFd = cgiInf.vCGI[0]; //expect POLLOUT
 			if (cgiInf.state == PIPES_INIT && (writeFd.revents & POLLOUT) == POLLOUT){
 				cgiInf.state = WRITE_READY;
-				//std::cout << "write ready, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
 			}
 		} else if (cgiInf.vCGI.size() == 1) {
 			struct pollfd &readFd = cgiInf.vCGI[0]; //expect POLLIN
 			if (cgiInf.state == WRITE_DONE && (readFd.revents & POLLIN)== POLLIN){ // && (readFd.revents & POLLIN)== POLLIN)
 				cgiInf.state = READ_READY;
-				//std::cout << "READ_READY, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
 			} else if (cgiInf.state == READ_READY && (readFd.revents & POLLHUP)== POLLHUP){
 				cgiInf.state = READ_DONE;
-				cgiInf.vCGI.erase(cgiInf.vCGI.begin()); //read in vCGI[1] but write should be erased already NOT SURE
+				cgiInf.vCGI.erase(cgiInf.vCGI.begin());
 				cgiInf.vCGIsize = 0;
-				//std::cout << "READ_DONE, vCGi size is expected 0 and is: " << cgiInf.vCGI.size() <<  std::endl;
 			}
 		}
 

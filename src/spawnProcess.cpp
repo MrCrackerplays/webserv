@@ -203,10 +203,8 @@ void	waitChild(int &statusChild, pid_t childPid, bool &childExited){
 		}
 	} else {
 		childExited = true;
-		//std::cout << "---- child is done (from wait) ----" << std::endl;
 		if (WIFEXITED(status)){
 			statusChild = WEXITSTATUS(status);
-			//std::cout << "child exited with status: " << statusChild << std::endl;
 			if (statusChild == 1){
 				statusChild = -1;
 				// std::cerr << "cgi failed" << std::endl;
