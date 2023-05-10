@@ -156,10 +156,10 @@ Socket::Socket(char * hostName, char * portNumber){
 }
 
 Socket::~Socket(){
-	if (_addrinfo) {
-		freeaddrinfo(_addrinfo);
-		delete _addrinfo;
-	}
+	// if (_addrinfo) {
+	// 	freeaddrinfo(_addrinfo);
+	// 	delete _addrinfo;
+	// }
 	if (_listenFd > 0){
 		close(_listenFd);
 	}
@@ -227,6 +227,10 @@ void	Socket::acceptNewConnect(int i){
 		clientStruct.receivedContentVector.clear();
 		clientStruct.reply.clear();
 		clientStruct.isCGI = false;
+		clientStruct.startTime = std::time(nullptr);
+		clientStruct.timerOn = true;
+		clientStruct.timeout = false;
+		clientStruct.ClientRequest.code = 0;
 		_clients.push_back(clientStruct);
 	}
 }
@@ -266,6 +270,7 @@ void	Socket::recvConnection(int i){
 		if (fullRequestReceived(_clients[i].receivedContent, _clients[i].recvBytes, res)){
 			//parsing part
 			try {
+				_clients[i].timerOn = false;
 				_clients[i].ClientRequest.parsBuff = _clients[i].receivedContent;
 				_clients[i].reply = methods(_clients[i].ClientRequest, *_servers, _portNumber, _hostName, _clients[i].isCGI);
 				if (_clients[i].isCGI == false){
@@ -488,6 +493,50 @@ void	Socket::checkCGIevens(int i){
 	}
 }
 
+
+void	Socket::clientTimeout(int i){
+
+	std::time_t currentTime = std::time(nullptr);
+	double timeDiff = std::difftime(currentTime, _clients[i].startTime);
+	if (timeDiff > TIMEOUT_CLIENT && _clients[i].timeout == false){
+		std::cerr << "Client timeout for fd: " << _vFds[i].fd << std::endl;
+		std::cerr << "current timeout limit in ms is : " << TIMEOUT_CLIENT << std::endl;
+		try {
+			closeClientConnection(i);
+		} catch(const std::exception& e) {
+			std::cerr << e.what() << std::endl;
+		}
+	}
+
+	//this approach might interfear with rule poll before read and write, though it is beautifull visually
+	// if (_clients[i].timeout == true){
+	// 	try {
+	// 		//closeClientConnection(i);
+	// 		sendData(i);
+	// 		return ;
+	// 	} catch (std::exception &e) {
+	// 		std::cerr << "failed to send data with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
+	// 	}
+				
+	// } 		
+	// std::time_t currentTime = std::time(nullptr);
+	// double timeDiff = std::difftime(currentTime, _clients[i].startTime);
+	// if (timeDiff > TIMEOUT_CLIENT && _clients[i].timeout == false){
+	// 	std::string hostPort = _hostName + ":" + _portNumber;
+	// 	_clients[i].ClientRequest.code = 408;
+	// 	try {
+	// 		_clients[i].ClientRequest.method = ERR;
+	// 		_clients[i].reply = formResponseString(responseStructConstruct(*_servers, hostPort, "", _clients[i].ClientRequest));
+	// 		_clients[i].biteToSend = _clients[i].reply.length();
+	// 		_vFds[i].events |= POLLOUT; - for send data
+	// 		//_vFds[i].events &= ~POLLHUP;
+	// 		_clients[i].timeout = true;
+	// 	} catch(const std::exception& e) {
+	// 		std::cerr << e.what() << std::endl;
+	// 	}
+	// }
+}
+
 void	Socket::checkEvents(){
 
 	for (int i = 0; i < (int)_vFds.size(); i++){
@@ -495,12 +544,13 @@ void	Socket::checkEvents(){
 		if ((_vFds[i].revents & POLLIN) == POLLIN){
 			if (_vFds[i].fd == _listenFd){
 				try {
-					acceptNewConnect(i);
+					acceptNewConnect(i); //set time on accept
 				} catch (std::exception &e) {
 					std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
 				}
 			} else {
 				try {
+					_clients[i].startTime = std::time(nullptr);//reset unpon receive
 					recvConnection(i);
 				} catch (std::exception &e) {
 					std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
@@ -516,8 +566,13 @@ void	Socket::checkEvents(){
 				std::cout << "lost connection POLLHUP for fd = " << _vFds[i].fd << std::endl;
 				closeClientConnection(i);
 		}
+
+		//CGI event check
 		if (i > 0 && _clients.size() > i && _clients[i].isCGI == true){
 			checkCGIevens(i);
+		}
+		if (i > 0 && _clients.size() > i){
+			clientTimeout(i);
 		}
 	}
 }

@@ -46,7 +46,7 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 			}
 		}
 
-		if (poll(&socketsAll[0], (unsigned int)socketsAll.size(), 0) < 0){
+		if (poll(&socketsAll[0], (unsigned int)socketsAll.size(), 1000) < 0){
 			throw std::runtime_error("Socket : poll");
 		
 		} else { 

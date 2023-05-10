@@ -10,6 +10,8 @@
 
 #define EVENTS_NUM 5
 #define MAX_REQUEST_SIZE 8192
+#define TIMEOUT_CGI 5
+#define TIMEOUT_CLIENT 2
 
 //#include "Sockadrs.hpp"
 #include "spawnProcess.hpp"
@@ -31,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <ctime>
 
 typedef struct {
 
@@ -46,6 +49,9 @@ typedef struct {
 	bool CgiDone;
 	std::string cgiReply;
 	CGIInfo cgiInfo;
+	std::time_t startTime;
+	bool timerOn;
+	bool timeout;
 
 } ClientInfo;
 
@@ -78,6 +84,7 @@ public:
 	void	checkCGIevens(int i);
 	void	closeClientConnection(int i);
 	void	checkOnChild(int i);
+	void	clientTimeout(int i);
 
 
 	//CGI_METHODS____________________________________________________
