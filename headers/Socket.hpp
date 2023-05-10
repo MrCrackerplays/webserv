@@ -77,6 +77,7 @@ public:
 	void	sendData(int client_socket);
 	void	checkCGIevens(int i);
 	void	closeClientConnection(int i);
+	void	checkOnChild(int i);
 
 
 	//CGI_METHODS____________________________________________________

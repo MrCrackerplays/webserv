@@ -121,6 +121,7 @@ std::string	methods(parsRequest &request, std::map<std::string, std::vector<Serv
 	} else {
 		
 		if (request.callCGI == true){
+			std::cout << "set cgi to true" << std::endl;
 			CGI = true;
 			request.callCGI = true;
 			return "";

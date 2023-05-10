@@ -157,11 +157,6 @@ void findMethodInServer(parsRequest &request, std::map<std::string, std::vector<
 	std::vector<std::string> methods = location.getMethods();
 	std::vector<std::string> cgis = location.getCGIs();
 
-
-	//********body limit check
-	size_t maxBodySize = location.getClientBodyLimit();
-	std::cout << "maxBodySize: " << maxBodySize << std::endl;
-
 	if (std::find(methods.begin(), methods.end(), request.methodString) == methods.end()){
 		request.code = 405;// Method Not Allowed
 		request.callCGI = false;
@@ -340,7 +335,7 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 		}
 		request.requestBodyLen = request.requestBody.length();
 		if (request.requestBodyLen > getServer(servers, hostPort, request.hostNameHeader).getClientBodyLimit(request.urlPath)) {
-			std::cerr << "request body too big" << std::endl;
+			std::cerr << "request body too big, allowed: " << getServer(servers, hostPort, request.hostNameHeader).getClientBodyLimit(request.urlPath) << std::endl;
 			request.code = 413;
 			return request;
 		}

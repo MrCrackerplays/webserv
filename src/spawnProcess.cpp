@@ -56,6 +56,7 @@ void	envpGenerate(char** envp, parsRequest request, std::string portNumberSocket
 	envp[7] = new char[str7.length() + 1];
 	strcpy(envp[7], str7.c_str());
 	
+
 	std::string str8 = "CONTENT_LENGTH=" + std::to_string(contentLenghtCGI);
 	envp[8] = new char[str8.length() + 1];
 	strcpy(envp[8], str8.c_str());
@@ -193,7 +194,15 @@ ssize_t	readChild(int* pipeFdOut, std::string &reply){
 
 void	waitChild(int &statusChild, pid_t childPid, bool &childExited){
 	int status;
+	
+	// std::cout << "childPid" <<childPid << std::endl;
 	pid_t wpidRes = waitpid(childPid, &status, WNOHANG);
+	
+	
+	// std::cout << "wpidRes = " << wpidRes << std::endl;
+	// std::cout << "status = " << status << std::endl;
+	// std::cout << "WIFEXITED(status) = " << WIFEXITED(status) << std::endl;
+
 	if (wpidRes == 0){
 		childExited = false;
 	} else if (wpidRes < 0){ 
@@ -205,19 +214,69 @@ void	waitChild(int &statusChild, pid_t childPid, bool &childExited){
 		childExited = true;
 		if (WIFEXITED(status)){
 			statusChild = WEXITSTATUS(status);
-			if (statusChild == 1){
+			if (statusChild != 0){
 				statusChild = -1;
-				// std::cerr << "cgi failed" << std::endl;
-				// throw std::runtime_error("spawnProcess : execve");
+				std::cerr << "cgi failed" << std::endl;
+				throw std::runtime_error("spawnProcess : execve");
 			}
 		} else {
 			statusChild = -1;
-			// std::cerr << "parent: status child failure" << std::endl;
-			// throw std::runtime_error("spawnProcess : execve");
+			std::cerr << "parent: status child failure" << std::endl;
+			throw std::runtime_error("spawnProcess : execve");
 		}
 	}
 	
 }
+
+// void waitChild(int& statusChild, pid_t childPid, bool& childExited) {
+//     std::cout << "----waitChild------" << std::endl;
+//     int status;
+
+//     pid_t wpidRes = waitpid(childPid, &status, WNOHANG);
+
+//     std::cout << "wpidRes = " << wpidRes << std::endl;
+//     std::cout << "status = " << status << std::endl;
+//     std::cout << "WIFEXITED(status) = " << WIFEXITED(status) << std::endl;
+//     std::cout << "WIFSTOPPED(status) = " << WIFSTOPPED(status) << std::endl;
+
+//     if (wpidRes == 0) {
+//         // Child process is still running
+// 		int stoppedStatus;
+// 		int stopPid = waitpid(childPid, &stoppedStatus, WNOHANG | WUNTRACED);
+       
+//         if (stopPid > 0) {
+//             if (WIFSTOPPED(stoppedStatus)) {
+//                 std::cout << "Child process is stopped." << std::endl;
+//                 // Handle the case when child process is stopped (e.g., by a signal)
+//                 // Update the childExited flag or take appropriate action
+//             }
+//         } else if (stopPid != -1){
+//             // Error occurred while checking child process status
+//             std::cerr << "Error in waitpid: " << strerror(errno) << std::endl;
+//             throw std::runtime_error("spawnProcess: waitpid");
+//         }
+//     } else if (wpidRes < 0) {
+//         if (wpidRes != -1) {
+//             std::cerr << "spawnProcess: waitpid" << std::endl;
+//             throw std::runtime_error("spawnProcess: waitpid");
+//         }
+//     } else {
+//         childExited = true;
+//         if (WIFEXITED(status)) {
+//             statusChild = WEXITSTATUS(status);
+//             if (statusChild != 0) {
+//                 statusChild = -1;
+//                 std::cerr << "cgi failed" << std::endl;
+//                 throw std::runtime_error("spawnProcess : execve");
+//             }
+//         } else {
+//             statusChild = -1;
+//             std::cerr << "parent: status child failure" << std::endl;
+//             throw std::runtime_error("spawnProcess : execve");
+//         }
+//     }
+// }
+
 
 pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket){
 
@@ -252,7 +311,9 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		close(info.pipeFdOut[1]);
 
 		char *envp[20];
+		//TEST ISSUE IN CGI
 		envpGenerate(envp, request, portNumSocket, hostNameSocket, info.contentLenghtCGI);
+		//char ** envp = NULL;
 		execve((char *)request.physicalPathCgi.c_str(), NULL, envp);
 		std::cerr << "child execve failed" << std::endl;
 		exit(1);

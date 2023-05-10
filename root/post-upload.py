@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import cgi, os
+import cgi, os, sys
 
 
 # <html>
@@ -12,10 +12,14 @@ import cgi, os
 # </body>
 # </html>
 
-
+sys.stderr.write("spam\n")
 
 env = os.environ
 #  print(env)
+
+sys.stderr.write("spam\n")
+
+
 form = cgi.FieldStorage()
 
 # Get filename here.
