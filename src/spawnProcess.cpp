@@ -222,7 +222,7 @@ void	waitChild(int &statusChild, pid_t childPid, bool &childExited){
 	
 }
 
-pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket){
+pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket, Server &s){
 
 	try{
 		initPipesCreatePollFDstruct(info.vCGI, info.pipeFdIn, info.pipeFdOut);
@@ -254,6 +254,34 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		close(info.pipeFdOut[0]);
 		close(info.pipeFdOut[1]);
 
+		const Location &loc = s.getClosestLocation(request.urlPath);
+		std::string root = loc.getRoot();
+		std::string path = loc.getPath();
+		if (path != request.urlPath) {
+			path = request.urlPath.substr(path.length());
+		} else {
+			path = "";
+		}
+		root += path;
+		if (isFile(root)) {
+			size_t pos = root.rfind('/');
+			if (pos < std::string::npos)
+				pos += 1;
+			root = root.substr(0, pos);
+		}
+
+		if (request.physicalPathCgi.rfind(root, 0) != 0) {
+			std::cerr << "physicalpathcgi doesn't begin with root which should never ever happen" << std::endl;
+			std::cerr << "physicalPathCgi:'" << request.physicalPathCgi << "'" << std::endl;
+			std::cerr << "root:'" << root << "'" << std::endl;
+		} else {
+			request.physicalPathCgi = request.physicalPathCgi.substr(root.length());
+
+			if (chdir(root.c_str()) < 0) {
+				std::cerr << "child chdir" << std::endl;
+				exit(1);
+			}
+		}
 		char *envp[20];
 		envpGenerate(envp, request, portNumSocket, hostNameSocket, info.contentLenghtCGI);
 		execve((char *)request.physicalPathCgi.c_str(), NULL, envp);
