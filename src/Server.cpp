@@ -42,7 +42,9 @@ size_t Server::getClientBodyLimit(std::string path) const
 	size_t result = this->_client_body_limit;
 	try
 	{
-		result = getClosestLocation(path).getClientBodyLimit();
+		ssize_t l_res = getClosestLocation(path).getClientBodyLimit();
+		if (l_res != -1)
+			result = l_res;
 	}
 	catch(const std::exception& e)
 	{}
