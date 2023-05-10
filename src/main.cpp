@@ -80,7 +80,7 @@ int	main(int argc, char **argv) {
 		config_file = argv[1];
 
 	//ignore SIGPIPE which sometimes happens when client closes connection
-	//std::signal(SIGPIPE, SIG_IGN);
+	std::signal(SIGPIPE, SIG_IGN);
 	
 	std::map<std::string, std::vector<Server> > servers;
 	std::vector<Socket> vectSockets;

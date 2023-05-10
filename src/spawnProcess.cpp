@@ -149,12 +149,13 @@ void	initPipesCreatePollFDstruct(std::vector<struct pollfd> &vPipesCGI, int* pip
 }
 
 ssize_t writeChild(const std::vector<char>& rowData, size_t& offset, int* pipeFdIn) {
-    
+    std::cout << "writeChild" << std::endl;
 	ssize_t n = 0;
     size_t remainingDataLen = rowData.size() - offset;
     size_t chunkSize = (remainingDataLen > 8192) ? 8192 : remainingDataLen;
     if (chunkSize > 0) {
         n = write(pipeFdIn[1], rowData.data() + offset, chunkSize);
+		std::cout << "writeChild n = " << n << std::endl;
         if (n < 0 && n != -1) {
             throw std::runtime_error("SpawnProcess: writeInChild: write");
         }
@@ -170,7 +171,7 @@ ssize_t writeChild(const std::vector<char>& rowData, size_t& offset, int* pipeFd
 
 
 ssize_t	readChild(int* pipeFdOut, std::string &reply){
-
+std::cout << "readChild" << std::endl;
 	ssize_t res = 1;
 	char buff[1024];
 	memset(buff, 0, 1024);
@@ -180,6 +181,7 @@ ssize_t	readChild(int* pipeFdOut, std::string &reply){
 		//error
 		throw std::runtime_error("SpawnProcess: readFromChild : read");
 	}
+	std::cout << "readChild res = " << res << std::endl;
 	buff[res] = '\0';
 	if (res == 0){
 		reply.append(buff, res);
