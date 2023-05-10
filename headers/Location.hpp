@@ -13,7 +13,7 @@ protected:
 	std::string		_set_cookie;
 	std::string		_require_cookie;
 	std::string		_default_file;
-	size_t			_client_body_limit;
+	ssize_t			_client_body_limit;
 	std::string		_save_location;
 	std::pair<std::string, std::string>	_redirect;
 	std::vector<std::string>			_methods;
@@ -27,7 +27,7 @@ public:
 			std::string default_file = "index.html",
 			std::string set_cookie = "",
 			std::string require_cookie = "",
-			size_t client_body_limit = 0,
+			ssize_t client_body_limit = -1,
 			std::string save_location = "");
 	Location(Location const & src);
 
@@ -40,7 +40,7 @@ public:
 	std::string	getRoot(void) const { return (this->_root); };
 	bool		getDirectoryListing(void) const { return (this->_directory_listing); };
 	std::string	getDefaultFile(void) const { return (this->_default_file); };
-	size_t		getClientBodyLimit(void) const { return (this->_client_body_limit); };
+	ssize_t		getClientBodyLimit(void) const { return (this->_client_body_limit); };
 	std::string	getSetCookie(void) const { return (this->_set_cookie); };
 	std::string	getRequireCookie(void) const { return (this->_require_cookie); };
 	std::pair<std::string, std::string>	getRedirect(void) const { return (this->_redirect); };
