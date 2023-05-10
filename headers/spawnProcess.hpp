@@ -48,7 +48,7 @@ typedef struct {
 void	closePipes(int* pipeFdIn, int* pipeFdOut);
 bool	makeNonBlocking(int fd);
 void	initPipesCreatePollFDstruct(std::vector<struct pollfd> &vPipesCGI, int* pipeFdIn, int* pipeFdOut);
-pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket);
+pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket, Server &s);
 ssize_t writeChild(const std::vector<char>& rowData, size_t& offset, int* pipeFdIn);
 void	waitChild(int &statusChild, pid_t childPid, bool &childExited);
 ssize_t	readChild(int* pipeFdOut, std::string &reply);

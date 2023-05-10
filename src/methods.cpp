@@ -60,14 +60,17 @@ static void	fallback_error(response& response) {
 response responseStructConstruct(std::map<std::string, std::vector<Server> > &servers, std::string& hostPort, std::string body, parsRequest& request){
 	
 	response response;
-	std::string setCookie = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath).getSetCookie();
-	if (setCookie != ""){
-		response.setCookie = setCookie;
+	if (request.code != 408){
+			std::string setCookie = getServer(servers, hostPort, request.hostNameHeader).getClosestLocation(request.urlPath).getSetCookie();
+		if (setCookie != ""){
+			response.setCookie = setCookie;
+		}
+		if (request.code / 100 == 3){ //redirection
+			redirectionResponse(request.code, request.newlocation, response);
+			return response;
+		}
 	}
-	if (request.code / 100 == 3){ //redirection
-		redirectionResponse(request.code, request.newlocation, response);
-		return response;
-	}
+	
 	if (request.code != 200){
 		response.body = "";
 		response.errorPageByCode = getServer(servers, hostPort, request.hostNameHeader).getErrorPage(std::to_string(request.code), request.urlPath);
@@ -75,6 +78,12 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 			readFileBinary(response.errorPageByCode, response.body);
 			response.contentLenght = response.body.length();
 			response.contentType = getContentType(response.errorPageByCode);
+			// std::cout << "-------------------------------------" << std::endl;
+			// std::cout << "response.body: " << response.body << std::endl;
+			// std::cout << "response.errorPageByCode: " << response.errorPageByCode << std::endl;
+			// std::cout << "-------------------------------------" << std::endl;
+
+			//std::cout << "error page: " << response.body << std::endl;
 		} catch (std::exception &e) {
 			std::cerr << "Caught exception: " << e.what() << std::endl;
 			std::cerr << "was unable to read error page: " << response.errorPageByCode << std::endl;
@@ -91,7 +100,6 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 		}
 		response.contentLenght = response.body.length();
 	}
-	
 	response.method = request.method;
 	codes(request.code, response.codeMessage);
 	return response;

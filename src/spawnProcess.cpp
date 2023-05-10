@@ -56,6 +56,7 @@ void	envpGenerate(char** envp, parsRequest request, std::string portNumberSocket
 	envp[7] = new char[str7.length() + 1];
 	strcpy(envp[7], str7.c_str());
 	
+
 	std::string str8 = "CONTENT_LENGTH=" + std::to_string(contentLenghtCGI);
 	envp[8] = new char[str8.length() + 1];
 	strcpy(envp[8], str8.c_str());
@@ -176,7 +177,7 @@ ssize_t	readChild(int* pipeFdOut, std::string &reply){
 
 	res = read(pipeFdOut[0], buff, 1023);
 	if (res == -1){
-		//DO WE NEED error
+		//error
 		throw std::runtime_error("SpawnProcess: readFromChild : read");
 	}
 	buff[res] = '\0';
@@ -192,8 +193,10 @@ ssize_t	readChild(int* pipeFdOut, std::string &reply){
 }
 
 void	waitChild(int &statusChild, pid_t childPid, bool &childExited){
+	
 	int status;
 	pid_t wpidRes = waitpid(childPid, &status, WNOHANG);
+
 	if (wpidRes == 0){
 		childExited = false;
 	} else if (wpidRes < 0){ 
@@ -203,25 +206,23 @@ void	waitChild(int &statusChild, pid_t childPid, bool &childExited){
 		}
 	} else {
 		childExited = true;
-		//std::cout << "---- child is done (from wait) ----" << std::endl;
 		if (WIFEXITED(status)){
 			statusChild = WEXITSTATUS(status);
-			//std::cout << "child exited with status: " << statusChild << std::endl;
-			if (statusChild == 1){
+			if (statusChild != 0){
 				statusChild = -1;
-				// std::cerr << "cgi failed" << std::endl;
-				// throw std::runtime_error("spawnProcess : execve");
+				std::cerr << "cgi failed" << std::endl;
+				throw std::runtime_error("spawnProcess : execve");
 			}
 		} else {
 			statusChild = -1;
-			// std::cerr << "parent: status child failure" << std::endl;
-			// throw std::runtime_error("spawnProcess : execve");
+			std::cerr << "parent: status child failure" << std::endl;
+			throw std::runtime_error("spawnProcess : execve");
 		}
 	}
 	
 }
 
-pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket){
+pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocket, std::string& hostNameSocket, Server &s){
 
 	try{
 		initPipesCreatePollFDstruct(info.vCGI, info.pipeFdIn, info.pipeFdOut);
@@ -253,6 +254,34 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 		close(info.pipeFdOut[0]);
 		close(info.pipeFdOut[1]);
 
+		const Location &loc = s.getClosestLocation(request.urlPath);
+		std::string root = loc.getRoot();
+		std::string path = loc.getPath();
+		if (path != request.urlPath) {
+			path = request.urlPath.substr(path.length());
+		} else {
+			path = "";
+		}
+		root += path;
+		if (isFile(root)) {
+			size_t pos = root.rfind('/');
+			if (pos < std::string::npos)
+				pos += 1;
+			root = root.substr(0, pos);
+		}
+
+		if (request.physicalPathCgi.rfind(root, 0) != 0) {
+			std::cerr << "physicalpathcgi doesn't begin with root which should never ever happen" << std::endl;
+			std::cerr << "physicalPathCgi:'" << request.physicalPathCgi << "'" << std::endl;
+			std::cerr << "root:'" << root << "'" << std::endl;
+		} else {
+			request.physicalPathCgi = request.physicalPathCgi.substr(root.length());
+
+			if (chdir(root.c_str()) < 0) {
+				std::cerr << "child chdir" << std::endl;
+				exit(1);
+			}
+		}
 		char *envp[20];
 		envpGenerate(envp, request, portNumSocket, hostNameSocket, info.contentLenghtCGI);
 		execve((char *)request.physicalPathCgi.c_str(), NULL, envp);

@@ -25,13 +25,20 @@ size_t	Socket::getCGIVectorSize(int i){
 };
 
 bool	Socket::getCGIbool(int i){
-	if (_vFdsSize < i){
+	// if (_vFdsSize < i){
+	// 	return false;
+	// }
+	// if (!_clients[i].isCGI){
+	// 	//std::cout << "getCGIbool: _clients[i].isCGI is FALSE" << std::endl;
+	// 	return false;
+	// }
+	//std::cout << "getCGIbool: _clients[i].isCGI is TRUE" << std::endl;
+	if (_clients[i].CgiDone)
 		return false;
-	}
-	if (!_clients[i].isCGI){
-		return false;
-	}
-	return _clients[i].isCGI;
+	
+	if (_clients[i].isCGI == true)
+		return true;
+	return false;
 };
 
 void Socket::setPollFdVectorSize(size_t size) { _vFdsSize = size; }
@@ -149,10 +156,10 @@ Socket::Socket(char * hostName, char * portNumber){
 }
 
 Socket::~Socket(){
-	if (_addrinfo) {
-		freeaddrinfo(_addrinfo);
-		delete _addrinfo;
-	}
+	// if (_addrinfo) {
+	// 	freeaddrinfo(_addrinfo);
+	// 	delete _addrinfo;
+	// }
 	if (_listenFd > 0){
 		close(_listenFd);
 	}
@@ -210,8 +217,7 @@ void	Socket::acceptNewConnect(int i){
 		newPollfd.events = POLLIN | POLLHUP; //added POLLHUP though it may be not proper place to add both
 		_vFds.push_back(newPollfd);
 		_vFdsSize = _vFds.size();
-		//std::cout << "new connection accepted, _vFds.size = " << _vFdsSize << std::endl;
-		
+
 		//initiate client.struct
 		ClientInfo clientStruct;
 		clientStruct.biteToSend = 0;
@@ -221,17 +227,15 @@ void	Socket::acceptNewConnect(int i){
 		clientStruct.receivedContentVector.clear();
 		clientStruct.reply.clear();
 		clientStruct.isCGI = false;
+		clientStruct.startTime = std::time(nullptr);
+		clientStruct.timerOn = true;
+		clientStruct.timeout = false;
+		clientStruct.ClientRequest.code = 0;
 		_clients.push_back(clientStruct);
 	}
 }
 
 void transferBufferToVector(const char* buff, ssize_t buffSize, std::vector<char>& rowData) {
-
-	// for (ssize_t i = 0; i < buffSize; i++) {
-	// 	rowData.push_back(buff[i]);
-	// }
-	//std::cout << "res = " << buffSize << std::endl;
-	//std::cout << "vector size after receive = " << rowData.size() << std::endl;
    	rowData.insert(rowData.end(), buff, buff + buffSize);
 }
 
@@ -248,7 +252,6 @@ void removeHeaderFromRowData(std::vector<char>& rowData) {
 }
 
 void	Socket::recvConnection(int i){
-	
 	ssize_t res = 0;
 	char buff[MAX_REQUEST_SIZE];
 	std::string buffer;
@@ -259,7 +262,7 @@ void	Socket::recvConnection(int i){
 	} else if (res < 0){
 		closeClientConnection(i);
 		throw std::runtime_error("SockedLoop : recv");
-	} else if (res >= 0) {
+	} else if (res > 0) {
 		transferBufferToVector(buff, res, _clients[i].receivedContentVector);
 		buff[res] = '\0';
 		_clients[i].recvBytes += res;
@@ -267,6 +270,7 @@ void	Socket::recvConnection(int i){
 		if (fullRequestReceived(_clients[i].receivedContent, _clients[i].recvBytes, res)){
 			//parsing part
 			try {
+				_clients[i].timerOn = false;
 				_clients[i].ClientRequest.parsBuff = _clients[i].receivedContent;
 				_clients[i].reply = methods(_clients[i].ClientRequest, *_servers, _portNumber, _hostName, _clients[i].isCGI);
 				if (_clients[i].isCGI == false){
@@ -293,7 +297,6 @@ void	Socket::recvConnection(int i){
 }
 
 void	Socket::closeClientConnection(int i){
-	//std::cout << "closeClientConnection for fd = " << _vFds[i].fd << std::endl;
 	close(_vFds[i].fd);
 	_vFds.erase(_vFds.begin() + i, _vFds.begin() + i + 1);
 	_vFdsSize--;
@@ -305,11 +308,6 @@ void	Socket::closeClientConnection(int i){
 void	Socket::sendData(int i){
 
 	ssize_t biteSent = send(_vFds[i].fd, _clients[i].reply.c_str(), _clients[i].reply.length(), 0);
-	// if (i > 0 && _clients.size() > i && _clients[i].isCGI == true){
-	// 	// std::cout << "biteSent for cgi reply: " << biteSent << std::endl;
-	// 	// std::cout << "reply: " << _clients[i].reply << std::endl;
-	// 	// std::cout << "send to fd =" << _vFds[i].fd << std::endl; // ->> check if I do not close it somewhere previously
-	// }
 	if (biteSent == -1){
 		std::cerr << "biteSent == -1" << std::endl;
 		throw std::runtime_error("Socket : send");
@@ -319,6 +317,7 @@ void	Socket::sendData(int i){
 		_clients[i].biteToSend -= biteSent;
 	} else if (_clients[i].biteToSend == biteSent){
 		closeClientConnection(i);
+		
 	}
 }
 
@@ -332,9 +331,20 @@ void	Socket::CGIerrorReply(int i){
 	client.reply = formResponseString(client.ClientResponse);
 	client.CgiDone = true;
 	_vFds[i].events |= POLLOUT;
-	client.isCGI = false;
+
+	_clients[i].cgiInfo.state = ERROR;
+	_clients[i].isCGI = false;
+
+	if (client.cgiInfo.vCGI.size() == 2){
+		close(client.cgiInfo.vCGI[0].fd);
+		close(client.cgiInfo.vCGI[1].fd);
+	} else if (client.cgiInfo.vCGI.size() == 1){
+		close(client.cgiInfo.vCGI[0].fd);
+	}
 	client.cgiInfo.vCGI.clear();
 	client.cgiInfo.vCGIsize = 0;
+	client.CgiDone = true;
+
 }
 
 void	Socket::readFromChild(int i){
@@ -354,6 +364,7 @@ void	Socket::writeInChild(int i){
 
 	ClientInfo &client = _clients[i];
 	CGIInfo &cgiInf = client.cgiInfo;
+
 	try{
 		std::vector<char> &rowData = client.receivedContentVector;
 		ssize_t wrote = writeChild(rowData, client.cgiInfo.offset, cgiInf.pipeFdIn);
@@ -362,7 +373,6 @@ void	Socket::writeInChild(int i){
     		return;
 		}
 		if (rowData.size() == client.cgiInfo.offset){
-			std::cout << "write done" << std::endl;
 			cgiInf.state = WRITE_DONE;
 			cgiInf.contentLenghtCGI = rowData.size();
 			cgiInf.vCGI.erase(cgiInf.vCGI.begin()); //write is in vCGI[0]
@@ -381,7 +391,8 @@ void	Socket::startChild(int i){
 	ClientInfo &client = _clients[i];
 	CGIInfo &cgiInf = client.cgiInfo;
 	try{
-		cgiInf.childPid = launchChild(cgiInf, client.ClientRequest, _portNumber, _hostName);
+		std::string hp = _hostName + ":" + _portNumber;
+		cgiInf.childPid = launchChild(cgiInf, client.ClientRequest, _portNumber, _hostName, getServer(*_servers, hp, client.ClientRequest.hostNameHeader));
 		cgiInf.state = PIPES_INIT;
 		cgiInf.vCGIsize = 2;
 		cgiInf.childExited = false;
@@ -393,19 +404,43 @@ void	Socket::startChild(int i){
 	}
 }
 
+
+void Socket::checkOnChild(int i){
+
+	CGIInfo &cgiInf = _clients[i].cgiInfo;
+	
+	if (cgiInf.state == WRITE_READY || cgiInf.state == READ_READY){
+		
+		try {
+			int stChild;
+			waitChild(stChild, cgiInf.childPid, cgiInf.childExited);
+		} catch (std::exception &e) {
+			std::cerr << "Failed child: " << e.what() << std::endl;
+			cgiInf.state = ERROR;
+			CGIerrorReply(i);
+			return ;
+		}
+	}
+	
+}
+
 void Socket::pickCGIState(int i){
 
 	CGIInfo &cgiInf = _clients[i].cgiInfo;
+
+	checkOnChild(i); //additional child health checks
 	if (cgiInf.state == NO_PIPES){
-		std::cout << "no pipes yet" << std::endl;
 		return ;
 	} else if (cgiInf.state == WRITE_DONE){
 		try {
 			int stChild;
 			waitChild(stChild, cgiInf.childPid, cgiInf.childExited);
-			if (cgiInf.childExited == true){
+			if (cgiInf.childExited == true && stChild != -1){
 				cgiInf.state = READ_READY;
-				std::cout << "read ready, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
+			} else if (stChild == -1){
+				cgiInf.state = ERROR;
+				CGIerrorReply(i);
+				return ;
 			}
 		} catch (std::exception &e) {
 			std::cerr << "Failed to wait for child: " << e.what() << std::endl;
@@ -418,18 +453,15 @@ void Socket::pickCGIState(int i){
 			struct pollfd &writeFd = cgiInf.vCGI[0]; //expect POLLOUT
 			if (cgiInf.state == PIPES_INIT && (writeFd.revents & POLLOUT) == POLLOUT){
 				cgiInf.state = WRITE_READY;
-				//std::cout << "write ready, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
 			}
 		} else if (cgiInf.vCGI.size() == 1) {
 			struct pollfd &readFd = cgiInf.vCGI[0]; //expect POLLIN
 			if (cgiInf.state == WRITE_DONE && (readFd.revents & POLLIN)== POLLIN){ // && (readFd.revents & POLLIN)== POLLIN)
 				cgiInf.state = READ_READY;
-				//std::cout << "READ_READY, vCGi size is " << cgiInf.vCGI.size() <<  std::endl;
 			} else if (cgiInf.state == READ_READY && (readFd.revents & POLLHUP)== POLLHUP){
 				cgiInf.state = READ_DONE;
-				cgiInf.vCGI.erase(cgiInf.vCGI.begin()); //read in vCGI[1] but write should be erased already NOT SURE
+				cgiInf.vCGI.erase(cgiInf.vCGI.begin());
 				cgiInf.vCGIsize = 0;
-				//std::cout << "READ_DONE, vCGi size is expected 0 and is: " << cgiInf.vCGI.size() <<  std::endl;
 			}
 		}
 
@@ -441,7 +473,6 @@ void	Socket::checkCGIevens(int i){
 
 	if (_clients[i].CgiDone == true)
 		return ;
-
 	pickCGIState(i);
 	if (_clients[i].cgiInfo.state == NO_PIPES){ 
 		startChild(i);
@@ -462,6 +493,50 @@ void	Socket::checkCGIevens(int i){
 	}
 }
 
+
+void	Socket::clientTimeout(int i){
+
+	std::time_t currentTime = std::time(nullptr);
+	double timeDiff = std::difftime(currentTime, _clients[i].startTime);
+	if (timeDiff > TIMEOUT_CLIENT && _clients[i].timeout == false){
+		std::cerr << "Client timeout for fd: " << _vFds[i].fd << std::endl;
+		std::cerr << "current timeout limit in ms is : " << TIMEOUT_CLIENT << std::endl;
+		try {
+			closeClientConnection(i);
+		} catch(const std::exception& e) {
+			std::cerr << e.what() << std::endl;
+		}
+	}
+
+	//this approach might interfear with rule poll before read and write, though it is beautifull visually
+	// if (_clients[i].timeout == true){
+	// 	try {
+	// 		//closeClientConnection(i);
+	// 		sendData(i);
+	// 		return ;
+	// 	} catch (std::exception &e) {
+	// 		std::cerr << "failed to send data with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
+	// 	}
+				
+	// } 		
+	// std::time_t currentTime = std::time(nullptr);
+	// double timeDiff = std::difftime(currentTime, _clients[i].startTime);
+	// if (timeDiff > TIMEOUT_CLIENT && _clients[i].timeout == false){
+	// 	std::string hostPort = _hostName + ":" + _portNumber;
+	// 	_clients[i].ClientRequest.code = 408;
+	// 	try {
+	// 		_clients[i].ClientRequest.method = ERR;
+	// 		_clients[i].reply = formResponseString(responseStructConstruct(*_servers, hostPort, "", _clients[i].ClientRequest));
+	// 		_clients[i].biteToSend = _clients[i].reply.length();
+	// 		_vFds[i].events |= POLLOUT; - for send data
+	// 		//_vFds[i].events &= ~POLLHUP;
+	// 		_clients[i].timeout = true;
+	// 	} catch(const std::exception& e) {
+	// 		std::cerr << e.what() << std::endl;
+	// 	}
+	// }
+}
+
 void	Socket::checkEvents(){
 
 	for (int i = 0; i < (int)_vFds.size(); i++){
@@ -469,12 +544,13 @@ void	Socket::checkEvents(){
 		if ((_vFds[i].revents & POLLIN) == POLLIN){
 			if (_vFds[i].fd == _listenFd){
 				try {
-					acceptNewConnect(i);
+					acceptNewConnect(i); //set time on accept
 				} catch (std::exception &e) {
 					std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
 				}
 			} else {
 				try {
+					_clients[i].startTime = std::time(nullptr);//reset unpon receive
 					recvConnection(i);
 				} catch (std::exception &e) {
 					std::cerr << "failed with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
@@ -490,8 +566,13 @@ void	Socket::checkEvents(){
 				std::cout << "lost connection POLLHUP for fd = " << _vFds[i].fd << std::endl;
 				closeClientConnection(i);
 		}
+
+		//CGI event check
 		if (i > 0 && _clients.size() > i && _clients[i].isCGI == true){
 			checkCGIevens(i);
+		}
+		if (i > 0 && _clients.size() > i){
+			clientTimeout(i);
 		}
 	}
 }

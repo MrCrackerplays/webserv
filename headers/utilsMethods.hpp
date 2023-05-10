@@ -20,6 +20,7 @@ typedef enum {
 	DELETE = 2,
 	NOTSUPPORTED = 3,
 	ERR = -1
+	// CLIENT_TIMEOUT = -2
 	
 }	method;
 
