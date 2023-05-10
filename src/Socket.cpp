@@ -157,7 +157,6 @@ Socket::Socket(char * hostName, char * portNumber){
 Socket::~Socket(){
 	if (_addrinfo) {
 		freeaddrinfo(_addrinfo);
-		delete _addrinfo;
 	}
 	if (_listenFd > 0){
 		close(_listenFd);
