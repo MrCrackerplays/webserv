@@ -12,12 +12,12 @@ import cgi, os, sys
 # </body>
 # </html>
 
-sys.stderr.write("spam\n")
+# sys.stderr.write("spam\n")
 
 env = os.environ
 #  print(env)
 
-sys.stderr.write("spam\n")
+# sys.stderr.write("spam\n")
 
 
 form = cgi.FieldStorage()

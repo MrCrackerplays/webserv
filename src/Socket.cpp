@@ -212,7 +212,6 @@ void	Socket::acceptNewConnect(int i){
 			}
 			break;
 		}
-		std::cout << "New connection accepted fd = " << newFd << std::endl;
 		struct pollfd newPollfd;
 		newPollfd.fd = newFd;
 		newPollfd.events = POLLIN | POLLHUP; //added POLLHUP though it may be not proper place to add both
@@ -249,7 +248,6 @@ void removeHeaderFromRowData(std::vector<char>& rowData) {
 }
 
 void	Socket::recvConnection(int i){
-	std::cout << "recvConnection" << std::endl;
 	ssize_t res = 0;
 	char buff[MAX_REQUEST_SIZE];
 	std::string buffer;
@@ -268,7 +266,6 @@ void	Socket::recvConnection(int i){
 		if (fullRequestReceived(_clients[i].receivedContent, _clients[i].recvBytes, res)){
 			//parsing part
 			try {
-				std::cout << "-------parsBuffer--------- : " << _clients[i].ClientRequest.parsBuff << std::endl;
 				_clients[i].ClientRequest.parsBuff = _clients[i].receivedContent;
 				_clients[i].reply = methods(_clients[i].ClientRequest, *_servers, _portNumber, _hostName, _clients[i].isCGI);
 				if (_clients[i].isCGI == false){
@@ -314,7 +311,6 @@ void	Socket::sendData(int i){
 		_clients[i].reply = rest;
 		_clients[i].biteToSend -= biteSent;
 	} else if (_clients[i].biteToSend == biteSent){
-		std::cout << "closed fd client" << _vFds[i].fd << std::endl;
 		closeClientConnection(i);
 		
 	}
@@ -322,7 +318,6 @@ void	Socket::sendData(int i){
 
 void	Socket::CGIerrorReply(int i){
 
-	std::cout << "---------CGIerrorReply-------" << std::endl;
 	ClientInfo &client = _clients[i];
 
 	std::string hostPort = _hostName + ":" + _portNumber;
@@ -344,9 +339,6 @@ void	Socket::CGIerrorReply(int i){
 	client.cgiInfo.vCGI.clear();
 	client.cgiInfo.vCGIsize = 0;
 	client.CgiDone = true;
-	std::cout << "---------CGIerrorReply done-------" << std::endl;
-	std::cout << "client is cgi ? " << client.isCGI << std::endl;
-
 
 }
 
@@ -367,12 +359,6 @@ void	Socket::writeInChild(int i){
 
 	ClientInfo &client = _clients[i];
 	CGIInfo &cgiInf = client.cgiInfo;
-
-		//TEST
-	cgiInf.state = WRITE_DONE;
-	return ;
-		//TEST
-
 
 	try{
 		std::vector<char> &rowData = client.receivedContentVector;
@@ -435,17 +421,11 @@ void Socket::checkOnChild(int i){
 void Socket::pickCGIState(int i){
 
 	CGIInfo &cgiInf = _clients[i].cgiInfo;
-	// if (cgiInf.state == ERROR){
-	// 	CGIerrorReply(i);
-	// 	return ;
-	// }
 
-	//checkOnChild(i);
+	checkOnChild(i); //additional child health checks
 	if (cgiInf.state == NO_PIPES){
-		std::cout << "NO_PIPES" << std::endl;
 		return ;
 	} else if (cgiInf.state == WRITE_DONE){
-		std::cout << "WRITE_DONE" << std::endl;
 		try {
 			int stChild;
 			waitChild(stChild, cgiInf.childPid, cgiInf.childExited);
@@ -466,16 +446,13 @@ void Socket::pickCGIState(int i){
 		if (cgiInf.vCGI.size() == 2){
 			struct pollfd &writeFd = cgiInf.vCGI[0]; //expect POLLOUT
 			if (cgiInf.state == PIPES_INIT && (writeFd.revents & POLLOUT) == POLLOUT){
-				std::cout << "WRITE_READY" << std::endl;
 				cgiInf.state = WRITE_READY;
 			}
 		} else if (cgiInf.vCGI.size() == 1) {
 			struct pollfd &readFd = cgiInf.vCGI[0]; //expect POLLIN
 			if (cgiInf.state == WRITE_DONE && (readFd.revents & POLLIN)== POLLIN){ // && (readFd.revents & POLLIN)== POLLIN)
-				std::cout << "READ_READY" << std::endl;
 				cgiInf.state = READ_READY;
 			} else if (cgiInf.state == READ_READY && (readFd.revents & POLLHUP)== POLLHUP){
-				std::cout << "READ_DONE" << std::endl;
 				cgiInf.state = READ_DONE;
 				cgiInf.vCGI.erase(cgiInf.vCGI.begin());
 				cgiInf.vCGIsize = 0;
@@ -490,7 +467,6 @@ void	Socket::checkCGIevens(int i){
 
 	if (_clients[i].CgiDone == true)
 		return ;
-	std::cout << "checkCGIevens with i = " << i << std::endl;
 	pickCGIState(i);
 	if (_clients[i].cgiInfo.state == NO_PIPES){ 
 		startChild(i);
