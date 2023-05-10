@@ -381,7 +381,8 @@ void	Socket::startChild(int i){
 	ClientInfo &client = _clients[i];
 	CGIInfo &cgiInf = client.cgiInfo;
 	try{
-		cgiInf.childPid = launchChild(cgiInf, client.ClientRequest, _portNumber, _hostName);
+		std::string hp = _hostName + ":" + _portNumber;
+		cgiInf.childPid = launchChild(cgiInf, client.ClientRequest, _portNumber, _hostName, getServer(*_servers, hp, client.ClientRequest.hostNameHeader));
 		cgiInf.state = PIPES_INIT;
 		cgiInf.vCGIsize = 2;
 		cgiInf.childExited = false;
