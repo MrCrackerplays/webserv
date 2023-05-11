@@ -4,6 +4,8 @@ Server::Server(std::string port, std::string host,
 				size_t client_body_limit, std::vector<std::string> names)
 	: _port(port), _host(host), _client_body_limit(client_body_limit), _names(names), _error_pages()
 {
+	this->_error_pages.insert(std::pair<std::string, std::string>("403", "errors/403.html"));
+	this->_error_pages.insert(std::pair<std::string, std::string>("404", "errors/404.html"));
 }
 Server::Server(Server const &src)
 {
