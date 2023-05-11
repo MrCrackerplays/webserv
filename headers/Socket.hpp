@@ -8,10 +8,10 @@
 #ifndef Socket_hpp
 #define Socket_hpp
 
-#define EVENTS_NUM 5
+#define EVENTS_NUM 100
 #define MAX_REQUEST_SIZE 8192
-#define TIMEOUT_CGI 3
-#define TIMEOUT_CLIENT 5
+#define TIMEOUT_CGI 30
+#define TIMEOUT_CLIENT 50
 
 //#include "Sockadrs.hpp"
 #include "spawnProcess.hpp"
