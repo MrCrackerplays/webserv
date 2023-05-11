@@ -116,7 +116,7 @@ void	printVectStr(std::vector<std::string> vect){
 }
 
 void	Socket::createAddrinfo(){
-	
+
 	int status;
 	struct addrinfo hints;
 	
@@ -125,7 +125,6 @@ void	Socket::createAddrinfo(){
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 	
-	_addrinfo = new struct addrinfo;
 	status = getaddrinfo(_hostName.c_str(), _portNumber.c_str(), &hints, &_addrinfo);
 	if (status < 0){
 		throw std::runtime_error("Port : getaddrinfo");
@@ -156,10 +155,9 @@ Socket::Socket(char * hostName, char * portNumber){
 }
 
 Socket::~Socket(){
-	// if (_addrinfo) {
-	// 	freeaddrinfo(_addrinfo);
-	// 	delete _addrinfo;
-	// }
+	if (_addrinfo) {
+		freeaddrinfo(_addrinfo);
+	}
 	if (_listenFd > 0){
 		close(_listenFd);
 	}
