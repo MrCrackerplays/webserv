@@ -78,12 +78,6 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 			readFileBinary(response.errorPageByCode, response.body);
 			response.contentLenght = response.body.length();
 			response.contentType = getContentType(response.errorPageByCode);
-			// std::cout << "-------------------------------------" << std::endl;
-			// std::cout << "response.body: " << response.body << std::endl;
-			// std::cout << "response.errorPageByCode: " << response.errorPageByCode << std::endl;
-			// std::cout << "-------------------------------------" << std::endl;
-
-			//std::cout << "error page: " << response.body << std::endl;
 		} catch (std::exception &e) {
 			std::cerr << "Caught exception: " << e.what() << std::endl;
 			std::cerr << "was unable to read error page: " << response.errorPageByCode << std::endl;

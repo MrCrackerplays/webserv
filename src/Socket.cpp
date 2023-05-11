@@ -286,7 +286,7 @@ void	Socket::recvConnection(int i){
 					
 					if (_clients[i].cgiInfo.contentLenghtCGI > _clients[i].ClientRequest.allowedContLen){
 						_clients[i].receivedContentVector.erase(_clients[i].receivedContentVector.begin() + _clients[i].ClientRequest.allowedContLen, _clients[i].receivedContentVector.end()); //maybe +1
-						std::cout << "contentLenghtCGI > allowedContLen, cgi body was adjusted" << std::endl; //CORRECT?
+						// std::cout << "contentLenghtCGI > allowedContLen, cgi body was adjusted" << std::endl; //CORRECT?
 					}
 				}
 			} catch (std::exception &e) {
@@ -309,7 +309,6 @@ void	Socket::sendData(int i){
 
 	ssize_t biteSent = send(_vFds[i].fd, _clients[i].reply.c_str(), _clients[i].reply.length(), 0);
 	if (biteSent == -1){
-		std::cerr << "biteSent == -1" << std::endl;
 		throw std::runtime_error("Socket : send");
 	} else if (biteSent < _clients[i].biteToSend){
 		std::string rest = _clients[i].reply.substr(biteSent, _clients[i].reply.length());
@@ -335,18 +334,15 @@ void	Socket::CGIerrorReply(int i){
 	client.reply = formResponseString(client.ClientResponse);
 	client.CgiDone = true;
 	_vFds[i].events |= POLLOUT;
-
 	//_clients[i].cgiInfo.state = ERROR;
 	_clients[i].isCGI = false;
 
-	std::cout << "closing pipes : " << std::endl;
 	if (client.cgiInfo.vCGI.size() == 2){
 		close(client.cgiInfo.vCGI[0].fd);
 		close(client.cgiInfo.vCGI[1].fd);
 	} else if (client.cgiInfo.vCGI.size() == 1){
 		close(client.cgiInfo.vCGI[0].fd);
 	}
-	std::cout << "pipes closed" << std::endl;
 	client.cgiInfo.vCGI.clear();
 	client.cgiInfo.vCGIsize = 0;
 	client.CgiDone = true;
@@ -419,9 +415,7 @@ void Socket::checkOnChild(int i){
 	if (cgiInf.state == PIPES_INIT || cgiInf.state == WRITE_READY || cgiInf.state == WRITE_DONE || cgiInf.state == READ_READY){
 		std::time_t currentTime = std::time(nullptr);
 		double timeDiff = std::difftime(currentTime, cgiInf.startChildTime);
-		std::cout << "timeDiff = " << timeDiff << std::endl;
 		if (timeDiff > TIMEOUT_CGI){
-			std::cout << "TIMEOUT_CGI" << std::endl;
 			cgiInf.state = TIMEOUT;
 			kill(cgiInf.childPid, SIGTERM); //kill the child process if it takes too long
 			CGIerrorReply(i); 
@@ -429,7 +423,6 @@ void Socket::checkOnChild(int i){
 		}
 	}
 	if (cgiInf.state == WRITE_READY || cgiInf.state == READ_READY){
-		std::cout << "cgiInf.state == WRITE_READY || cgiInf.state == READ_READY" << std::endl;
 		try {
 			int stChild;
 			waitChild(stChild, cgiInf.childPid, cgiInf.childExited);
@@ -444,10 +437,8 @@ void Socket::checkOnChild(int i){
 }
 
 void Socket::pickCGIState(int i){
-	std::cout << "pickCGIState" << std::endl;
 
 	CGIInfo &cgiInf = _clients[i].cgiInfo;
-	
 
 	checkOnChild(i); //additional child health checks
 	if (cgiInf.state == NO_PIPES){
@@ -456,7 +447,6 @@ void Socket::pickCGIState(int i){
 		// CGIerrorReply(i);
 		return ;
 	} else if (cgiInf.state == WRITE_DONE){
-		std::cout << "cgiInf.state == WRITE_DONE" << std::endl;
 		try {
 			int stChild;
 			waitChild(stChild, cgiInf.childPid, cgiInf.childExited);
@@ -475,13 +465,11 @@ void Socket::pickCGIState(int i){
 		}
 	} else {
 		if (cgiInf.vCGI.size() == 2){
-			std::cout << "cgiInf.vCGI.size() == 2" << std::endl;
 			struct pollfd &writeFd = cgiInf.vCGI[0]; //expect POLLOUT
 			if (cgiInf.state == PIPES_INIT && (writeFd.revents & POLLOUT) == POLLOUT){
 				cgiInf.state = WRITE_READY;
 			}
 		} else if (cgiInf.vCGI.size() == 1) {
-			std::cout << "cgiInf.vCGI.size() == 1" << std::endl;
 			struct pollfd &readFd = cgiInf.vCGI[0]; //expect POLLIN
 			if (cgiInf.state == WRITE_DONE && (readFd.revents & POLLIN)== POLLIN){ // && (readFd.revents & POLLIN)== POLLIN)
 				cgiInf.state = READ_READY;
@@ -497,36 +485,26 @@ void Socket::pickCGIState(int i){
 }
 
 void	Socket::checkCGIevens(int i){ 
-	std::cout << "checkCGIevens" << std::endl;
 
 	if (_clients[i].CgiDone == true) //  || _clients[i].cgiInfo.state == ERROR || _clients[i].cgiInfo.state == TIMEOUT
 		return ;
 	pickCGIState(i);
 	if (_clients[i].cgiInfo.state == NO_PIPES){ 
-		std::cout << "NO_PIPES" << std::endl;
 		startChild(i);
-		std::cout << "startChild(i) done" << std::endl;
 
 	} else if (_clients[i].cgiInfo.state == WRITE_READY){
-		std::cout << "WRITE_READY" << std::endl;
 		writeInChild(i);
-		std::cout << "writeInChild(i) done" << std::endl;
 		
 	} else if (_clients[i].cgiInfo.state == READ_READY){ //read from child
-		std::cout << "READ_READY" << std::endl;
 		readFromChild(i);
-		std::cout << "readFromChild(i) done" << std::endl;
 
 	} else if (_clients[i].cgiInfo.state == READ_DONE){ 
-		std::cout << "READ_DONE" << std::endl;
-
 
 		parseCorrectResponseCGI(_clients[i].cgiReply, _clients[i].ClientResponse);
 		_clients[i].CgiDone = true;
 		_vFds[i].events |= POLLOUT; // &= ~POLLOUT;
 		_clients[i].reply = _clients[i].ClientResponse.header + _clients[i].ClientResponse.body;
 		_clients[i].biteToSend = _clients[i].reply.length();
-		std::cout << "reply cgi ready " << std::endl;
 	}
 }
 
@@ -536,8 +514,8 @@ void	Socket::clientTimeout(int i){
 	std::time_t currentTime = std::time(nullptr);
 	double timeDiff = std::difftime(currentTime, _clients[i].startTime);
 	if (timeDiff > TIMEOUT_CLIENT && _clients[i].timeout == false){
-		std::cerr << "Client timeout for fd: " << _vFds[i].fd << std::endl;
-		std::cerr << "current timeout limit in ms is : " << TIMEOUT_CLIENT << std::endl;
+		std::cerr << "Client timeout" << std::endl;
+		std::cerr << "current timeout limit is : " << TIMEOUT_CLIENT << std::endl;
 		try {
 			closeClientConnection(i);
 		} catch(const std::exception& e) {
