@@ -36,6 +36,8 @@ std::string getContentType(std::string& filename){
 	extensionsMap.insert(std::make_pair("png", "image/png"));
 	extensionsMap.insert(std::make_pair("gif", "image/gif"));
 	extensionsMap.insert(std::make_pair("pdf", "application/pdf"));
+	extensionsMap.insert(std::make_pair("css", "text/css"));
+	extensionsMap.insert(std::make_pair("js", "text/javascript"));
 
 	std::string contentType;
 	size_t pos = filename.rfind(".");
