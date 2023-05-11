@@ -1,7 +1,7 @@
 NAME := webserv
 CC := c++
 
-CFLAGS ?= -Wall -fsanitize=address # -Werror -Wextra -std=c++98 -Wshadow -Wno-shadow -d -fsanitize=address
+CFLAGS ?= -Wall -Werror -Wextra -std=c++98 -Wshadow -Wno-shadow
 ifdef DEBUG
 CFLAGS := -g $(CFLAGS)
 endif
