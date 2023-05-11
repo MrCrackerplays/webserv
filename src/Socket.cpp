@@ -163,6 +163,24 @@ Socket::~Socket(){
 	}
 }
 
+Socket::Socket(const Socket &src) {
+	*this = src;
+}
+
+Socket& Socket::operator=(const Socket &src) {
+	if (this == &src)
+		return *this;
+	this->_addrinfo = src._addrinfo;
+	this->_clients = src._clients;
+	this->_hostName = src._hostName;
+	this->_listenFd = src._listenFd;
+	this->_portNumber = src._portNumber;
+	this->_servers = src._servers;
+	this->_vFds = src._vFds;
+	this->_vFdsSize = src._vFdsSize;
+	return *this;
+}
+
 size_t	findContentLenght(std::string buffer){
 	
 	size_t pos = buffer.find("Content-Length: ");

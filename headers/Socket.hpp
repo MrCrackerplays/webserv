@@ -76,6 +76,8 @@ public:
 	
 	Socket(char * hostName, char * portNumber);
 	~Socket();
+	Socket(const Socket &src);
+	Socket &operator=(const Socket &src);
 	
 	//EVENTS_METHODS_________________________________________________
 	void	checkEvents();
