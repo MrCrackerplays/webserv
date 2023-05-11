@@ -46,7 +46,7 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 			}
 		}
 
-		if (poll(&socketsAll[0], (unsigned int)socketsAll.size(), 0) < 0){
+		if (poll(&socketsAll[0], (unsigned int)socketsAll.size(), 1000) < 0){
 			throw std::runtime_error("Socket : poll");
 		
 		} else { 
@@ -80,7 +80,7 @@ int	main(int argc, char **argv) {
 		config_file = argv[1];
 
 	//ignore SIGPIPE which sometimes happens when client closes connection
-	//std::signal(SIGPIPE, SIG_IGN);
+	std::signal(SIGPIPE, SIG_IGN);
 	
 	std::map<std::string, std::vector<Server> > servers;
 	std::vector<Socket> vectSockets;

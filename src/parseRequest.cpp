@@ -280,7 +280,7 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 	std::istringstream requestStream(requestBuff);
 	request.autoindex = false;
 	request.allowedContLen = -1; //by default
-	
+
 	request.code = 200;
 	requestStream >> request.methodString;
 	request.method = getMethodFromRequest(request.methodString);

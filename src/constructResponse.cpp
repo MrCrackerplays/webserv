@@ -64,9 +64,9 @@ std::string	formResponseString(response response){
 	
 	switch (response.method) {
 		case ERR:
-			return response.header + response.errorPageByCode;
+			return response.header + response.body; //response.errorPageByCode - was path to error page;
 		case NOTSUPPORTED:
-			return response.header + response.errorPageByCode;
+			return response.header + response.body; //response.errorPageByCode;
 		case GET:
 			return response.header + response.body;
 		case DELETE:

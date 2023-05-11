@@ -18,7 +18,8 @@ env = os.environ
 #  print(env)
 
 # sys.stderr.write("spam\n")
-
+# import time
+# time.sleep(3)
 
 form = cgi.FieldStorage()
 

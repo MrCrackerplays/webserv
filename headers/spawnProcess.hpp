@@ -24,8 +24,8 @@ typedef enum {
 	WRITE_DONE = 3,
 	READ_READY = 4,
 	READ_DONE = 5,
-	ERROR = 6
-	//TIMEOUT // not used
+	ERROR = 6,
+	TIMEOUT = 7
 	
 } cgiState;
 
@@ -42,6 +42,7 @@ typedef struct {
 	int vCGIsize;
 	int pipeFdIn[2];
 	int pipeFdOut[2];
+	std::time_t startChildTime;
 	cgiState state;
 } CGIInfo;
 
