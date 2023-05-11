@@ -423,7 +423,8 @@ void Socket::checkOnChild(int i){
 		if (timeDiff > TIMEOUT_CGI){
 			std::cout << "TIMEOUT_CGI" << std::endl;
 			cgiInf.state = TIMEOUT;
-			CGIerrorReply(i);
+			kill(cgiInf.childPid, SIGTERM); //kill the child process if it takes too long
+			CGIerrorReply(i); 
 			return ;
 		}
 	}

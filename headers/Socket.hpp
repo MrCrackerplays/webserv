@@ -10,8 +10,8 @@
 
 #define EVENTS_NUM 5
 #define MAX_REQUEST_SIZE 8192
-#define TIMEOUT_CGI 5
-#define TIMEOUT_CLIENT 2
+#define TIMEOUT_CGI 1
+#define TIMEOUT_CLIENT 20
 
 //#include "Sockadrs.hpp"
 #include "spawnProcess.hpp"
@@ -34,6 +34,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <ctime>
+#include <signal.h>
 
 typedef struct {
 
