@@ -51,8 +51,10 @@ void methodDelete(parsRequest& request) {
 	}
 }
 
-static void	fallback_error(response& response) {
-	response.body = "<html><head><title>Internal Server Error</title><style>*{text-align: center;}</style></head><body><h1>An Internal Server Error Has Occurred</h1><hr>Webserv</body></html>";
+static void	fallback_error(response& response, int code) {
+	std::ostringstream oss;
+	oss << "<html><head><title>Internal Server Error</title><style>*{text-align: center;}</style></head><body><h1>An Internal Server Error has occurred while attempting to get the page for error code '" << code << "'</h1><hr>Webserv</body></html>";
+	response.body = oss.str();
 	response.contentLenght = response.body.length();
 	response.contentType = "text/html";
 }
@@ -81,7 +83,7 @@ response responseStructConstruct(std::map<std::string, std::vector<Server> > &se
 		} catch (std::exception &e) {
 			std::cerr << "Caught exception: " << e.what() << std::endl;
 			std::cerr << "was unable to read error page: " << response.errorPageByCode << std::endl;
-			fallback_error(response);
+			fallback_error(response, request.code);
 			request.code = 500;
 		}
 	} else {
