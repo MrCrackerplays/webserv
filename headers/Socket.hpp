@@ -71,7 +71,6 @@ protected:
 	
 public:
 	
-	void	printClientFds();
 	void	createAddrinfo();
 	
 	Socket(char * hostName, char * portNumber);

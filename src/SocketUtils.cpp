@@ -7,19 +7,6 @@
 
 #include "Socket.hpp"
 
-void	Socket::printClientFds(){
-	
-	for (size_t i = 0; i < _vFds.size(); i++){
-		std::cout <<  "FD["<< i <<"] == " << _vFds[i].fd << " | event ==" << _vFds[i].events << " | revent ==" << _vFds[i].revents << std::endl;
-		std::cout << "does it has CG? " << _clients[i].isCGI << std::endl;
-		if (_clients[i].isCGI == true){
-			std::cout << "it has CGI" << std::endl;
-			std::cout << "CgiFd[0] == "<< _clients[i].cgiInfo.vCGI[0].fd << " | event ==" << _clients[i].cgiInfo.vCGI[0].events << " | revent ==" << _clients[i].cgiInfo.vCGI[0].events << std::endl;
-			std::cout << "CgiFd[1] == "<< _clients[i].cgiInfo.vCGI[1].fd << " | event ==" << _clients[i].cgiInfo.vCGI[1].events << " | revent ==" << _clients[i].cgiInfo.vCGI[1].events << std::endl;
-		}
-	}
-}
-
 void	initiateVectPoll(int listenFd, std::vector<struct pollfd> &vFds){
 
 	struct pollfd deflt;

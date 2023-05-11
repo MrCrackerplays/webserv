@@ -100,21 +100,6 @@ void Socket::unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::v
 	
 };
 
-void	printVectPollFd(std::vector<struct pollfd> vect){
-	
-	for(std::vector<struct pollfd>::iterator it = vect.begin(); it != vect.end(); it++){
-		struct pollfd local = *it;
-		std::cout << local.fd << std::endl;
-	}
-}
-
-void	printVectStr(std::vector<std::string> vect){
-	
-	for(std::vector<std::string>::iterator it = vect.begin(); it != vect.end(); it++){
-		std::cout << *it << std::endl;
-	}
-}
-
 void	Socket::createAddrinfo(){
 
 	int status;
@@ -300,9 +285,9 @@ void	Socket::recvConnection(int i){
 					_clients[i].cgiInfo.childPid = 0;
 					_clients[i].cgiInfo.contentLenghtCGI = _clients[i].receivedContentVector.size();
 					
-					if (_clients[i].cgiInfo.contentLenghtCGI > _clients[i].ClientRequest.allowedContLen){
-						_clients[i].receivedContentVector.erase(_clients[i].receivedContentVector.begin() + _clients[i].ClientRequest.allowedContLen, _clients[i].receivedContentVector.end()); //maybe +1
-						// std::cout << "contentLenghtCGI > allowedContLen, cgi body was adjusted" << std::endl; //CORRECT?
+					if (_clients[i].ClientRequest.allowedContLen != -1
+						&& _clients[i].cgiInfo.contentLenghtCGI > (size_t)_clients[i].ClientRequest.allowedContLen) {
+						_clients[i].receivedContentVector.erase(_clients[i].receivedContentVector.begin() + _clients[i].ClientRequest.allowedContLen, _clients[i].receivedContentVector.end());
 					}
 				}
 			} catch (std::exception &e) {
@@ -332,7 +317,7 @@ void	Socket::sendData(int i){
 		_clients[i].biteToSend -= biteSent;
 	} else if (_clients[i].biteToSend == biteSent){
 		closeClientConnection(i);
-		
+
 	}
 }
 
@@ -599,10 +584,10 @@ void	Socket::checkEvents(){
 		}
 
 		//CGI event check
-		if (i > 0 && _clients.size() > i && _clients[i].isCGI == true){
+		if (i > 0 && _clients.size() > (size_t)i && _clients[i].isCGI == true){
 			checkCGIevens(i);
 		}
-		if (i > 0 && _clients.size() > i){
+		if (i > 0 && _clients.size() > (size_t)i){
 			clientTimeout(i);
 		}
 	}
