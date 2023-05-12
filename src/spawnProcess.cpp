@@ -102,7 +102,7 @@ void	envpGenerate(char** envp, parsRequest request, std::string portNumberSocket
 	envp[17] = new char[str17.length() + 1];
 	strcpy(envp[17], str17.c_str());
 
-	std::string str18 = request.save_location;
+	std::string str18 = std::string("SAVE_LOCATION=") + request.save_location;
 	envp[18] = new char[str18.length() + 1];
 	strcpy(envp[18], str18.c_str());
 	
@@ -154,7 +154,6 @@ ssize_t writeChild(const std::vector<char>& rowData, size_t& offset, int* pipeFd
     size_t chunkSize = (remainingDataLen > 8192) ? 8192 : remainingDataLen;
     if (chunkSize > 0) {
         n = write(pipeFdIn[1], rowData.data() + offset, chunkSize);
-		std::cout << "writeChild n = " << n << std::endl;
         if (n < 0 && n != -1) {
             throw std::runtime_error("SpawnProcess: writeInChild: write");
         }
@@ -179,7 +178,6 @@ ssize_t	readChild(int* pipeFdOut, std::string &reply){
 		//error
 		throw std::runtime_error("SpawnProcess: readFromChild : read");
 	}
-	std::cout << "readChild res = " << res << std::endl;
 	buff[res] = '\0';
 	if (res == 0){
 		reply.append(buff, res);
@@ -282,6 +280,7 @@ pid_t	launchChild(CGIInfo &info, parsRequest &request, std::string& portNumSocke
 				exit(1);
 			}
 		}
+		request.save_location = loc.getSaveLocation();
 		char *envp[20];
 		envpGenerate(envp, request, portNumSocket, hostNameSocket, info.contentLenghtCGI);
 		execve((char *)request.physicalPathCgi.c_str(), NULL, envp);

@@ -216,7 +216,6 @@ bool	cookieEnforcement(parsRequest &request, std::map<std::string, std::vector<S
 	//check if there's a cookie header
 	if (request.headers.find("Cookie") == request.headers.end()) {
 		request.code = 403;
-		// std::cout << "couldnt find cookie header" << std::endl;
 		return true;
 	}
 
@@ -241,7 +240,6 @@ bool	cookieEnforcement(parsRequest &request, std::map<std::string, std::vector<S
 	}
 	if (!found) {
 		request.code = 403;
-		// std::cout << "couldnt find cookie inside cookie header" << std::endl;
 		return true;
 	}
 	return false;
@@ -342,6 +340,8 @@ parsRequest parseRequest(std::string requestBuff, std::map<std::string, std::vec
 		findMethodInServer(request, servers, hostPort);
 		if (request.method != GET && request.autoindex == true){ //? not sure
 			request.code = 405;
+		} else if (request.method == POST && request.callCGI == false) {
+			request.code = 400;
 		}
 	}
 	return request;
