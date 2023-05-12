@@ -15,8 +15,6 @@ size_t	Socket::getPollFdVectorSize(){return _vFds.size();};
 void	Socket::setServers(std::map<std::string, std::vector<Server> > &servers){ _servers = &servers;};
 	
 std::vector<struct pollfd> &Socket::getCGIVector(int i){
-	// if (_clients.size() < i)
-	// 	return _clients[0].cgiInfo.vCGI;
 	return _clients[i].cgiInfo.vCGI;
 };
 
@@ -25,14 +23,6 @@ size_t	Socket::getCGIVectorSize(int i){
 };
 
 bool	Socket::getCGIbool(int i){
-	// if (_vFdsSize < i){
-	// 	return false;
-	// }
-	// if (!_clients[i].isCGI){
-	// 	//std::cout << "getCGIbool: _clients[i].isCGI is FALSE" << std::endl;
-	// 	return false;
-	// }
-	//std::cout << "getCGIbool: _clients[i].isCGI is TRUE" << std::endl;
 	if (_clients[i].CgiDone)
 		return false;
 	
@@ -63,7 +53,6 @@ size_t Socket::numberOfConnections(){
 void Socket::unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::vector<struct pollfd> &socketsAll) {
 
 	if (_vFds.size() < fdCounter){
-		//std::cout << "_vFds.size() < fdCounter but this should not happen" << std::endl;
 		return;
 	}
 	_vFds[fdCounter].fd = socketsAll[allCounter].fd;
@@ -75,7 +64,6 @@ void Socket::unpackVectorintoSocket(size_t &allCounter, size_t fdCounter, std::v
 		CGIInfo &CGIinfo = _clients[fdCounter].cgiInfo;
 			if (CGIinfo.vCGI.size() == 1) {
 				if (socketsAll.size() < allCounter + 1){
-					//std::cout << "socketsAll.size() < allCounter" << std::endl;
 					return;
 				}
 				CGIinfo.vCGI[0].fd = socketsAll[allCounter].fd;
@@ -274,6 +262,8 @@ void	Socket::recvConnection(int i){
 				_clients[i].timerOn = false;
 				_clients[i].ClientRequest.parsBuff = _clients[i].receivedContent;
 				_clients[i].reply = methods(_clients[i].ClientRequest, *_servers, _portNumber, _hostName, _clients[i].isCGI);
+
+
 				if (_clients[i].isCGI == false){
 					_vFds[i].events |= POLLOUT;
 					_clients[i].biteToSend = _clients[i].reply.size();
@@ -331,7 +321,9 @@ void	Socket::CGIerrorReply(int i){
 	} else {
 		client.ClientRequest.code = 500;
 	}
+	
 	client.ClientResponse = responseStructConstruct(*_servers, hostPort, "", client.ClientRequest);
+	client.ClientResponse.method = ERR;
 	client.reply = formResponseString(client.ClientResponse);
 	client.CgiDone = true;
 	_vFds[i].events |= POLLOUT;
@@ -579,7 +571,7 @@ void	Socket::checkEvents(){
 				std::cerr << "failed to send data with i = " << i << " and FD: " << _vFds[i].fd << "err message: " << e.what() << std::endl;
 			}
 		} else if ((_vFds[i].revents & POLLHUP) == POLLHUP){
-				std::cout << "lost connection POLLHUP for fd = " << _vFds[i].fd << std::endl;
+				std::cerr << "lost connection POLLHUP for fd = " << _vFds[i].fd << std::endl;
 				closeClientConnection(i);
 		}
 

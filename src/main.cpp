@@ -67,10 +67,6 @@ void	pollLoop(std::vector<Socket> &vectSockets, std::map<std::string, std::vecto
 
 int	main(int argc, char **argv) {
 	
-	char str[PATH_MAX];
-	getcwd(str, PASS_MAX);
-	std::cout << str << std::endl;
-	
 	std::string	config_file = "configs/default.conf";
 	if (argc > 2) {
 		std::cout << "invalid number of arguments" << std::endl;
@@ -94,9 +90,16 @@ int	main(int argc, char **argv) {
 		for (stupid_vector = vectSockets.begin(); stupid_vector != vectSockets.end(); stupid_vector++) {
 			stupid_vector->createAddrinfo();
 		}
-		pollLoop(vectSockets, servers);
 	} catch(const std::exception& e) {
 		std::cerr << e.what() << std::endl;
 		return (1);
+	}
+	std::cout << "Webserv is running" << std::endl;
+	while (1) {
+		try {
+			pollLoop(vectSockets, servers);
+		} catch(const std::exception& e) {
+			std::cerr << e.what() << std::endl;
+		}
 	}
 }
